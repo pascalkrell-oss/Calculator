@@ -83,6 +83,44 @@ function src_get_default_json() {
         "audioguide": { "name": "Audioguide", "base": [300, 350, 400], "limit": 5, "extra": [60, 75, 90], "lic": "Nutzung im Guide-System. Zeitlich unbegrenzt." },
         "podcast": { "name": "Podcast", "base": [300, 350, 400], "limit": 5, "extra": [60, 75, 90], "lic": "Redaktioneller Inhalt (1 Folge). Weltweit online." },
         "doku": { "name": "Doku / Reportage", "min": [150, 250, 350], "per_min": [10, 15, 20], "lic": "TV-Ausstrahlung / Mediathek (Redaktionell)." },
-        "phone": { "name": "Telefonansage", "base": [180, 240, 300], "limit": 3, "extra": [50, 60, 70], "lic": "Nutzung in 1 Telefonanlage. Zeitlich unbegrenzt." }
+        "phone": { "name": "Telefonansage", "base": [180, 240, 300], "limit": 3, "extra": [50, 60, 70], "lic": "Nutzung in 1 Telefonanlage. Zeitlich unbegrenzt." },
+        "rights_guidance": {
+            "default": {
+                "headline": "Nutzungsrechte & Lizenzen",
+                "text": "Die Lizenz richtet sich nach Gebiet, Nutzungsdauer und Zusatzlizenzen. Bitte Projekt auswählen bzw. Konfiguration prüfen.",
+                "extras": {
+                    "social_organic": "Zusatzlizenz Social Media (organisch) gemäß VDS/Gagenkompass.",
+                    "event_pos": "Zusatzlizenz Event/Messe/POS gemäß VDS/Gagenkompass."
+                }
+            },
+            "tv": { "text": "Lizenzen: Lineares TV-Programm im gewählten Gebiet. Laufzeit wie ausgewählt." },
+            "online_paid": { "text": "Lizenzen: Online/Internet Paid Media (Pre-Roll/Ad). Laufzeit wie ausgewählt." },
+            "radio": { "text": "Lizenzen: Lineares Radio-Programm im gewählten Gebiet. Laufzeit wie ausgewählt." },
+            "cinema": { "text": "Lizenzen: Nutzung in Kinos im gewählten Gebiet. Laufzeit wie ausgewählt." },
+            "pos": { "text": "Lizenzen: Nutzung am Point of Sale (Ladenlokal). Laufzeit wie ausgewählt." },
+            "imagefilm": { "text": "Lizenzen: Internet Basic (Website, YouTube etc.) - Unpaid Media. Zeitlich unbegrenzt." },
+            "explainer": { "text": "Lizenzen: Internet Basic (Website, interne Nutzung). Zeitlich unbegrenzt." },
+            "app": { "text": "Lizenzen: Nutzung innerhalb einer App (kein TTS). Zeitlich unbegrenzt." },
+            "elearning": { "text": "Nur interne Nutzung (Schulung). Keine Veröffentlichung." },
+            "audioguide": { "text": "Nutzung im Guide-System. Zeitlich unbegrenzt." },
+            "podcast": { "text": "Redaktioneller Inhalt (1 Folge). Weltweit online." },
+            "doku": { "text": "TV-Ausstrahlung / Mediathek (Redaktionell)." },
+            "phone": { "text": "Nutzung in 1 Telefonanlage. Zeitlich unbegrenzt." }
+        },
+        "options_by_project": {
+            "tv": { "allow_cutdown": true },
+            "online_paid": { "allow_cutdown": true },
+            "radio": { "allow_cutdown": true },
+            "cinema": { "allow_cutdown": true },
+            "pos": { "allow_cutdown": true },
+            "imagefilm": { "allow_cutdown": false },
+            "explainer": { "allow_cutdown": false },
+            "app": { "allow_cutdown": false },
+            "elearning": { "allow_cutdown": false },
+            "audioguide": { "allow_cutdown": false },
+            "podcast": { "allow_cutdown": false },
+            "doku": { "allow_cutdown": false },
+            "phone": { "allow_cutdown": false }
+        }
     }';
 }
