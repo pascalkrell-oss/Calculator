@@ -11,6 +11,8 @@
     --src-input-radius: 8px; 
     --src-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
     --src-anim-speed: 0.3s;
+    --src-header-gradient: linear-gradient(180deg, rgba(219,234,254,1) 0%, rgba(239,246,255,1) 100%);
+    --src-header-panel: #eff6ff;
 }
 
 .src-reset-header { max-width: 1100px; margin: 0 auto 10px; text-align: right; font-family: "Rubik", system-ui, sans-serif; }
@@ -190,15 +192,15 @@
     text-transform: uppercase;
     letter-spacing: 0.08em;
     color: #0f172a;
-    background: linear-gradient(90deg, #dbeafe 0%, #f8fafc 100%);
-    padding: 10px 14px;
+    background: var(--src-header-gradient);
+    padding: 12px 16px;
     border-radius: 12px 12px 0 0;
     border-bottom: 1px solid #e2e8f0;
-}
-
-.src-license-section .src-sidebar-title {
-    background: #f8fafc;
-    color: rgb(15, 23, 42);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 48px;
+    line-height: 1.2;
 }
 
 .src-info-section {
@@ -210,7 +212,7 @@
 }
 
 .src-info-section .src-sidebar-title {
-    background: #f8fafc;
+    background: var(--src-header-gradient);
     border-radius: 12px 12px 0 0;
     border-bottom: 1px solid var(--src-border-light);
 }
@@ -313,6 +315,7 @@
 .src-license-meta { display: inline-block; margin-top: 6px; font-size: 12px; font-weight: 600; }
 
 .src-footer-actions { margin-top: auto; padding-top: 20px; }
+.src-note-text { text-align: center; margin-top: 6px; font-size: 10px; color: #94a3b8; }
 
 .src-btn { background: var(--src-primary); color: #fff; border: none; padding: 16px; border-radius: 50px; width: 100%; font-weight: 700; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.2s; transform: none !important; }
 .src-btn:hover { background: var(--src-primary-hover); transform: none !important; }
@@ -328,6 +331,7 @@
     background: #fff;
     padding: 14px;
     box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+    margin-bottom: 20px;
 }
 .src-cutdown-row { border-bottom: none; padding: 6px 0; margin-bottom: 0; }
 .src-cutdown-detail {
@@ -341,6 +345,17 @@
 #src-express-wrap.open,
 #src-discount-wrap.open {
     margin: 10px 0 16px;
+}
+
+.src-rights-panel {
+    background: var(--src-header-panel);
+    border: 1px solid rgba(203, 213, 225, 0.6);
+    border-radius: 12px;
+    padding: 16px;
+}
+
+#src-calc-v6:not(.src-has-project) .src-sidebar-title--pricedetails {
+    display: none;
 }
 
 /* HIDE GLOBAL SETTINGS INITIALLY */

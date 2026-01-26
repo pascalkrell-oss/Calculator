@@ -171,7 +171,7 @@ function src_shortcode_output_v7() {
 
             <div id="mod-ads" class="src-slide-wrap">
                 <div class="src-light-box-wrapper">
-                    <div class="src-group" style="margin-bottom:20px;">
+                    <div class="src-group src-rights-panel" style="margin-bottom:20px;">
                         <div class="src-section-title" style="margin-bottom:10px;">
                             <span class="dashicons dashicons-location-alt"></span> Verbreitungsgebiet
                         </div>
@@ -207,7 +207,7 @@ function src_shortcode_output_v7() {
                         </div>
                     </div>
 
-                    <div class="src-group" style="margin-bottom:20px;">
+                    <div class="src-group src-rights-panel" style="margin-bottom:20px;">
                         <div class="src-slider-header">
                             <div class="src-section-title" style="margin:0;">
                                 <span class="dashicons dashicons-calendar-alt"></span> Nutzungsdauer 
@@ -264,7 +264,7 @@ function src_shortcode_output_v7() {
 
             <div id="mod-image" class="src-slide-wrap">
                 <div class="src-light-box-wrapper">
-                    <div class="src-group" style="margin-bottom:0;">
+                    <div class="src-group src-rights-panel" style="margin-bottom:0;">
                         <div class="src-section-title"><span class="dashicons dashicons-plus-alt"></span> Zusatzlizenzen</div>
                         <label class="src-switch-row boxed">
                             <span class="src-switch-content">
@@ -296,7 +296,7 @@ function src_shortcode_output_v7() {
                     <div class="src-cutdown-card">
                         <label class="src-switch-row src-global-toggle-row src-cutdown-row">
                             <span class="src-switch-content">
-                                <span class="dashicons dashicons-edit src-switch-icon" aria-hidden="true"></span>
+                                <span class="dashicons dashicons-controls-repeat src-switch-icon" aria-hidden="true"></span>
                                 <div>
                                     <div class="src-switch-text">
                                         Cut-down / Reminder
@@ -420,7 +420,7 @@ function src_shortcode_output_v7() {
             </div>
 
             <div class="src-sidebar-section">
-                <div class="src-sidebar-title">Preis-Details</div>
+                <div class="src-sidebar-title src-sidebar-title--pricedetails">Preis-Details</div>
                 <div id="src-calc-breakdown" class="src-breakdown-box">
                     <div id="src-breakdown-list">
                         <div class="src-breakdown-row">Bitte Projekt wählen..</div>
@@ -429,12 +429,12 @@ function src_shortcode_output_v7() {
             </div>
 
             <div id="src-license-section" class="src-sidebar-section src-license-section src-hidden">
-                <div class="src-sidebar-title">Nutzungsrechte</div>
+                <div class="src-sidebar-title src-sidebar-title--rights">Nutzungsrechte</div>
                 <div id="src-license-text" class="src-license-box"></div>
             </div>
 
             <div class="src-sidebar-section src-info-section">
-                <div class="src-sidebar-title">Wissenswertes</div>
+                <div class="src-sidebar-title src-sidebar-title--knowledge">Wissenswertes</div>
                 <div class="src-info-box">
                     <div class="src-acc-item">
                         <div class="src-acc-head" onclick="toggleAccordion(this)">Berechnungsgrundlage</div>
@@ -485,7 +485,7 @@ function src_shortcode_output_v7() {
                     <span class="dashicons dashicons-pdf"></span> Angebot speichern
                 </button>
             </div>
-            <div style="text-align:center; margin-top:10px; font-size:10px; color:#94a3b8;">
+            <div class="src-note-text">
                 Auf Basis VDS Gagenkompass 2025. Alle Preise zzgl. MwSt.
             </div>
         </div>
