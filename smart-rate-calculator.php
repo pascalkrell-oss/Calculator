@@ -59,18 +59,6 @@ add_action('wp_enqueue_scripts', 'src_enqueue_assets_v7');
 function src_shortcode_output_v7() {
     ob_start();
     ?>
-    <div class="src-hero">
-        <div class="src-hero-content">
-            <p class="src-hero-eyebrow">Gagenkalkulation für professionelle Sprecher:innen</p>
-            <h1 class="src-hero-title">Gagenrechner für Voice-Over Projekte</h1>
-            <p class="src-hero-subtext">Erstelle in wenigen Schritten eine transparente, marktgerechte Gagenkalkulation für Werbung, Imagefilm, E-Learning oder Telefonansagen – inklusive Lizenz, Studio und Zusatzoptionen.</p>
-        </div>
-        <div class="src-hero-actions">
-            <a class="src-hero-link" href="https://www.vds-ev.de/gagenkompass/" target="_blank" rel="noopener noreferrer">Zum VDS Gagenkompass</a>
-            <a class="src-hero-link" href="https://www.vds-ev.de/" target="_blank" rel="noopener noreferrer">Verband deutscher Sprecher</a>
-        </div>
-    </div>
-
     <div class="src-reset-header">
         <button class="src-reset-btn" onclick="srcReset()">
             <span class="dashicons dashicons-image-rotate"></span> Gagenrechner zurücksetzen
@@ -279,19 +267,25 @@ function src_shortcode_output_v7() {
             <div id="src-global-settings" class="src-group" style="margin-top:15px; border-top:1px dashed #e2e8f0; padding-top:15px;">
                 
                 <div id="mod-extra-ads" class="src-slide-wrap">
-                    <label class="src-switch-row src-global-toggle-row">
-                        <span class="src-switch-content">
-                            <span class="dashicons dashicons-editor-cut src-switch-icon"></span>
+                    <div class="src-cutdown-card">
+                        <div class="src-cutdown-header">
+                            <span class="dashicons dashicons-editor-cut src-cutdown-icon"></span>
                             <div>
-                                <div class="src-switch-text">Cut-down / Reminder <span class="src-tooltip-icon" data-tip="Kurzversionen (Tag-ons, Reminder) kosten 50% der Gage.">?</span></div>
-                                <div class="src-switch-sub">50% der Gage berechnen</div>
+                                <div class="src-switch-text">Cut-down / Reminder</div>
+                                <div class="src-switch-sub">Kurzversionen (Tag-ons, Reminder) kosten 50% der Gage.</div>
                             </div>
-                        </span>
-                        <div class="src-toggle-wrapper">
-                            <input type="checkbox" id="src-cutdown" onchange="srcCalc()">
-                            <span class="src-toggle-slider"></span>
+                            <span class="src-tooltip-icon" data-tip="Aktiviere diese Option, wenn zusätzlich Kurzversionen geplant sind.">?</span>
                         </div>
-                    </label>
+                        <label class="src-switch-row src-global-toggle-row src-cutdown-toggle">
+                            <span class="src-switch-content">
+                                <span class="src-cutdown-label">50% der Gage berechnen</span>
+                            </span>
+                            <div class="src-toggle-wrapper">
+                                <input type="checkbox" id="src-cutdown" onchange="srcCalc()">
+                                <span class="src-toggle-slider"></span>
+                            </div>
+                        </label>
+                    </div>
                 </div>
 
                 <label class="src-switch-row src-global-toggle-row">
@@ -378,58 +372,84 @@ function src_shortcode_output_v7() {
 
         <div class="src-col-right">
             
-            <div class="src-result-card">
-                <div class="src-price-label">Kalkulierte Gage (Netto)</div>
-                <div class="src-price-main-box">
-                    <div class="src-price-main" id="src-display-total">0 €</div>
-                </div>
-                <div class="src-price-sub" id="src-display-range">Mittelwert: 0 €</div>
-                <div class="src-price-note">Alle Preise zzgl. MwSt.</div>
-                
-                <div id="src-final-fee-wrapper" class="src-final-fee-wrap src-hidden-initially">
-                    <label class="src-final-fee-label">Dein Angebotspreis (Netto)</label>
-                    <input type="number" id="src-final-fee-user" class="src-final-fee-input" placeholder="z.B. 650" oninput="srcValidateFinalFee()">
-                    <div id="src-final-fee-msg" class="src-final-fee-msg">Betrag liegt außerhalb der kalkulierten Spanne!</div>
+            <div class="src-sidebar-section">
+                <div class="src-sidebar-title">Ergebnis</div>
+                <div class="src-result-card">
+                    <div class="src-price-label">Kalkulierte Gage (Netto)</div>
+                    <div class="src-price-main-box">
+                        <div class="src-price-main" id="src-display-total">0 €</div>
+                    </div>
+                    <div class="src-price-sub" id="src-display-range">Mittelwert: 0 €</div>
+                    <div class="src-price-note">Alle Preise zzgl. MwSt.</div>
+                    
+                    <div id="src-final-fee-wrapper" class="src-final-fee-wrap src-hidden-initially">
+                        <label class="src-final-fee-label">
+                            Dein Angebotspreis (Netto)
+                            <span class="src-tooltip-icon" data-tip="Der eingetragene Angebotspreis wird im fertigen Angebot übernommen.">?</span>
+                        </label>
+                        <input type="number" id="src-final-fee-user" class="src-final-fee-input" placeholder="z.B. 650" oninput="srcValidateFinalFee()">
+                        <div id="src-final-fee-msg" class="src-final-fee-msg">Betrag liegt außerhalb der kalkulierten Spanne!</div>
+                    </div>
                 </div>
             </div>
 
-            <div id="src-calc-breakdown" class="src-breakdown-box">
-                <span class="src-breakdown-title">Wie setzt sich der Preis zusammen?</span>
-                <div id="src-breakdown-list">
-                    <div class="src-breakdown-row">Bitte Projekt wählen..</div>
+            <div class="src-sidebar-section">
+                <div class="src-sidebar-title">Preis-Details</div>
+                <div id="src-calc-breakdown" class="src-breakdown-box">
+                    <div id="src-breakdown-list">
+                        <div class="src-breakdown-row">Bitte Projekt wählen..</div>
+                    </div>
                 </div>
             </div>
 
-            <div id="src-license-text" class="src-license-box src-hidden"></div>
+            <div id="src-license-section" class="src-sidebar-section src-license-section src-hidden">
+                <div class="src-sidebar-title">Nutzungsrechte</div>
+                <div id="src-license-text" class="src-license-box"></div>
+            </div>
 
-            <div class="src-info-box">
-                <div class="src-section-title" style="margin-bottom:10px;">Wissenswertes</div>
-                
-                <div class="src-acc-item">
-                    <div class="src-acc-head" onclick="toggleAccordion(this)">Berechnungsgrundlage</div>
-                    <div class="src-acc-body">
-                        Anders als bei stundenbasierten Jobs bezahlst du hier primär für die Nutzung der Aufnahme. Die "Verwertungsrechte" definieren den Preis. Entscheidend sind: Wo läuft es (Medium)? Wie lange (Zeitraum)? Und wo (Gebiet)? Je mehr Reichweite, desto höher die Gage.
+            <div class="src-sidebar-section">
+                <div class="src-sidebar-title">Wissenswertes</div>
+                <div class="src-info-box">
+                    <div class="src-acc-item">
+                        <div class="src-acc-head" onclick="toggleAccordion(this)">Berechnungsgrundlage</div>
+                        <div class="src-acc-body">
+                            Anders als bei stundenbasierten Jobs bezahlst du hier primär für die Nutzung der Aufnahme. Die "Verwertungsrechte" definieren den Preis. Entscheidend sind: Wo läuft es (Medium)? Wie lange (Zeitraum)? Und wo (Gebiet)? Je mehr Reichweite, desto höher die Gage.
+                        </div>
                     </div>
-                </div>
-                
-                <div class="src-acc-item">
-                    <div class="src-acc-head" onclick="toggleAccordion(this)">Textlänge & Dauer</div>
-                    <div class="src-acc-body">
-                        Als Faustregel gilt: 900 Zeichen (inkl. Leerzeichen) entsprechen ca. 1 Minute gesprochenem Text. Zahlen und Abkürzungen sollten ausgeschrieben gezählt werden, da sie beim Sprechen länger sind als im geschriebenen Text.
+                    
+                    <div class="src-acc-item">
+                        <div class="src-acc-head" onclick="toggleAccordion(this)">Textlänge & Dauer</div>
+                        <div class="src-acc-body">
+                            Als Faustregel gilt: 900 Zeichen (inkl. Leerzeichen) entsprechen ca. 1 Minute gesprochenem Text. Zahlen und Abkürzungen sollten ausgeschrieben gezählt werden, da sie beim Sprechen länger sind als im geschriebenen Text.
+                        </div>
                     </div>
-                </div>
 
-                <div class="src-acc-item">
-                    <div class="src-acc-head" onclick="toggleAccordion(this)">Buyouts & Unlimited</div>
-                    <div class="src-acc-body">
-                        Ein "Buyout" ist der Einkauf der Nutzungsrechte. Willst du eine Aufnahme zeitlich unbegrenzt nutzen, vervielfacht sich der Basispreis (oft x3 oder x4), da der Sprecher durch die dauerhafte Bindung seine Stimme für Konkurrenzprodukte in diesem Zeitraum oft nicht mehr zur Verfügung stellen kann.
+                    <div class="src-acc-item">
+                        <div class="src-acc-head" onclick="toggleAccordion(this)">Buyouts & Unlimited</div>
+                        <div class="src-acc-body">
+                            Ein "Buyout" ist der Einkauf der Nutzungsrechte. Willst du eine Aufnahme zeitlich unbegrenzt nutzen, vervielfacht sich der Basispreis (oft x3 oder x4), da der Sprecher durch die dauerhafte Bindung seine Stimme für Konkurrenzprodukte in diesem Zeitraum oft nicht mehr zur Verfügung stellen kann.
+                        </div>
                     </div>
-                </div>
 
-                 <div class="src-acc-item">
-                    <div class="src-acc-head" onclick="toggleAccordion(this)">Studio & Technik</div>
-                    <div class="src-acc-body">
-                        Die reine Sprechergage deckt die kreative Leistung und die Lizenz ab. Technische Leistungen wie Aufnahmeleitung, Schnitt, Cleaning und Datei-Export sind oft separat als Studiokosten ausgewiesen, wenn der Sprecher dies im eigenen Studio übernimmt.
+                    <div class="src-acc-item">
+                        <div class="src-acc-head" onclick="toggleAccordion(this)">Studio & Technik</div>
+                        <div class="src-acc-body">
+                            Die reine Sprechergage deckt die kreative Leistung und die Lizenz ab. Technische Leistungen wie Aufnahmeleitung, Schnitt, Cleaning und Datei-Export sind oft separat als Studiokosten ausgewiesen, wenn der Sprecher dies im eigenen Studio übernimmt.
+                        </div>
+                    </div>
+
+                    <div class="src-acc-item">
+                        <div class="src-acc-head" onclick="toggleAccordion(this)">Korrekturen & Revisionen</div>
+                        <div class="src-acc-body">
+                            Planbare Korrekturschleifen (z.B. 1–2 Takes) sind oft inklusive. Größere Textänderungen oder zusätzliche Versionen sollten jedoch neu kalkuliert werden, da sie zusätzlichen Produktionsaufwand bedeuten.
+                        </div>
+                    </div>
+
+                    <div class="src-acc-item">
+                        <div class="src-acc-head" onclick="toggleAccordion(this)">Exklusivität & Konkurrenzschutz</div>
+                        <div class="src-acc-body">
+                            Bei längeren Nutzungsrechten oder exklusiven Kampagnen kann ein Konkurrenzschutz gelten. Das verhindert parallele Aufträge in derselben Branche und beeinflusst die Gage entsprechend.
+                        </div>
                     </div>
                 </div>
             </div>

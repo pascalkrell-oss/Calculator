@@ -92,9 +92,11 @@ window.srcReset = function() {
     toggleElement('src-discount-wrap', false);
     
     const licBox = document.getElementById('src-license-text');
+    const licSection = document.getElementById('src-license-section');
     licBox.innerHTML = '';
     licBox.classList.remove('hidden');
     licBox.style.display = 'none';
+    if(licSection) licSection.classList.add('src-hidden');
     
     srcUIUpdate();
     srcCalc();
@@ -186,6 +188,8 @@ window.srcCalc = function() {
         document.getElementById('src-display-total').innerText = "0 €";
         document.getElementById('src-display-range').innerText = "Bitte Projekt wählen..";
         document.getElementById('src-license-text').classList.add('hidden');
+        const licSection = document.getElementById('src-license-section');
+        if(licSection) licSection.classList.add('src-hidden');
         if(finalFeeWrap) finalFeeWrap.style.display = 'none'; // Hide if no genre
         return;
     }
@@ -341,7 +345,7 @@ window.srcCalc = function() {
     // Add Cutdown Icon in Breakdown List if applicable
     const bd = document.getElementById('src-breakdown-list');
     const iconMatches = [
-        { match: "Cut-down", icon: "dashicons-scissors" },
+        { match: "Cut-down", icon: "dashicons-editor-cut" },
         { match: "Gebiet:", icon: "dashicons-location-alt" }
     ];
     bd.innerHTML = info.map(line => {
@@ -354,12 +358,15 @@ window.srcCalc = function() {
     
     dynamicLicenseText = "<strong>Enthaltene Nutzungsrechte:</strong><br>" + licParts.join(', ');
     const licBox = document.getElementById('src-license-text');
+    const licSection = document.getElementById('src-license-section');
     
     if(licParts.length > 0 && !layoutMode) {
         licBox.innerHTML = dynamicLicenseText;
         licBox.classList.remove('hidden');
+        if(licSection) licSection.classList.remove('src-hidden');
     } else {
         licBox.classList.add('hidden');
+        if(licSection) licSection.classList.add('src-hidden');
     }
 
     currentResult = { low: final[0], mid: final[1], high: final[2] };
