@@ -146,15 +146,15 @@ function src_shortcode_output_v7() {
                 </div>
 
                 <div style="margin-top:5px;">
-                    <label class="src-switch-row" style="padding: 5px 0;">
+                    <div class="src-switch-row" style="padding: 5px 0;">
                         <span class="src-switch-content">
                             <span class="src-manual-label">Länge manuell eingeben</span>
                         </span>
                         <div class="src-toggle-wrapper">
-                            <input type="checkbox" id="src-manual-time-check" onchange="srcToggleManualTime()">
-                            <span class="src-toggle-slider"></span>
+                            <input type="checkbox" id="src-manual-time-check">
+                            <label class="src-toggle-slider" for="src-manual-time-check"></label>
                         </div>
-                    </label>
+                    </div>
                     <div id="src-manual-input-wrap" class="src-slide-wrap" style="margin-top:0;">
                          <input type="text" id="src-manual-minutes" class="src-input-text" style="margin-top:5px;" placeholder="Länge in Minuten (z.B. 1,5)" oninput="srcAnalyzeText()">
                     </div>
@@ -228,7 +228,7 @@ function src_shortcode_output_v7() {
 
                     <div class="src-group" style="margin-bottom:0;">
                         <div id="src-pkg-online-wrap" class="src-slide-wrap">
-                            <label class="src-switch-row boxed">
+                            <div class="src-switch-row boxed">
                                 <span class="src-switch-content">
                                     <span class="dashicons dashicons-cloud src-switch-icon"></span>
                                     <div>
@@ -237,14 +237,14 @@ function src_shortcode_output_v7() {
                                     </div>
                                 </span>
                                 <div class="src-toggle-wrapper">
-                                    <input type="checkbox" id="src-pkg-online" onchange="srcCalc()">
-                                    <span class="src-toggle-slider"></span>
+                                    <input type="checkbox" id="src-pkg-online">
+                                    <label class="src-toggle-slider" for="src-pkg-online"></label>
                                 </div>
-                            </label>
+                            </div>
                         </div>
 
                         <div id="src-pkg-atv-wrap" class="src-slide-wrap">
-                            <label class="src-switch-row boxed">
+                            <div class="src-switch-row boxed">
                                 <span class="src-switch-content">
                                     <span class="dashicons dashicons-video-alt3 src-switch-icon"></span>
                                     <div>
@@ -253,10 +253,10 @@ function src_shortcode_output_v7() {
                                     </div>
                                 </span>
                                 <div class="src-toggle-wrapper">
-                                    <input type="checkbox" id="src-pkg-atv" onchange="srcCalc()">
-                                    <span class="src-toggle-slider"></span>
+                                    <input type="checkbox" id="src-pkg-atv">
+                                    <label class="src-toggle-slider" for="src-pkg-atv"></label>
                                 </div>
-                            </label>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -266,32 +266,32 @@ function src_shortcode_output_v7() {
                 <div class="src-light-box-wrapper">
                     <div class="src-group src-rights-panel" style="margin-bottom:0;">
                         <div class="src-section-title"><span class="dashicons dashicons-plus-alt"></span> Zusatzlizenzen</div>
-                        <label class="src-switch-row boxed">
+                        <div class="src-switch-row boxed">
                             <span class="src-switch-content">
                                 <span class="dashicons dashicons-share src-switch-icon"></span>
                                 <div><div class="src-switch-text">Social Media (Organisch)</div></div>
                             </span>
                             <div class="src-toggle-wrapper">
-                                <input type="checkbox" id="src-lic-social" onchange="srcCalc()">
-                                <span class="src-toggle-slider"></span>
+                                <input type="checkbox" id="src-lic-social">
+                                <label class="src-toggle-slider" for="src-lic-social"></label>
                             </div>
-                        </label>
-                        <label class="src-switch-row boxed">
+                        </div>
+                        <div class="src-switch-row boxed">
                             <span class="src-switch-content">
                                 <span class="dashicons dashicons-groups src-switch-icon"></span>
                                 <div><div class="src-switch-text">Event / Messe / POS</div></div>
                             </span>
                             <div class="src-toggle-wrapper">
-                                <input type="checkbox" id="src-lic-event" onchange="srcCalc()">
-                                <span class="src-toggle-slider"></span>
+                                <input type="checkbox" id="src-lic-event">
+                                <label class="src-toggle-slider" for="src-lic-event"></label>
                             </div>
-                        </label>
+                        </div>
                     </div>
                 </div>
             </div>
 
             <div id="src-global-settings" class="src-group" style="margin-top:15px; border-top:1px dashed #e2e8f0; padding-top:15px;">
-                <label class="src-switch-row src-global-toggle-row">
+                <div class="src-switch-row src-global-toggle-row">
                     <span class="src-switch-content">
                         <span class="dashicons dashicons-edit src-switch-icon"></span>
                         <div>
@@ -300,10 +300,10 @@ function src_shortcode_output_v7() {
                         </div>
                     </span>
                     <div class="src-toggle-wrapper">
-                        <input type="checkbox" id="src-layout-mode" onchange="srcCalc()">
-                        <span class="src-toggle-slider"></span>
+                        <input type="checkbox" id="src-layout-mode">
+                        <label class="src-toggle-slider" for="src-layout-mode"></label>
                     </div>
-                </label>
+                </div>
 
                 <div class="src-option-row" data-option="studio">
                     <div class="src-option-left">
@@ -321,8 +321,8 @@ function src_shortcode_output_v7() {
                     </div>
                     <div class="src-option-right">
                         <div class="src-toggle-wrapper">
-                            <input type="checkbox" id="src-own-studio" onchange="srcToggleStudio()">
-                            <span class="src-toggle-slider"></span>
+                            <input type="checkbox" id="src-own-studio">
+                            <label class="src-toggle-slider" for="src-own-studio"></label>
                         </div>
                     </div>
                 </div>
@@ -345,8 +345,8 @@ function src_shortcode_output_v7() {
                     </div>
                     <div class="src-option-right">
                         <div class="src-toggle-wrapper">
-                            <input type="checkbox" id="src-express-toggle" onchange="srcHandleOptionToggle('src-express-toggle'); srcCalc();">
-                            <span class="src-toggle-slider"></span>
+                            <input type="checkbox" id="src-express-toggle">
+                            <label class="src-toggle-slider" for="src-express-toggle"></label>
                         </div>
                     </div>
                 </div>
@@ -367,8 +367,8 @@ function src_shortcode_output_v7() {
                     </div>
                     <div class="src-option-right">
                         <div class="src-toggle-wrapper">
-                            <input type="checkbox" id="src-cutdown" onchange="srcHandleOptionToggle('src-cutdown'); srcCalc();">
-                            <span class="src-toggle-slider"></span>
+                            <input type="checkbox" id="src-cutdown">
+                            <label class="src-toggle-slider" for="src-cutdown"></label>
                         </div>
                     </div>
                 </div>
@@ -390,8 +390,8 @@ function src_shortcode_output_v7() {
                     </div>
                     <div class="src-option-right">
                         <div class="src-toggle-wrapper">
-                            <input type="checkbox" id="src-discount-toggle" onchange="srcHandleOptionToggle('src-discount-toggle'); srcCalc();">
-                            <span class="src-toggle-slider"></span>
+                            <input type="checkbox" id="src-discount-toggle">
+                            <label class="src-toggle-slider" for="src-discount-toggle"></label>
                         </div>
                     </div>
                 </div>
