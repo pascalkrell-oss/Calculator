@@ -162,6 +162,8 @@
     transform: translateX(8px);
     overflow: hidden;
     pointer-events: none;
+    position: relative;
+    z-index: 1;
     transition: max-width 220ms cubic-bezier(0.4, 0, 0.2, 1), max-height 220ms cubic-bezier(0.4, 0, 0.2, 1), opacity 180ms ease, transform 220ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 .src-option-row.is-on .src-option-inline {
@@ -173,6 +175,8 @@
 }
 .src-option-right {
     flex: 0 0 auto;
+    position: relative;
+    z-index: 2;
 }
 .src-option-inline-note {
     font-size: 12px;
@@ -349,6 +353,15 @@
     opacity: 0;
 }
 .src-price-sub { font-size: 13px; color: #475569; text-align: center; }
+.src-mean-fade {
+    display: inline-flex;
+    opacity: 1;
+    transition: opacity 160ms ease;
+}
+.src-mean-fade.is-updating {
+    opacity: 0;
+    transition: opacity 160ms ease;
+}
 .src-price-note { font-size: 11px; color: #64748b; margin-top: 6px; letter-spacing: 0.2px; text-transform: none; }
 
 /* USER FINAL FEE INPUT */
