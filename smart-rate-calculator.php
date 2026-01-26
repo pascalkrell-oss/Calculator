@@ -34,7 +34,7 @@ function src_enqueue_assets_v7() {
     // Unser eigenes JS laden
     wp_enqueue_script(
         'src-script', 
-        SRC_PLUGIN_URL . 'assets/js/script.js', 
+        SRC_PLUGIN_URL . 'assets/js/skripts.js', 
         array('jquery', 'jspdf'), 
         '7.0.0', 
         true

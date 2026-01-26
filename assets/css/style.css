@@ -142,9 +142,9 @@
 
 /* RESULT CARD (BLUE) */
 .src-result-card { 
-    background: var(--src-primary); 
+    background: #0f141a; 
     border-radius: 16px; padding: 25px; text-align: center; 
-    box-shadow: 0 10px 30px rgba(26, 147, 238, 0.3); 
+    box-shadow: none; 
     margin-bottom: 20px; position: relative; overflow: hidden; 
     color: #fff; 
 }
