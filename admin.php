@@ -1,0 +1,88 @@
+<?php
+if ( ! defined( 'ABSPATH' ) ) exit;
+
+// Admin-Menüpunkt hinzufügen
+function src_add_admin_menu() {
+    add_options_page(
+        'Gagenrechner Einstellungen', // Seitentitel
+        'Gagenrechner',               // Menütitel
+        'manage_options',             // Berechtigung
+        'src-calculator-settings',    // Slug
+        'src_settings_page_html'      // Callback-Funktion
+    );
+}
+add_action('admin_menu', 'src_add_admin_menu');
+
+// HTML der Einstellungsseite
+function src_settings_page_html() {
+    // Speichern, wenn Formular gesendet wurde
+    if (isset($_POST['src_rates_json']) && check_admin_referer('src_save_settings')) {
+        $json_input = wp_unslash($_POST['src_rates_json']);
+        
+        // Validierung: Ist es valides JSON?
+        if(json_decode($json_input) !== null) {
+             update_option('src_rates_json', $json_input);
+             echo '<div class="notice notice-success is-dismissible"><p>Einstellungen gespeichert!</p></div>';
+        } else {
+             echo '<div class="notice notice-error is-dismissible"><p>Fehler: Ungültiges JSON Format.</p></div>';
+        }
+    }
+
+    // Aktuellen Wert holen oder Default
+    $current_json = get_option('src_rates_json');
+    if (!$current_json) {
+        $current_json = src_get_default_json();
+    }
+
+    // JSON hübsch formatieren für die Anzeige
+    $pretty_json = json_encode(json_decode($current_json), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+
+    ?>
+    <div class="wrap">
+        <h1>Gagenrechner Konfiguration</h1>
+        <p>Hier können Sie die Basispreise und Faktoren für den Rechner anpassen. Bitte achten Sie auf valides JSON Format.</p>
+        
+        <form method="post" action="">
+            <?php wp_nonce_field('src_save_settings'); ?>
+            
+            <table class="form-table">
+                <tr valign="top">
+                    <th scope="row">Preis-Konfiguration (JSON)</th>
+                    <td>
+                        <textarea name="src_rates_json" rows="25" cols="80" style="font-family:monospace; width:100%; background:#f0f0f1;"><?php echo esc_textarea($pretty_json); ?></textarea>
+                        <p class="description">Bearbeiten Sie hier die Preise, Limits und Lizenztexte.</p>
+                    </td>
+                </tr>
+            </table>
+            
+            <?php submit_button(); ?>
+        </form>
+        
+        <div class="card" style="max-width:800px; margin-top:20px;">
+            <h3>Anleitung</h3>
+            <p><strong>Base:</strong> Array mit [Low, Mid, High] Preisen.<br>
+            <strong>Tiers:</strong> Staffelung nach Minuten.<br>
+            <strong>Extra:</strong> Kosten für Zusatzminuten oder Module.</p>
+        </div>
+    </div>
+    <?php
+}
+
+// Hilfsfunktion: Default JSON Daten (Fallback)
+function src_get_default_json() {
+    return '{
+        "tv": { "base": [600, 700, 800], "name": "TV Spot", "lic": "Lizenzen: Lineares TV-Programm im gewählten Gebiet. Laufzeit wie ausgewählt." },
+        "online_paid": { "base": [600, 700, 800], "name": "Online Paid Media", "lic": "Lizenzen: Online/Internet Paid Media (Pre-Roll/Ad). Laufzeit wie ausgewählt." },
+        "radio": { "base": [450, 500, 550], "name": "Funkspot", "lic": "Lizenzen: Lineares Radio-Programm im gewählten Gebiet. Laufzeit wie ausgewählt." },
+        "cinema": { "base": [600, 700, 800], "name": "Kino Spot", "lic": "Lizenzen: Nutzung in Kinos im gewählten Gebiet. Laufzeit wie ausgewählt." },
+        "pos": { "base": [600, 700, 800], "name": "POS / Ladenfunk", "lic": "Lizenzen: Nutzung am Point of Sale (Ladenlokal). Laufzeit wie ausgewählt." },
+        "imagefilm": { "name": "Imagefilm", "tiers": [{ "limit": 2, "p": [300, 385, 450] }, { "limit": 5, "p": [350, 450, 500] }], "extra": [50, 100, 150], "lic": "Lizenzen: Internet Basic (Website, YouTube etc.) - Unpaid Media. Zeitlich unbegrenzt." },
+        "explainer": { "name": "Erklärvideo", "tiers": [{ "limit": 2, "p": [300, 385, 450] }, { "limit": 5, "p": [350, 450, 500] }], "extra": [50, 100, 150], "lic": "Lizenzen: Internet Basic (Website, interne Nutzung). Zeitlich unbegrenzt." },
+        "app": { "name": "App", "tiers": [{ "limit": 2, "p": [300, 400, 450] }, { "limit": 5, "p": [500, 550, 600] }], "extra": [100, 125, 150], "lic": "Lizenzen: Nutzung innerhalb einer App (kein TTS). Zeitlich unbegrenzt." },
+        "elearning": { "name": "E-Learning", "base": [300, 350, 400], "limit": 5, "extra": [60, 75, 90], "lic": "Nur interne Nutzung (Schulung). Keine Veröffentlichung." },
+        "audioguide": { "name": "Audioguide", "base": [300, 350, 400], "limit": 5, "extra": [60, 75, 90], "lic": "Nutzung im Guide-System. Zeitlich unbegrenzt." },
+        "podcast": { "name": "Podcast", "base": [300, 350, 400], "limit": 5, "extra": [60, 75, 90], "lic": "Redaktioneller Inhalt (1 Folge). Weltweit online." },
+        "doku": { "name": "Doku / Reportage", "min": [150, 250, 350], "per_min": [10, 15, 20], "lic": "TV-Ausstrahlung / Mediathek (Redaktionell)." },
+        "phone": { "name": "Telefonansage", "base": [180, 240, 300], "limit": 3, "extra": [50, 60, 70], "lic": "Nutzung in 1 Telefonanlage. Zeitlich unbegrenzt." }
+    }';
+}
