@@ -291,29 +291,6 @@ function src_shortcode_output_v7() {
             </div>
 
             <div id="src-global-settings" class="src-group" style="margin-top:15px; border-top:1px dashed #e2e8f0; padding-top:15px;">
-                
-                <div id="mod-extra-ads" class="src-slide-wrap">
-                    <div class="src-cutdown-card">
-                        <label class="src-switch-row src-global-toggle-row src-cutdown-row">
-                            <span class="src-switch-content">
-                                <span class="dashicons dashicons-controls-repeat src-switch-icon" aria-hidden="true"></span>
-                                <div>
-                                    <div class="src-switch-text">
-                                        Cut-down / Reminder
-                                        <span class="src-tooltip-icon" data-tip="Aktiviere diese Option, wenn zusätzlich Kurzversionen geplant sind.">?</span>
-                                    </div>
-                                    <div class="src-switch-sub">Kurzversionen (Tag-ons, Reminder) kosten 50% der Gage.</div>
-                                </div>
-                            </span>
-                            <div class="src-toggle-wrapper">
-                                <input type="checkbox" id="src-cutdown" onchange="srcCalc()">
-                                <span class="src-toggle-slider"></span>
-                            </div>
-                        </label>
-                        <div class="src-cutdown-detail src-switch-detail-wrap">50% der Gage berechnen</div>
-                    </div>
-                </div>
-
                 <label class="src-switch-row src-global-toggle-row">
                     <span class="src-switch-content">
                         <span class="dashicons dashicons-edit src-switch-icon"></span>
@@ -328,69 +305,95 @@ function src_shortcode_output_v7() {
                     </div>
                 </label>
 
-                <label class="src-switch-row src-global-toggle-row">
-                    <span class="src-switch-content">
+                <div class="src-option-row" data-option="studio">
+                    <div class="src-option-left">
                         <span class="dashicons dashicons-microphone src-switch-icon"></span>
-                        <div>
-                            <div class="src-switch-text">Eigenes Studio / Remote</div>
-                            <div class="src-switch-sub">Technik-Pauschale addieren</div>
+                        <div class="src-option-text">
+                            <div class="src-option-title">Eigenes Studio / Remote</div>
+                            <div class="src-option-sub">Technik-Pauschale addieren</div>
                         </div>
-                    </span>
-                    <div class="src-toggle-wrapper">
-                        <input type="checkbox" id="src-own-studio" onchange="srcToggleStudio()">
-                        <span class="src-toggle-slider"></span>
                     </div>
-                </label>
-                
-                <div id="src-studio-wrap" class="src-slide-wrap">
-                    <div class="src-input-compact-wrap src-switch-detail-wrap">
-                        <input type="number" id="src-studio-fee" value="150" class="src-input-compact" style="padding-right:10px;" oninput="srcCalc()">
-                        <div style="font-size:10px; color:#94a3b8; margin-top:4px;">Betrag in €</div>
+                    <div class="src-option-inline">
+                        <div class="src-input-compact-wrap">
+                            <input type="number" id="src-studio-fee" value="150" class="src-input-compact" style="padding-right:10px;" oninput="srcCalc()">
+                            <div class="src-option-help">Betrag in €</div>
+                        </div>
+                    </div>
+                    <div class="src-option-right">
+                        <div class="src-toggle-wrapper">
+                            <input type="checkbox" id="src-own-studio" onchange="srcToggleStudio()">
+                            <span class="src-toggle-slider"></span>
+                        </div>
                     </div>
                 </div>
 
-                <label class="src-switch-row src-global-toggle-row">
-                    <span class="src-switch-content">
+                <div class="src-option-row" data-option="express">
+                    <div class="src-option-left">
                         <span class="dashicons dashicons-clock src-switch-icon"></span>
-                        <div>
-                            <div class="src-switch-text">Express Lieferung</div>
-                            <div class="src-switch-sub">Schnellere Abgabe mit Aufpreis</div>
+                        <div class="src-option-text">
+                            <div class="src-option-title">Express Lieferung</div>
+                            <div class="src-option-sub">Schnellere Abgabe mit Aufpreis</div>
                         </div>
-                    </span>
-                    <div class="src-toggle-wrapper">
-                        <input type="checkbox" id="src-express-toggle" onchange="toggleElement('src-express-wrap', this.checked); srcCalc();">
-                        <span class="src-toggle-slider"></span>
                     </div>
-                </label>
-                <div id="src-express-wrap" class="src-slide-wrap">
-                    <div class="src-input-compact-wrap src-switch-detail-wrap">
-                        <select id="src-express-type" class="src-select src-input-compact" onchange="srcCalc()">
-                            <option value="24h">Innerhalb 24h (+50%)</option>
-                            <option value="4h">Innerhalb 4h (+100%)</option>
-                        </select>
+                    <div class="src-option-inline">
+                        <div class="src-input-compact-wrap">
+                            <select id="src-express-type" class="src-select src-input-compact" onchange="srcCalc()">
+                                <option value="24h">Innerhalb 24h (+50%)</option>
+                                <option value="4h">Innerhalb 4h (+100%)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="src-option-right">
+                        <div class="src-toggle-wrapper">
+                            <input type="checkbox" id="src-express-toggle" onchange="srcHandleOptionToggle('src-express-toggle'); srcCalc();">
+                            <span class="src-toggle-slider"></span>
+                        </div>
                     </div>
                 </div>
-                
-                <label class="src-switch-row src-global-toggle-row">
-                    <span class="src-switch-content">
-                        <span class="dashicons dashicons-tag src-switch-icon"></span>
-                        <div>
-                            <span class="src-switch-text">Rabatt gewähren?</span>
-                            <div class="src-switch-sub">Vom Netto-Betrag abziehen</div>
+
+                <div class="src-option-row" data-option="cutdown">
+                    <div class="src-option-left">
+                        <span class="dashicons dashicons-controls-repeat src-switch-icon" aria-hidden="true"></span>
+                        <div class="src-option-text">
+                            <div class="src-option-title">
+                                Cut-down / Reminder
+                                <span class="src-tooltip-icon" data-tip="Aktiviere diese Option, wenn zusätzlich Kurzversionen geplant sind.">?</span>
+                            </div>
+                            <div class="src-option-sub">Kurzversionen (Tag-ons, Reminder) kosten 50% der Gage.</div>
                         </div>
-                    </span>
-                    <div class="src-toggle-wrapper">
-                        <input type="checkbox" id="src-discount-toggle" onchange="toggleElement('src-discount-wrap', this.checked)">
-                        <span class="src-toggle-slider"></span>
                     </div>
-                </label>
-                
-                <div id="src-discount-wrap" class="src-slide-wrap">
-                    <div class="src-discount-row src-switch-detail-wrap">
-                        <input type="number" id="src-discount-percent" class="src-input-compact src-discount-percent" placeholder="%" min="0" max="100" oninput="srcCalc()">
-                        <input type="text" id="src-discount-reason" class="src-input-compact" placeholder="Grund (z.B. Neukunde)" oninput="srcCalc()">
+                    <div class="src-option-inline">
+                        <div class="src-option-inline-note">50% der Gage berechnen</div>
                     </div>
-                    <span class="src-hint-text src-switch-detail-wrap">Der Rabatt wird vom Netto-Gesamtbetrag abgezogen.</span>
+                    <div class="src-option-right">
+                        <div class="src-toggle-wrapper">
+                            <input type="checkbox" id="src-cutdown" onchange="srcHandleOptionToggle('src-cutdown'); srcCalc();">
+                            <span class="src-toggle-slider"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="src-option-row" data-option="discount">
+                    <div class="src-option-left">
+                        <span class="dashicons dashicons-tag src-switch-icon"></span>
+                        <div class="src-option-text">
+                            <div class="src-option-title">Rabatt gewähren?</div>
+                            <div class="src-option-sub">Vom Netto-Betrag abziehen</div>
+                        </div>
+                    </div>
+                    <div class="src-option-inline">
+                        <div class="src-discount-row src-option-discount-row">
+                            <input type="number" id="src-discount-percent" class="src-input-compact src-discount-percent" placeholder="%" min="0" max="100" oninput="srcCalc()">
+                            <input type="text" id="src-discount-reason" class="src-input-compact" placeholder="Grund (z.B. Neukunde)" oninput="srcCalc()">
+                        </div>
+                        <span class="src-hint-text">Der Rabatt wird vom Netto-Gesamtbetrag abgezogen.</span>
+                    </div>
+                    <div class="src-option-right">
+                        <div class="src-toggle-wrapper">
+                            <input type="checkbox" id="src-discount-toggle" onchange="srcHandleOptionToggle('src-discount-toggle'); srcCalc();">
+                            <span class="src-toggle-slider"></span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -403,9 +406,17 @@ function src_shortcode_output_v7() {
                 <div class="src-result-card">
                     <div class="src-price-label">Kalkulierte Gage (Netto)</div>
                     <div class="src-price-main-box">
-                        <div class="src-price-main" id="src-display-total">0 €</div>
+                        <div class="src-price-main">
+                            <div class="src-amount-anim">
+                                <span class="src-amount-anim__value" id="src-display-total">0 €</span>
+                            </div>
+                        </div>
                     </div>
-                    <div class="src-price-sub" id="src-display-range">Mittelwert: 0 €</div>
+                    <div class="src-price-sub">
+                        <span class="src-amount-anim src-amount-anim--sub">
+                            <span class="src-amount-anim__value" id="src-display-range">Mittelwert: 0 €</span>
+                        </span>
+                    </div>
                     <div class="src-price-note">Alle Preise zzgl. MwSt.</div>
                     
                     <div id="src-final-fee-wrapper" class="src-final-fee-wrap src-hidden-initially">
@@ -484,9 +495,9 @@ function src_shortcode_output_v7() {
                 <button class="src-btn" onclick="srcGeneratePDFv6()">
                     <span class="dashicons dashicons-pdf"></span> Angebot speichern
                 </button>
-            </div>
-            <div class="src-note-text">
-                Auf Basis VDS Gagenkompass 2025. Alle Preise zzgl. MwSt.
+                <div class="src-note-text">
+                    Auf Basis VDS Gagenkompass 2025. Alle Preise zzgl. MwSt.
+                </div>
             </div>
         </div>
     </div>

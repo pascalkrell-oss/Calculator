@@ -15,13 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Initial state logic
-    const ownStudio = document.getElementById('src-own-studio');
-    const discountTog = document.getElementById('src-discount-toggle');
-    const expressTog = document.getElementById('src-express-toggle');
-    
-    if(ownStudio) toggleElement('src-studio-wrap', ownStudio.checked);
-    if(discountTog) toggleElement('src-discount-wrap', discountTog.checked);
-    if(expressTog) toggleElement('src-express-wrap', expressTog.checked);
+    srcSyncOptionRowStates();
     
     // Attach Tooltip events
     const tipEl = document.getElementById('src-tooltip-fixed');
@@ -48,6 +42,68 @@ window.toggleElement = function(id, show) {
     if(!el) return;
     if(show) { el.classList.add('open'); if(id.includes('mod')) el.classList.add('with-margin'); } 
     else { el.classList.remove('open'); el.classList.remove('with-margin'); }
+}
+
+const srcSetOptionRowState = function(toggleEl) {
+    if(!toggleEl) return;
+    const row = toggleEl.closest('.src-option-row');
+    if(!row) return;
+    row.classList.toggle('is-on', toggleEl.checked);
+}
+
+window.srcHandleOptionToggle = function(toggleId) {
+    const toggleEl = document.getElementById(toggleId);
+    if(!toggleEl) return;
+    srcSetOptionRowState(toggleEl);
+}
+
+window.srcSyncOptionRowStates = function() {
+    document.querySelectorAll('.src-option-row .src-toggle-wrapper input[type="checkbox"]').forEach(toggleEl => {
+        srcSetOptionRowState(toggleEl);
+    });
+}
+
+const srcUpdateAnimatedValue = function(target, nextText) {
+    if(!target) return;
+    const current = target.textContent.trim();
+    if(current === nextText.trim()) return;
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if(prefersReducedMotion) {
+        target.textContent = nextText;
+        return;
+    }
+    target.classList.remove('src-amount-enter', 'src-amount-exit');
+    const onExit = (event) => {
+        if(event.propertyName !== 'transform' && event.propertyName !== 'opacity') return;
+        target.removeEventListener('transitionend', onExit);
+        target.textContent = nextText;
+        target.classList.remove('src-amount-exit');
+        requestAnimationFrame(() => {
+            target.classList.add('src-amount-enter');
+            requestAnimationFrame(() => {
+                target.classList.remove('src-amount-enter');
+            });
+        });
+    };
+    target.addEventListener('transitionend', onExit);
+    requestAnimationFrame(() => {
+        target.classList.add('src-amount-exit');
+    });
+}
+
+const srcUpdateCutdownVisibility = function(genre, layoutMode) {
+    const row = document.querySelector('.src-option-row[data-option="cutdown"]');
+    if(!row) return;
+    const optionsByProject = srcRatesData.options_by_project || {};
+    const allow = !layoutMode && optionsByProject[genre] && optionsByProject[genre].allow_cutdown === true;
+    row.style.display = allow ? '' : 'none';
+    if(!allow) {
+        const toggle = document.getElementById('src-cutdown');
+        if(toggle && toggle.checked) {
+            toggle.checked = false;
+            srcSetOptionRowState(toggle);
+        }
+    }
 }
 
 window.toggleAccordion = function(head) {
@@ -87,15 +143,12 @@ window.srcReset = function() {
     
     document.querySelectorAll('.src-acc-item').forEach(el => el.classList.remove('open'));
     toggleElement('src-manual-input-wrap', false);
-    toggleElement('src-studio-wrap', false);
-    toggleElement('src-express-wrap', false);
-    toggleElement('src-discount-wrap', false);
+    srcSyncOptionRowStates();
     
     const licBox = document.getElementById('src-license-text');
     const licSection = document.getElementById('src-license-section');
     licBox.innerHTML = '';
     licBox.classList.remove('hidden');
-    licBox.style.display = 'none';
     if(licSection) licSection.classList.add('src-hidden');
     
     srcUIUpdate();
@@ -118,16 +171,16 @@ window.srcUIUpdate = function() {
     
     if(layoutMode) {
         toggleElement('mod-ads', false); toggleElement('mod-image', false); toggleElement('mod-phone', false);
-        toggleElement('mod-extra-ads', false);
     } else {
         toggleElement('mod-ads', ['tv','online_paid','radio','cinema','pos'].includes(genre));
         toggleElement('mod-image', ['imagefilm','explainer','app'].includes(genre));
         toggleElement('mod-phone', genre === 'phone');
-        toggleElement('mod-extra-ads', ['tv','online_paid','radio','cinema','pos'].includes(genre));
         
         toggleElement('src-pkg-online-wrap', genre === 'radio');
         toggleElement('src-pkg-atv-wrap', genre === 'online_paid');
     }
+    srcUpdateCutdownVisibility(genre, layoutMode);
+    srcSyncOptionRowStates();
     srcAnalyzeText();
 }
 
@@ -140,7 +193,7 @@ window.srcToggleManualTime = function() {
 }
 
 window.srcToggleStudio = function() {
-    toggleElement('src-studio-wrap', document.getElementById('src-own-studio').checked);
+    srcHandleOptionToggle('src-own-studio');
     srcCalc();
 }
 
@@ -190,8 +243,8 @@ window.srcCalc = function() {
 
     if(!genre) {
         document.getElementById('src-calc-breakdown').style.display = 'none';
-        document.getElementById('src-display-total').innerText = "0 €";
-        document.getElementById('src-display-range').innerText = "Bitte Projekt wählen..";
+        srcUpdateAnimatedValue(document.getElementById('src-display-total'), "0 €");
+        srcUpdateAnimatedValue(document.getElementById('src-display-range'), "Bitte Projekt wählen..");
         document.getElementById('src-license-text').classList.add('hidden');
         const licSection = document.getElementById('src-license-section');
         if(licSection) licSection.classList.add('src-hidden');
@@ -356,8 +409,8 @@ window.srcCalc = function() {
         info.push(`Rabatt (${discountPct}%): <strong style="color:green">-${disc} €</strong>`);
     }
 
-    document.getElementById('src-display-total').innerText = `${final[0]} - ${final[2]} €`;
-    document.getElementById('src-display-range').innerText = `Ø Mittelwert: ${final[1]} €`;
+    srcUpdateAnimatedValue(document.getElementById('src-display-total'), `${final[0]} - ${final[2]} €`);
+    srcUpdateAnimatedValue(document.getElementById('src-display-range'), `Ø Mittelwert: ${final[1]} €`);
     
     // Add Cutdown Icon in Breakdown List if applicable
     const bd = document.getElementById('src-breakdown-list');
@@ -372,19 +425,35 @@ window.srcCalc = function() {
         return `<div class="src-breakdown-row"><span>${line}</span></div>`;
     }).join('');
     
+    const rightsGuidance = srcRatesData.rights_guidance || {};
+    const defaultGuidance = rightsGuidance.default || {};
+    const guidanceEntry = rightsGuidance[layoutMode ? 'default' : genre] || defaultGuidance;
+    const guidanceHeadline = guidanceEntry.headline || defaultGuidance.headline || "Nutzungsrechte & Lizenzen";
+    let guidanceText = guidanceEntry.text || defaultGuidance.text || "";
+    if(licBaseText && (layoutMode || !guidanceEntry.text)) {
+        guidanceText = licBaseText;
+    }
+    if(!guidanceText) {
+        guidanceText = "Nutzungsrechte abhängig von Verbreitungsgebiet, Dauer und Zusatzlizenzen. Bitte Projekt auswählen bzw. Konfiguration prüfen.";
+    }
+    const extras = Object.assign({}, defaultGuidance.extras || {}, guidanceEntry.extras || {});
+    const extrasText = [];
+    if(document.getElementById('src-lic-social').checked && extras.social_organic) {
+        extrasText.push(extras.social_organic);
+    }
+    if(document.getElementById('src-lic-event').checked && extras.event_pos) {
+        extrasText.push(extras.event_pos);
+    }
+    const extraBlock = extrasText.length ? `<br><span class="src-license-extras">${extrasText.join(' ')}</span>` : "";
     const licMetaText = licMeta.length ? `<br><span class="src-license-meta">${licMeta.join(' · ')}</span>` : "";
-    dynamicLicenseText = "<strong>Nutzungsrechte gemäß VDS Gagenkompass:</strong><br>" + (licBaseText || licParts.join(', ')) + licMetaText;
+    dynamicLicenseText = `<strong>${guidanceHeadline}</strong><br>${guidanceText || ""}${extraBlock}${licMetaText}`;
     const licBox = document.getElementById('src-license-text');
     const licSection = document.getElementById('src-license-section');
     
-    if((licBaseText || licParts.length > 0)) {
-        licBox.innerHTML = dynamicLicenseText;
-        licBox.classList.remove('hidden');
-        if(licSection) licSection.classList.remove('src-hidden');
-    } else {
-        licBox.classList.add('hidden');
-        if(licSection) licSection.classList.add('src-hidden');
-    }
+    licBox.innerHTML = dynamicLicenseText;
+    licBox.classList.remove('hidden');
+    licBox.style.display = '';
+    if(licSection) licSection.classList.remove('src-hidden');
 
     currentResult = { low: final[0], mid: final[1], high: final[2] };
     window.srcBreakdown = info;
