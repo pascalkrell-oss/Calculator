@@ -340,11 +340,16 @@ window.srcCalc = function() {
     
     // Add Cutdown Icon in Breakdown List if applicable
     const bd = document.getElementById('src-breakdown-list');
+    const iconMatches = [
+        { match: "Cut-down", icon: "dashicons-scissors" },
+        { match: "Gebiet:", icon: "dashicons-location-alt" }
+    ];
     bd.innerHTML = info.map(line => {
-            if(line.includes("Cut-down")) {
-                return `<div class="src-breakdown-row"><span><span class="dashicons dashicons-scissors"></span> ${line}</span></div>`;
-            }
-            return `<div class="src-breakdown-row"><span>${line}</span></div>`;
+        const found = iconMatches.find(entry => line.includes(entry.match));
+        if(found) {
+            return `<div class="src-breakdown-row"><span><span class="dashicons ${found.icon}"></span> ${line}</span></div>`;
+        }
+        return `<div class="src-breakdown-row"><span>${line}</span></div>`;
     }).join('');
     
     dynamicLicenseText = "<strong>Enthaltene Nutzungsrechte:</strong><br>" + licParts.join(', ');

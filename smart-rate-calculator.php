@@ -59,6 +59,18 @@ add_action('wp_enqueue_scripts', 'src_enqueue_assets_v7');
 function src_shortcode_output_v7() {
     ob_start();
     ?>
+    <div class="src-hero">
+        <div class="src-hero-content">
+            <p class="src-hero-eyebrow">Gagenkalkulation für professionelle Sprecher:innen</p>
+            <h1 class="src-hero-title">Gagenrechner für Voice-Over Projekte</h1>
+            <p class="src-hero-subtext">Erstelle in wenigen Schritten eine transparente, marktgerechte Gagenkalkulation für Werbung, Imagefilm, E-Learning oder Telefonansagen – inklusive Lizenz, Studio und Zusatzoptionen.</p>
+        </div>
+        <div class="src-hero-actions">
+            <a class="src-hero-link" href="https://www.vds-ev.de/gagenkompass/" target="_blank" rel="noopener noreferrer">Zum VDS Gagenkompass</a>
+            <a class="src-hero-link" href="https://www.vds-ev.de/" target="_blank" rel="noopener noreferrer">Verband deutscher Sprecher</a>
+        </div>
+    </div>
+
     <div class="src-reset-header">
         <button class="src-reset-btn" onclick="srcReset()">
             <span class="dashicons dashicons-image-rotate"></span> Gagenrechner zurücksetzen
@@ -147,7 +159,7 @@ function src_shortcode_output_v7() {
                 <div class="src-light-box-wrapper">
                     <div class="src-group" style="margin-bottom:20px;">
                         <div class="src-section-title" style="margin-bottom:10px;">
-                            <span class="dashicons dashicons-globe"></span> Verbreitungsgebiet
+                            <span class="dashicons dashicons-location-alt"></span> Verbreitungsgebiet
                         </div>
                         <div class="src-tiles-grid">
                             <label>
@@ -311,27 +323,31 @@ function src_shortcode_output_v7() {
                 </label>
                 
                 <div id="src-studio-wrap" class="src-slide-wrap">
-                    <div style="padding:0 0 10px 42px;">
-                        <input type="number" id="src-studio-fee" value="150" class="src-input-text" style="padding-right:10px;" oninput="srcCalc()">
+                    <div class="src-input-compact-wrap" style="padding:0 0 10px 42px;">
+                        <input type="number" id="src-studio-fee" value="150" class="src-input-compact" style="padding-right:10px;" oninput="srcCalc()">
                         <div style="font-size:10px; color:#94a3b8; margin-top:4px;">Betrag in €</div>
                     </div>
-                    <label class="src-switch-row" style="margin-top:5px; padding-left:42px;">
-                        <span class="src-switch-content">
-                            <span class="dashicons dashicons-clock src-switch-icon"></span>
-                            <div class="src-switch-text">Express Lieferung?</div>
-                        </span>
-                        <div class="src-toggle-wrapper">
-                            <input type="checkbox" id="src-express-toggle" onchange="toggleElement('src-express-wrap', this.checked); srcCalc();">
-                            <span class="src-toggle-slider"></span>
+                </div>
+
+                <label class="src-switch-row src-global-toggle-row">
+                    <span class="src-switch-content">
+                        <span class="dashicons dashicons-clock src-switch-icon"></span>
+                        <div>
+                            <div class="src-switch-text">Express Lieferung</div>
+                            <div class="src-switch-sub">Schnellere Abgabe mit Aufpreis</div>
                         </div>
-                    </label>
-                    <div id="src-express-wrap" class="src-slide-wrap">
-                        <div style="padding:0 0 10px 42px;">
-                            <select id="src-express-type" class="src-select" style="font-size:14px; padding-left:10px;" onchange="srcCalc()">
-                                <option value="24h">Innerhalb 24h (+50%)</option>
-                                <option value="4h">Innerhalb 4h (+100%)</option>
-                            </select>
-                        </div>
+                    </span>
+                    <div class="src-toggle-wrapper">
+                        <input type="checkbox" id="src-express-toggle" onchange="toggleElement('src-express-wrap', this.checked); srcCalc();">
+                        <span class="src-toggle-slider"></span>
+                    </div>
+                </label>
+                <div id="src-express-wrap" class="src-slide-wrap">
+                    <div class="src-input-compact-wrap" style="padding:0 0 10px 42px;">
+                        <select id="src-express-type" class="src-select src-input-compact" onchange="srcCalc()">
+                            <option value="24h">Innerhalb 24h (+50%)</option>
+                            <option value="4h">Innerhalb 4h (+100%)</option>
+                        </select>
                     </div>
                 </div>
                 
@@ -351,8 +367,8 @@ function src_shortcode_output_v7() {
                 
                 <div id="src-discount-wrap" class="src-slide-wrap">
                     <div class="src-discount-row" style="padding-left:42px;">
-                        <input type="number" id="src-discount-percent" placeholder="%" min="0" max="100" oninput="srcCalc()" style="width:60px;">
-                        <input type="text" id="src-discount-reason" placeholder="Grund (z.B. Neukunde)" oninput="srcCalc()">
+                        <input type="number" id="src-discount-percent" class="src-input-compact" placeholder="%" min="0" max="100" oninput="srcCalc()" style="width:60px;">
+                        <input type="text" id="src-discount-reason" class="src-input-compact" placeholder="Grund (z.B. Neukunde)" oninput="srcCalc()">
                     </div>
                     <span class="src-hint-text" style="padding-left:42px;">Der Rabatt wird vom Netto-Gesamtbetrag abgezogen.</span>
                 </div>
@@ -368,7 +384,7 @@ function src_shortcode_output_v7() {
                     <div class="src-price-main" id="src-display-total">0 €</div>
                 </div>
                 <div class="src-price-sub" id="src-display-range">Mittelwert: 0 €</div>
-                <div class="src-price-note">zzgl. MwSt.</div>
+                <div class="src-price-note">Alle Preise zzgl. MwSt.</div>
                 
                 <div id="src-final-fee-wrapper" class="src-final-fee-wrap src-hidden-initially">
                     <label class="src-final-fee-label">Dein Angebotspreis (Netto)</label>
