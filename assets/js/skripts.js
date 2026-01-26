@@ -16,6 +16,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initial state logic
     srcSyncOptionRowStates();
+
+    const calcRoot = document.getElementById('src-calc-v6');
+    if(calcRoot) {
+        calcRoot.addEventListener('change', (event) => {
+            if(event.target && event.target.matches('.src-option-row .src-toggle-wrapper input[type="checkbox"]')) {
+                srcSetOptionRowState(event.target);
+                srcCalc();
+            }
+        });
+    }
     
     // Attach Tooltip events
     const tipEl = document.getElementById('src-tooltip-fixed');
@@ -88,6 +98,24 @@ const srcUpdateAnimatedValue = function(target, nextText) {
     target.addEventListener('transitionend', onExit);
     requestAnimationFrame(() => {
         target.classList.add('src-amount-exit');
+    });
+}
+
+const srcUpdateMeanValue = function(wrapper, target, nextText) {
+    if(!wrapper || !target) return;
+    const current = target.textContent.trim();
+    if(current === nextText.trim()) return;
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if(prefersReducedMotion) {
+        target.textContent = nextText;
+        return;
+    }
+    wrapper.classList.add('is-updating');
+    requestAnimationFrame(() => {
+        target.textContent = nextText;
+        requestAnimationFrame(() => {
+            wrapper.classList.remove('is-updating');
+        });
     });
 }
 
@@ -244,7 +272,11 @@ window.srcCalc = function() {
     if(!genre) {
         document.getElementById('src-calc-breakdown').style.display = 'none';
         srcUpdateAnimatedValue(document.getElementById('src-display-total'), "0 €");
-        srcUpdateAnimatedValue(document.getElementById('src-display-range'), "Bitte Projekt wählen..");
+        srcUpdateMeanValue(
+            document.getElementById('src-mean-fade'),
+            document.getElementById('src-display-range'),
+            "Bitte Projekt wählen.."
+        );
         document.getElementById('src-license-text').classList.add('hidden');
         const licSection = document.getElementById('src-license-section');
         if(licSection) licSection.classList.add('src-hidden');
@@ -410,7 +442,11 @@ window.srcCalc = function() {
     }
 
     srcUpdateAnimatedValue(document.getElementById('src-display-total'), `${final[0]} - ${final[2]} €`);
-    srcUpdateAnimatedValue(document.getElementById('src-display-range'), `Ø Mittelwert: ${final[1]} €`);
+    srcUpdateMeanValue(
+        document.getElementById('src-mean-fade'),
+        document.getElementById('src-display-range'),
+        `Ø Mittelwert: ${final[1]} €`
+    );
     
     // Add Cutdown Icon in Breakdown List if applicable
     const bd = document.getElementById('src-breakdown-list');
@@ -428,7 +464,6 @@ window.srcCalc = function() {
     const rightsGuidance = srcRatesData.rights_guidance || {};
     const defaultGuidance = rightsGuidance.default || {};
     const guidanceEntry = rightsGuidance[layoutMode ? 'default' : genre] || defaultGuidance;
-    const guidanceHeadline = guidanceEntry.headline || defaultGuidance.headline || "Nutzungsrechte & Lizenzen";
     let guidanceText = guidanceEntry.text || defaultGuidance.text || "";
     if(licBaseText && (layoutMode || !guidanceEntry.text)) {
         guidanceText = licBaseText;
@@ -446,7 +481,7 @@ window.srcCalc = function() {
     }
     const extraBlock = extrasText.length ? `<br><span class="src-license-extras">${extrasText.join(' ')}</span>` : "";
     const licMetaText = licMeta.length ? `<br><span class="src-license-meta">${licMeta.join(' · ')}</span>` : "";
-    dynamicLicenseText = `<strong>${guidanceHeadline}</strong><br>${guidanceText || ""}${extraBlock}${licMetaText}`;
+    dynamicLicenseText = `${guidanceText || ""}${extraBlock}${licMetaText}`;
     const licBox = document.getElementById('src-license-text');
     const licSection = document.getElementById('src-license-section');
     

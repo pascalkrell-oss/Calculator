@@ -413,9 +413,9 @@ function src_shortcode_output_v7() {
                         </div>
                     </div>
                     <div class="src-price-sub">
-                        <span class="src-amount-anim src-amount-anim--sub">
-                            <span class="src-amount-anim__value" id="src-display-range">Mittelwert: 0 €</span>
-                        </span>
+                        <div class="src-mean-fade" id="src-mean-fade">
+                            <span id="src-display-range">Ø Mittelwert: 0 €</span>
+                        </div>
                     </div>
                     <div class="src-price-note">Alle Preise zzgl. MwSt.</div>
                     
@@ -440,7 +440,7 @@ function src_shortcode_output_v7() {
             </div>
 
             <div id="src-license-section" class="src-sidebar-section src-license-section src-hidden">
-                <div class="src-sidebar-title src-sidebar-title--rights">Nutzungsrechte</div>
+                <div class="src-sidebar-title src-sidebar-title--rights">Nutzungsrechte &amp; Lizenzen</div>
                 <div id="src-license-text" class="src-license-box"></div>
             </div>
 
