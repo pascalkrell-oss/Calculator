@@ -281,7 +281,7 @@ function src_shortcode_output_v7() {
                 <div id="mod-extra-ads" class="src-slide-wrap">
                     <label class="src-switch-row src-global-toggle-row">
                         <span class="src-switch-content">
-                            <span class="dashicons dashicons-scissors src-switch-icon"></span>
+                            <span class="dashicons dashicons-editor-cut src-switch-icon"></span>
                             <div>
                                 <div class="src-switch-text">Cut-down / Reminder <span class="src-tooltip-icon" data-tip="Kurzversionen (Tag-ons, Reminder) kosten 50% der Gage.">?</span></div>
                                 <div class="src-switch-sub">50% der Gage berechnen</div>
@@ -323,7 +323,7 @@ function src_shortcode_output_v7() {
                 </label>
                 
                 <div id="src-studio-wrap" class="src-slide-wrap">
-                    <div class="src-input-compact-wrap" style="padding:0 0 10px 42px;">
+                    <div class="src-input-compact-wrap src-switch-detail-wrap">
                         <input type="number" id="src-studio-fee" value="150" class="src-input-compact" style="padding-right:10px;" oninput="srcCalc()">
                         <div style="font-size:10px; color:#94a3b8; margin-top:4px;">Betrag in €</div>
                     </div>
@@ -343,7 +343,7 @@ function src_shortcode_output_v7() {
                     </div>
                 </label>
                 <div id="src-express-wrap" class="src-slide-wrap">
-                    <div class="src-input-compact-wrap" style="padding:0 0 10px 42px;">
+                    <div class="src-input-compact-wrap src-switch-detail-wrap">
                         <select id="src-express-type" class="src-select src-input-compact" onchange="srcCalc()">
                             <option value="24h">Innerhalb 24h (+50%)</option>
                             <option value="4h">Innerhalb 4h (+100%)</option>
@@ -366,11 +366,11 @@ function src_shortcode_output_v7() {
                 </label>
                 
                 <div id="src-discount-wrap" class="src-slide-wrap">
-                    <div class="src-discount-row" style="padding-left:42px;">
-                        <input type="number" id="src-discount-percent" class="src-input-compact" placeholder="%" min="0" max="100" oninput="srcCalc()" style="width:60px;">
+                    <div class="src-discount-row src-switch-detail-wrap">
+                        <input type="number" id="src-discount-percent" class="src-input-compact src-discount-percent" placeholder="%" min="0" max="100" oninput="srcCalc()">
                         <input type="text" id="src-discount-reason" class="src-input-compact" placeholder="Grund (z.B. Neukunde)" oninput="srcCalc()">
                     </div>
-                    <span class="src-hint-text" style="padding-left:42px;">Der Rabatt wird vom Netto-Gesamtbetrag abgezogen.</span>
+                    <span class="src-hint-text src-switch-detail-wrap">Der Rabatt wird vom Netto-Gesamtbetrag abgezogen.</span>
                 </div>
             </div>
 
