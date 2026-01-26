@@ -373,7 +373,7 @@ function src_shortcode_output_v7() {
         <div class="src-col-right">
             
             <div class="src-sidebar-section">
-                <div class="src-sidebar-title">Ergebnis</div>
+                <div class="src-sidebar-title">Kalkulation</div>
                 <div class="src-result-card">
                     <div class="src-price-label">Kalkulierte Gage (Netto)</div>
                     <div class="src-price-main-box">
