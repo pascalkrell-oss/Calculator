@@ -122,7 +122,7 @@ function src_shortcode_output_v7() {
                 <div style="margin-top:5px;">
                     <label class="src-switch-row" style="padding: 5px 0;">
                         <span class="src-switch-content">
-                            <span style="font-size:12px; color:#64748b;">Länge manuell eingeben</span>
+                            <span class="src-manual-label">Länge manuell eingeben</span>
                         </span>
                         <div class="src-toggle-wrapper">
                             <input type="checkbox" id="src-manual-time-check" onchange="srcToggleManualTime()">
@@ -364,8 +364,11 @@ function src_shortcode_output_v7() {
             
             <div class="src-result-card">
                 <div class="src-price-label">Kalkulierte Gage (Netto)</div>
-                <div class="src-price-main" id="src-display-total">0 €</div>
+                <div class="src-price-main-box">
+                    <div class="src-price-main" id="src-display-total">0 €</div>
+                </div>
                 <div class="src-price-sub" id="src-display-range">Mittelwert: 0 €</div>
+                <div class="src-price-note">zzgl. MwSt.</div>
                 
                 <div id="src-final-fee-wrapper" class="src-final-fee-wrap src-hidden-initially">
                     <label class="src-final-fee-label">Dein Angebotspreis (Netto)</label>
@@ -377,7 +380,7 @@ function src_shortcode_output_v7() {
             <div id="src-calc-breakdown" class="src-breakdown-box">
                 <span class="src-breakdown-title">Wie setzt sich der Preis zusammen?</span>
                 <div id="src-breakdown-list">
-                    <div class="src-breakdown-row">Bitte wählen Sie eine Projektart...</div>
+                    <div class="src-breakdown-row">Bitte Projekt wählen..</div>
                 </div>
             </div>
 

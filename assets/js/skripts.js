@@ -184,7 +184,7 @@ window.srcCalc = function() {
     if(!genre) {
         document.getElementById('src-calc-breakdown').style.display = 'none';
         document.getElementById('src-display-total').innerText = "0 €";
-        document.getElementById('src-display-range').innerText = "Bitte wählen...";
+        document.getElementById('src-display-range').innerText = "Bitte Projekt wählen..";
         document.getElementById('src-license-text').classList.add('hidden');
         if(finalFeeWrap) finalFeeWrap.style.display = 'none'; // Hide if no genre
         return;
@@ -281,7 +281,7 @@ window.srcCalc = function() {
             info.push(`Pauschale (bis 3 Module${langLabel}): <strong>${final[1]} €</strong>`);
             if(modules > 3) {
                 let ex = modules - 3; let cost = ex * data.extra[1];
-                final[0] += extra * data.extra[0]; final[1] += cost; final[2] += extra * data.extra[2];
+                final[0] += ex * data.extra[0]; final[1] += cost; final[2] += ex * data.extra[2];
                 info.push(`+ ${ex} weitere Module: <strong>+${cost} €</strong>`);
             }
         }
@@ -301,8 +301,8 @@ window.srcCalc = function() {
                 final[0] += chunks * data.extra[0]; final[1] += extraCost; final[2] += chunks * data.extra[2];
                 info.push(`Überlänge (+ ${chunks}x 5 Min): <strong>+${extraCost} €</strong>`);
             }
-            if(document.getElementById('src-lic-social').checked) { final[1]+=150; info.push("Social Media: <strong>+150 €</strong>"); licParts.push("+ Social Media"); }
-            if(document.getElementById('src-lic-event').checked) { final[1]+=150; info.push("Event: <strong>+150 €</strong>"); licParts.push("+ Event"); }
+            if(document.getElementById('src-lic-social').checked) { final = final.map(v => v + 150); info.push("Social Media: <strong>+150 €</strong>"); licParts.push("+ Social Media"); }
+            if(document.getElementById('src-lic-event').checked) { final = final.map(v => v + 150); info.push("Event: <strong>+150 €</strong>"); licParts.push("+ Event"); }
         } 
         // CONTENT
         else {
