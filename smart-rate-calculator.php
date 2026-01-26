@@ -19,11 +19,22 @@ require_once SRC_PLUGIN_DIR . 'admin.php';
  * 1. Assets (CSS/JS) registrieren und laden
  */
 function src_enqueue_assets_v7() {
+    if ( ! src_is_calculator_page() ) {
+        return;
+    }
+
+    wp_enqueue_style('dashicons');
+    wp_enqueue_style(
+        'src-rubik-font',
+        'https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700&display=swap',
+        array(),
+        null
+    );
     // CSS laden
     wp_enqueue_style(
         'src-styles', 
         SRC_PLUGIN_URL . 'assets/css/style.css', 
-        array('dashicons'), 
+        array('dashicons', 'src-rubik-font'), 
         '7.0.0'
     );
 
@@ -52,6 +63,21 @@ function src_enqueue_assets_v7() {
     ));
 }
 add_action('wp_enqueue_scripts', 'src_enqueue_assets_v7');
+
+function src_is_calculator_page() {
+    if ( is_admin() ) {
+        return false;
+    }
+
+    if ( is_singular() ) {
+        $post = get_post();
+        if ( $post instanceof WP_Post ) {
+            return has_shortcode( $post->post_content, 'smart_rate_calculator' );
+        }
+    }
+
+    return false;
+}
 
 /**
  * 2. Shortcode Ausgabe
@@ -268,23 +294,23 @@ function src_shortcode_output_v7() {
                 
                 <div id="mod-extra-ads" class="src-slide-wrap">
                     <div class="src-cutdown-card">
-                        <div class="src-cutdown-header">
-                            <span class="dashicons dashicons-editor-cut src-cutdown-icon"></span>
-                            <div>
-                                <div class="src-switch-text">Cut-down / Reminder</div>
-                                <div class="src-switch-sub">Kurzversionen (Tag-ons, Reminder) kosten 50% der Gage.</div>
-                            </div>
-                            <span class="src-tooltip-icon" data-tip="Aktiviere diese Option, wenn zusätzlich Kurzversionen geplant sind.">?</span>
-                        </div>
-                        <label class="src-switch-row src-global-toggle-row src-cutdown-toggle">
+                        <label class="src-switch-row src-global-toggle-row src-cutdown-row">
                             <span class="src-switch-content">
-                                <span class="src-cutdown-label">50% der Gage berechnen</span>
+                                <span class="dashicons dashicons-edit src-switch-icon" aria-hidden="true"></span>
+                                <div>
+                                    <div class="src-switch-text">
+                                        Cut-down / Reminder
+                                        <span class="src-tooltip-icon" data-tip="Aktiviere diese Option, wenn zusätzlich Kurzversionen geplant sind.">?</span>
+                                    </div>
+                                    <div class="src-switch-sub">Kurzversionen (Tag-ons, Reminder) kosten 50% der Gage.</div>
+                                </div>
                             </span>
                             <div class="src-toggle-wrapper">
                                 <input type="checkbox" id="src-cutdown" onchange="srcCalc()">
                                 <span class="src-toggle-slider"></span>
                             </div>
                         </label>
+                        <div class="src-cutdown-detail src-switch-detail-wrap">50% der Gage berechnen</div>
                     </div>
                 </div>
 
@@ -407,7 +433,7 @@ function src_shortcode_output_v7() {
                 <div id="src-license-text" class="src-license-box"></div>
             </div>
 
-            <div class="src-sidebar-section">
+            <div class="src-sidebar-section src-info-section">
                 <div class="src-sidebar-title">Wissenswertes</div>
                 <div class="src-info-box">
                     <div class="src-acc-item">

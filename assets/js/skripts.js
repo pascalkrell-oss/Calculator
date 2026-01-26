@@ -357,8 +357,7 @@ window.srcCalc = function() {
     // Add Cutdown Icon in Breakdown List if applicable
     const bd = document.getElementById('src-breakdown-list');
     const iconMatches = [
-        { match: "Cut-down", icon: "dashicons-editor-cut" },
-        { match: "Gebiet:", icon: "dashicons-location-alt" }
+        { match: "Cut-down", icon: "dashicons-editor-cut" }
     ];
     bd.innerHTML = info.map(line => {
         const found = iconMatches.find(entry => line.includes(entry.match));
