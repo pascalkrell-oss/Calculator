@@ -106,6 +106,11 @@ window.srcUIUpdate = function() {
     const genre = document.getElementById('src-genre').value;
     const layoutMode = document.getElementById('src-layout-mode').checked;
     const hasGenre = genre !== "";
+    const calcRoot = document.getElementById('src-calc-v6');
+
+    if (calcRoot) {
+        calcRoot.classList.toggle('src-has-project', hasGenre);
+    }
 
     // TOGGLE GLOBAL SETTINGS VISIBILITY
     const glob = document.getElementById('src-global-settings');
