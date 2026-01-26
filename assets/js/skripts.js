@@ -20,8 +20,34 @@ document.addEventListener('DOMContentLoaded', () => {
     const calcRoot = document.getElementById('src-calc-v6');
     if(calcRoot) {
         calcRoot.addEventListener('change', (event) => {
-            if(event.target && event.target.matches('.src-option-row .src-toggle-wrapper input[type="checkbox"]')) {
-                srcSetOptionRowState(event.target);
+            const target = event.target;
+            if(!target || target.type !== 'checkbox') return;
+
+            if(target.closest('.src-option-row')) {
+                srcSetOptionRowState(target);
+            }
+
+            switch (target.id) {
+                case 'src-manual-time-check':
+                    srcToggleManualTime();
+                    return;
+                case 'src-own-studio':
+                    srcToggleStudio();
+                    return;
+                default:
+                    break;
+            }
+
+            if([
+                'src-layout-mode',
+                'src-pkg-online',
+                'src-pkg-atv',
+                'src-lic-social',
+                'src-lic-event',
+                'src-express-toggle',
+                'src-cutdown',
+                'src-discount-toggle'
+            ].includes(target.id)) {
                 srcCalc();
             }
         });
