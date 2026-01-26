@@ -38,13 +38,14 @@
 
 /* INPUTS */
 .src-select, .src-input-text, .src-textarea, .src-discount-row input {
-    width: 100%; padding: 12px 15px;
+    width: 100%; padding: 10px 15px;
     border: 2px solid var(--src-border-light); 
     border-radius: var(--src-input-radius);
     font-size: 15px; color: var(--src-dark); background: #fff; 
     appearance: none; -webkit-appearance: none;
     transition: border-color 0.2s;
     box-sizing: border-box; 
+    line-height: 1.2;
 }
 .src-select {
     height: 48px; padding-right: 40px; cursor: pointer;
@@ -140,6 +141,8 @@
 }
 #src-tooltip-fixed.is-visible { opacity: 1; visibility: visible; }
 
+.src-manual-label { font-size: 14px; font-weight: 600; color: #64748b; }
+
 /* RESULT CARD (BLUE) */
 .src-result-card { 
     background: #0f141a; 
@@ -149,8 +152,10 @@
     color: #fff; 
 }
 .src-price-label { font-size: 12px; text-transform: uppercase; color: rgba(255,255,255,0.8); font-weight: 700; letter-spacing: 0.5px; }
-.src-price-main { font-size: 42px; font-weight: 800; color: #fff; line-height: 1.1; margin: 10px 0; }
+.src-price-main-box { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); border-radius: 12px; padding: 14px 10px; margin: 12px 0 8px; }
+.src-price-main { font-size: 42px; font-weight: 800; color: #fff; line-height: 1.1; margin: 0; }
 .src-price-sub { font-size: 13px; color: rgba(255,255,255,0.9); }
+.src-price-note { font-size: 11px; color: rgba(255,255,255,0.7); margin-top: 6px; letter-spacing: 0.2px; text-transform: uppercase; }
 
 /* USER FINAL FEE INPUT */
 .src-final-fee-wrap { margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.2); text-align: left; }
