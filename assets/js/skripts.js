@@ -210,6 +210,8 @@ window.srcCalc = function() {
     let final = [0,0,0];
     let info = []; 
     let licParts = []; 
+    let licMeta = [];
+    let licBaseText = "";
     let studioFee = document.getElementById('src-own-studio').checked ? (parseInt(document.getElementById('src-studio-fee').value)||0) : 0;
     const layoutMode = document.getElementById('src-layout-mode').checked;
     
@@ -223,9 +225,10 @@ window.srcCalc = function() {
         final = [250, 300, 350]; 
         info.push("<strong>Pauschale Layout / Casting</strong>");
         info.push("Verwendung: Intern / Pitch");
-        licParts.push("Nur interne Nutzung / Pitch (Keine Veröffentlichung)");
+        licBaseText = "Nur interne Nutzung / Pitch (Keine Veröffentlichung).";
     } else {
         licParts.push("Projekt: " + data.name);
+        licBaseText = data.lic || "";
 
         // ADS
         if(['tv','online_paid','radio','cinema','pos'].includes(genre)) {
@@ -240,6 +243,7 @@ window.srcCalc = function() {
             if(region === 'national') { info.push("Gebiet: National (Basis)"); }
             if(region === 'dach') { regionMult = 2.5; info.push(`Gebiet: DACH (x2.5): <strong>+${Math.round(base[1]*1.5)} €</strong>`); }
             if(region === 'world') { regionMult = 4.0; info.push(`Gebiet: Weltweit (x4.0): <strong>+${Math.round(base[1]*3.0)} €</strong>`); }
+            licMeta.push(`Gebiet: ${region === 'regional' ? 'Regional' : region === 'national' ? 'National' : region === 'dach' ? 'DACH' : 'Weltweit'}`);
             
             const years = parseInt(document.getElementById('src-time-slider').value);
             const sliderLabel = document.getElementById('src-slider-val');
@@ -251,6 +255,7 @@ window.srcCalc = function() {
                 let intermediate = base[1] * regionMult;
                 info.push(`Laufzeit: Unlimited (x4.0): <strong>+${Math.round(intermediate*3)} €</strong>`); 
                 licParts.push("Unlimited");
+                licMeta.push("Laufzeit: Unlimited");
             } else {
                 sliderLabel.innerText = years + (years === 1 ? " Jahr" : " Jahre");
                 timeMult = years;
@@ -258,15 +263,18 @@ window.srcCalc = function() {
                 if(years > 1) { info.push(`Laufzeit: ${years} Jahre (x${years}.0): <strong>+${Math.round(intermediate*(years-1))} €</strong>`); }
                 else { info.push("Laufzeit: 1 Jahr"); }
                 licParts.push(years + " Jahr(e)");
+                licMeta.push(`Laufzeit: ${years} ${years === 1 ? 'Jahr' : 'Jahre'}`);
             }
 
             if(genre === 'radio' && document.getElementById('src-pkg-online').checked) {
                 base = base.map(v => Math.round(v * 1.6));
                 info.push("Paket: + Online Audio (x1.6)"); licParts.push("inkl. Online Audio");
+                licMeta.push("Paket: Online Audio");
             }
             if(genre === 'online_paid' && document.getElementById('src-pkg-atv').checked) {
                 base = base.map(v => Math.round(v * 1.6));
                 info.push("Paket: + ATV/CTV (x1.6)"); licParts.push("inkl. ATV/CTV");
+                licMeta.push("Paket: ATV/CTV");
             }
 
             final = base.map(v => Math.round(v * regionMult * timeMult));
@@ -276,6 +284,7 @@ window.srcCalc = function() {
                 final = final.map(v => Math.round(v * 0.5));
                 info.push(`Cut-down (50%): <strong style="color:green">-${oldMid - final[1]} €</strong>`);
                 licParts.push("Typ: Cut-down");
+                licMeta.push("Typ: Cut-down");
             }
         } 
         // PHONE
@@ -314,6 +323,9 @@ window.srcCalc = function() {
             info.push(`Basis (Standard${langLabel}): <strong>${final[1]} €</strong>`);
         }
     }
+
+    if(document.getElementById('src-lic-social').checked) { licMeta.push("Zusatzlizenz: Social Media (organisch)"); }
+    if(document.getElementById('src-lic-event').checked) { licMeta.push("Zusatzlizenz: Event / Messe / POS"); }
 
     // ADD ONS
     if(studioFee > 0) {
@@ -356,11 +368,12 @@ window.srcCalc = function() {
         return `<div class="src-breakdown-row"><span>${line}</span></div>`;
     }).join('');
     
-    dynamicLicenseText = "<strong>Enthaltene Nutzungsrechte:</strong><br>" + licParts.join(', ');
+    const licMetaText = licMeta.length ? `<br><span class="src-license-meta">${licMeta.join(' · ')}</span>` : "";
+    dynamicLicenseText = "<strong>Nutzungsrechte gemäß VDS Gagenkompass:</strong><br>" + (licBaseText || licParts.join(', ')) + licMetaText;
     const licBox = document.getElementById('src-license-text');
     const licSection = document.getElementById('src-license-section');
     
-    if(licParts.length > 0 && !layoutMode) {
+    if((licBaseText || licParts.length > 0)) {
         licBox.innerHTML = dynamicLicenseText;
         licBox.classList.remove('hidden');
         if(licSection) licSection.classList.remove('src-hidden');
@@ -396,7 +409,7 @@ window.srcGeneratePDFv6 = function() {
     doc.autoTable({ startY: 60, head: [['Details']], body: rows, theme: 'grid', headStyles: { fillColor: [26, 147, 238] } });
 
     const cleanLicText = dynamicLicenseText.replace(/<br>/g, "\n").replace(/<strong>|<\/strong>/g, "");
-    if(cleanLicText && !layoutMode) {
+    if(cleanLicText) {
         const finalY = doc.lastAutoTable.finalY + 10;
         doc.setFontSize(10); doc.setTextColor(0); 
         doc.text(doc.splitTextToSize(cleanLicText, 180), 15, finalY);
