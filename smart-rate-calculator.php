@@ -123,7 +123,7 @@ function src_shortcode_output_v7() {
                         </optgroup>
                     </select>
                     <span class="src-top-sub">Was wird produziert?</span>
-                    <div id="src-project-tips" class="src-project-tips"></div>
+                    <div id="src-project-tips" class="src-project-tips src-collapse"></div>
                 </div>
                 
                 <div>
@@ -175,143 +175,145 @@ function src_shortcode_output_v7() {
                     <label style="font-size:13px; font-weight:700; color:var(--src-primary); display:block; margin-bottom:5px;">Anzahl der Module / Ansagen</label>
                     <input type="number" id="src-phone-count" class="src-input-text" value="1" min="1" oninput="srcCalc()">
                     <div style="font-size:11px; color:#64748b; margin-top:5px;">Bis zu 3 Module sind in der Pauschale enthalten. Jedes weitere Modul kostet extra.</div>
+                    <div id="src-project-tips-phone" class="src-project-tips src-collapse"></div>
                 </div>
             </div>
 
-            <div class="src-rights-section">
-            <div class="src-section-head src-section-head--rights">
-                <div class="src-section-head__title">Nutzungsrechte &amp; Lizenzen</div>
-            </div>
+            <div class="src-left-card src-rights-card src-collapse">
+                <div class="src-left-card__head">
+                    <div class="src-left-card__title">Nutzungsrechte &amp; Lizenzen</div>
+                </div>
+                <div class="src-left-card__body">
+                    <div id="mod-ads" class="src-slide-wrap">
+                        <div class="src-light-box-wrapper">
+                            <div id="src-pos-type-wrap" class="src-slide-wrap" style="margin-bottom:15px;">
+                                <div class="src-section-title"><span class="dashicons dashicons-admin-site"></span> POS Typ</div>
+                                <select id="src-pos-type" class="src-select" onchange="srcCalc()">
+                                    <option value="pos_spot">POS Spot (mit Bild)</option>
+                                    <option value="ladenfunk">Ladenfunk (ohne Bild)</option>
+                                </select>
+                                <span class="src-top-sub">Nur bei POS relevant</span>
+                            </div>
+                            <div class="src-group src-rights-panel" style="margin-bottom:20px;">
+                                <div class="src-section-title" style="margin-bottom:10px;">
+                                    <span class="dashicons dashicons-location-alt"></span> Verbreitungsgebiet
+                                    <span class="src-tooltip-icon src-field-tip" data-field-tip="region" data-default-tip="Tipp: Größere Gebiete bedeuten höhere Reichweite und höhere Lizenzkosten.">?</span>
+                                </div>
+                                <div class="src-tiles-grid">
+                                    <label>
+                                        <input type="radio" name="region" value="regional" class="src-tile-input" onchange="srcCalc()">
+                                        <div class="src-tile">
+                                            <span class="dashicons dashicons-location src-tile-icon"></span>
+                                            <div class="src-tile-label">Regional</div>
+                                        </div>
+                                    </label>
+                                    <label>
+                                        <input type="radio" name="region" value="national" class="src-tile-input" checked onchange="srcCalc()">
+                                        <div class="src-tile">
+                                            <span class="dashicons dashicons-flag src-tile-icon"></span>
+                                            <div class="src-tile-label">National</div>
+                                        </div>
+                                    </label>
+                                    <label>
+                                        <input type="radio" name="region" value="dach" class="src-tile-input" onchange="srcCalc()">
+                                        <div class="src-tile">
+                                            <span style="font-weight:800; font-size:16px; color:#94a3b8; margin-bottom:4px; display:block;">DACH</span>
+                                            <div class="src-tile-label">D-A-CH</div>
+                                        </div>
+                                    </label>
+                                    <label>
+                                        <input type="radio" name="region" value="world" class="src-tile-input" onchange="srcCalc()">
+                                        <div class="src-tile">
+                                            <span class="dashicons dashicons-admin-site src-tile-icon"></span>
+                                            <div class="src-tile-label">Weltweit</div>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
 
-            <div id="mod-ads" class="src-slide-wrap">
-                <div class="src-light-box-wrapper">
-                    <div id="src-pos-type-wrap" class="src-slide-wrap" style="margin-bottom:15px;">
-                        <div class="src-section-title"><span class="dashicons dashicons-admin-site"></span> POS Typ</div>
-                        <select id="src-pos-type" class="src-select" onchange="srcCalc()">
-                            <option value="pos_spot">POS Spot (mit Bild)</option>
-                            <option value="ladenfunk">Ladenfunk (ohne Bild)</option>
-                        </select>
-                        <span class="src-top-sub">Nur bei POS relevant</span>
-                    </div>
-                    <div class="src-group src-rights-panel" style="margin-bottom:20px;">
-                        <div class="src-section-title" style="margin-bottom:10px;">
-                            <span class="dashicons dashicons-location-alt"></span> Verbreitungsgebiet
-                            <span class="src-tooltip-icon src-field-tip" data-field-tip="region" data-default-tip="Tipp: Größere Gebiete bedeuten höhere Reichweite und höhere Lizenzkosten.">?</span>
-                        </div>
-                        <div class="src-tiles-grid">
-                            <label>
-                                <input type="radio" name="region" value="regional" class="src-tile-input" onchange="srcCalc()">
-                                <div class="src-tile">
-                                    <span class="dashicons dashicons-location src-tile-icon"></span>
-                                    <div class="src-tile-label">Regional</div>
+                            <div class="src-group src-rights-panel" style="margin-bottom:20px;">
+                                <div class="src-slider-header">
+                                <div class="src-section-title" style="margin:0;">
+                                    <span class="dashicons dashicons-calendar-alt"></span> Nutzungsdauer
+                                    <span class="src-tooltip-icon src-field-tip" data-field-tip="duration" data-default-tip="Wie lange darf die Aufnahme genutzt werden? Standard ist 1 Jahr.">?</span>
                                 </div>
-                            </label>
-                            <label>
-                                <input type="radio" name="region" value="national" class="src-tile-input" checked onchange="srcCalc()">
-                                <div class="src-tile">
-                                    <span class="dashicons dashicons-flag src-tile-icon"></span>
-                                    <div class="src-tile-label">National</div>
+                                <div id="src-slider-val" class="src-slider-val">1 Jahr</div>
+                            </div>
+                                <div class="src-slider-container">
+                                    <input type="range" id="src-time-slider" min="1" max="4" value="1" step="1" class="src-slider" oninput="srcCalc()">
                                 </div>
-                            </label>
-                            <label>
-                                <input type="radio" name="region" value="dach" class="src-tile-input" onchange="srcCalc()">
-                                <div class="src-tile">
-                                    <span style="font-weight:800; font-size:16px; color:#94a3b8; margin-bottom:4px; display:block;">DACH</span>
-                                    <div class="src-tile-label">D-A-CH</div>
+                                <div class="src-slider-steps">
+                                    <span>1 Jahr</span>
+                                    <span>2 Jahre</span>
+                                    <span>3 Jahre</span>
+                                    <span>Unlimited</span>
                                 </div>
-                            </label>
-                            <label>
-                                <input type="radio" name="region" value="world" class="src-tile-input" onchange="srcCalc()">
-                                <div class="src-tile">
-                                    <span class="dashicons dashicons-admin-site src-tile-icon"></span>
-                                    <div class="src-tile-label">Weltweit</div>
-                                </div>
-                            </label>
-                        </div>
-                    </div>
+                            </div>
 
-                    <div class="src-group src-rights-panel" style="margin-bottom:20px;">
-                        <div class="src-slider-header">
-                        <div class="src-section-title" style="margin:0;">
-                            <span class="dashicons dashicons-calendar-alt"></span> Nutzungsdauer
-                            <span class="src-tooltip-icon src-field-tip" data-field-tip="duration" data-default-tip="Wie lange darf die Aufnahme genutzt werden? Standard ist 1 Jahr.">?</span>
-                        </div>
-                        <div id="src-slider-val" class="src-slider-val">1 Jahr</div>
-                    </div>
-                        <div class="src-slider-container">
-                            <input type="range" id="src-time-slider" min="1" max="4" value="1" step="1" class="src-slider" oninput="srcCalc()">
-                        </div>
-                        <div class="src-slider-steps">
-                            <span>1 Jahr</span>
-                            <span>2 Jahre</span>
-                            <span>3 Jahre</span>
-                            <span>Unlimited</span>
-                        </div>
-                    </div>
-
-                    <div class="src-group" style="margin-bottom:0;">
-                        <div id="src-pkg-online-wrap" class="src-slide-wrap">
-                            <div class="src-switch-row boxed">
-                                <span class="src-switch-content">
-                                    <span class="dashicons dashicons-cloud src-switch-icon"></span>
-                                    <div>
-                                        <div class="src-switch-text">Paket: Online Audio <span class="src-tooltip-icon" data-tip="Zusätzliche Verwertung im Internet (Audio only) - ca. +60% Aufschlag.">?</span></div>
-                                        <div class="src-switch-sub">Zusätzlich zum Funkspot</div>
+                            <div class="src-group" style="margin-bottom:0;">
+                                <div id="src-pkg-online-wrap" class="src-slide-wrap">
+                                    <div class="src-switch-row boxed">
+                                        <span class="src-switch-content">
+                                            <span class="dashicons dashicons-cloud src-switch-icon"></span>
+                                            <div>
+                                                <div class="src-switch-text">Paket: Online Audio <span class="src-tooltip-icon" data-tip="Zusätzliche Verwertung im Internet (Audio only) - ca. +60% Aufschlag.">?</span></div>
+                                                <div class="src-switch-sub">Zusätzlich zum Funkspot</div>
+                                            </div>
+                                        </span>
+                                        <div class="src-toggle-wrapper">
+                                            <input type="checkbox" id="src-pkg-online">
+                                            <label class="src-toggle-slider" for="src-pkg-online"></label>
+                                        </div>
                                     </div>
-                                </span>
-                                <div class="src-toggle-wrapper">
-                                    <input type="checkbox" id="src-pkg-online">
-                                    <label class="src-toggle-slider" for="src-pkg-online"></label>
                                 </div>
-                            </div>
-                        </div>
 
-                        <div id="src-pkg-atv-wrap" class="src-slide-wrap">
-                            <div class="src-switch-row boxed">
-                                <span class="src-switch-content">
-                                    <span class="dashicons dashicons-video-alt3 src-switch-icon"></span>
-                                    <div>
-                                        <div class="src-switch-text">Paket: ATV/CTV <span class="src-tooltip-icon" data-tip="Addressable TV & Connected TV Nutzung - ca. +60% Aufschlag.">?</span></div>
-                                        <div class="src-switch-sub">Addressable TV Add-on</div>
+                                <div id="src-pkg-atv-wrap" class="src-slide-wrap">
+                                    <div class="src-switch-row boxed">
+                                        <span class="src-switch-content">
+                                            <span class="dashicons dashicons-video-alt3 src-switch-icon"></span>
+                                            <div>
+                                                <div class="src-switch-text">Paket: ATV/CTV <span class="src-tooltip-icon" data-tip="Addressable TV & Connected TV Nutzung - ca. +60% Aufschlag.">?</span></div>
+                                                <div class="src-switch-sub">Addressable TV Add-on</div>
+                                            </div>
+                                        </span>
+                                        <div class="src-toggle-wrapper">
+                                            <input type="checkbox" id="src-pkg-atv">
+                                            <label class="src-toggle-slider" for="src-pkg-atv"></label>
+                                        </div>
                                     </div>
-                                </span>
-                                <div class="src-toggle-wrapper">
-                                    <input type="checkbox" id="src-pkg-atv">
-                                    <label class="src-toggle-slider" for="src-pkg-atv"></label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="mod-image" class="src-slide-wrap">
+                        <div class="src-light-box-wrapper">
+                            <div class="src-group src-rights-panel" style="margin-bottom:0;">
+                                <div class="src-section-title"><span class="dashicons dashicons-plus-alt"></span> Zusatzlizenzen</div>
+                                <div class="src-switch-row boxed">
+                                    <span class="src-switch-content">
+                                        <span class="dashicons dashicons-share src-switch-icon"></span>
+                                        <div><div class="src-switch-text">Social Media (Organisch)</div></div>
+                                    </span>
+                                    <div class="src-toggle-wrapper">
+                                        <input type="checkbox" id="src-lic-social">
+                                        <label class="src-toggle-slider" for="src-lic-social"></label>
+                                    </div>
+                                </div>
+                                <div class="src-switch-row boxed">
+                                    <span class="src-switch-content">
+                                        <span class="dashicons dashicons-groups src-switch-icon"></span>
+                                        <div><div class="src-switch-text">Event / Messe / POS</div></div>
+                                    </span>
+                                    <div class="src-toggle-wrapper">
+                                        <input type="checkbox" id="src-lic-event">
+                                        <label class="src-toggle-slider" for="src-lic-event"></label>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-
-            <div id="mod-image" class="src-slide-wrap">
-                <div class="src-light-box-wrapper">
-                    <div class="src-group src-rights-panel" style="margin-bottom:0;">
-                        <div class="src-section-title"><span class="dashicons dashicons-plus-alt"></span> Zusatzlizenzen</div>
-                        <div class="src-switch-row boxed">
-                            <span class="src-switch-content">
-                                <span class="dashicons dashicons-share src-switch-icon"></span>
-                                <div><div class="src-switch-text">Social Media (Organisch)</div></div>
-                            </span>
-                            <div class="src-toggle-wrapper">
-                                <input type="checkbox" id="src-lic-social">
-                                <label class="src-toggle-slider" for="src-lic-social"></label>
-                            </div>
-                        </div>
-                        <div class="src-switch-row boxed">
-                            <span class="src-switch-content">
-                                <span class="dashicons dashicons-groups src-switch-icon"></span>
-                                <div><div class="src-switch-text">Event / Messe / POS</div></div>
-                            </span>
-                            <div class="src-toggle-wrapper">
-                                <input type="checkbox" id="src-lic-event">
-                                <label class="src-toggle-slider" for="src-lic-event"></label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
             </div>
 
             <div class="src-group src-complexity-group" id="src-complexity-group">
@@ -375,6 +377,30 @@ function src_shortcode_output_v7() {
                 <div class="src-section-head">
                     <div class="src-section-head__title">Optionen</div>
                 </div>
+                <div class="src-opt-card src-collapse" data-opt="cutdown">
+                    <div class="src-opt-head">
+                        <div class="src-opt-left">
+                            <span class="dashicons dashicons-controls-repeat src-opt-icon" aria-hidden="true"></span>
+                            <div class="src-opt-text">
+                                <div class="src-opt-title">
+                                    Cut-down / Reminder
+                                    <span class="src-tooltip-icon" data-tip="Aktiviere diese Option, wenn zusätzlich Kurzversionen geplant sind.">?</span>
+                                </div>
+                                <div class="src-opt-sub">Kurzversionen (Tag-ons, Reminder) kosten 50% der Gage.</div>
+                            </div>
+                        </div>
+                        <div class="src-opt-right">
+                            <div class="src-toggle-wrapper">
+                                <input type="checkbox" id="src-cutdown" aria-expanded="false">
+                                <label class="src-toggle-slider" for="src-cutdown"></label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="src-opt-body" data-opt-body>
+                        <div class="src-opt-body-text">50% der Gage berechnen.</div>
+                    </div>
+                </div>
+
                 <div class="src-opt-card" data-opt="layout">
                     <div class="src-opt-head">
                         <div class="src-opt-left">
@@ -470,30 +496,6 @@ function src_shortcode_output_v7() {
                         <span class="src-hint-text">Der Rabatt wird vom Netto-Gesamtbetrag abgezogen.</span>
                     </div>
                 </div>
-
-                <div class="src-opt-card" data-opt="cutdown">
-                    <div class="src-opt-head">
-                        <div class="src-opt-left">
-                            <span class="dashicons dashicons-controls-repeat src-opt-icon" aria-hidden="true"></span>
-                            <div class="src-opt-text">
-                                <div class="src-opt-title">
-                                    Cut-down / Reminder
-                                    <span class="src-tooltip-icon" data-tip="Aktiviere diese Option, wenn zusätzlich Kurzversionen geplant sind.">?</span>
-                                </div>
-                                <div class="src-opt-sub">Kurzversionen (Tag-ons, Reminder) kosten 50% der Gage.</div>
-                            </div>
-                        </div>
-                        <div class="src-opt-right">
-                            <div class="src-toggle-wrapper">
-                                <input type="checkbox" id="src-cutdown" aria-expanded="false">
-                                <label class="src-toggle-slider" for="src-cutdown"></label>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="src-opt-body" data-opt-body>
-                        <div class="src-opt-body-text">50% der Gage berechnen.</div>
-                    </div>
-                </div>
             </div>
 
         </div>
@@ -536,28 +538,24 @@ function src_shortcode_output_v7() {
 
             <div class="src-sidebar-section">
                 <div class="src-sidebar-title src-sidebar-title--pricedetails">Preis-Details</div>
-                <div id="src-calc-breakdown" class="src-breakdown-box">
+                <div id="src-calc-breakdown" class="src-breakdown-box src-collapse">
                     <div id="src-breakdown-list">
                         <div class="src-breakdown-row">Bitte Projekt wählen..</div>
-                    </div>
-                    <div class="src-breakdown-accordion">
-                        <button class="src-accordion-btn" type="button" id="src-breakdown-toggle">Rechenweg anzeigen</button>
-                        <div class="src-accordion-panel" id="src-breakdown-panel"></div>
                     </div>
                 </div>
             </div>
 
-            <div class="src-sidebar-section" id="src-risk-section">
+            <div class="src-sidebar-section src-collapse src-sidebar-box--hints" id="src-risk-section">
                 <div class="src-sidebar-title src-sidebar-title--risk">Hinweise</div>
                 <div class="src-risk-box" id="src-risk-list"></div>
             </div>
 
-            <div class="src-sidebar-section" id="src-compare-section">
+            <div class="src-sidebar-section src-collapse src-sidebar-box--compare" id="src-compare-section">
                 <div class="src-sidebar-title src-sidebar-title--compare">Vergleich</div>
                 <div class="src-compare-box" id="src-compare-view"></div>
             </div>
 
-            <div class="src-sidebar-section" id="src-packages-section">
+            <div class="src-sidebar-section src-collapse src-sidebar-box--packages" id="src-packages-section">
                 <div class="src-sidebar-title src-sidebar-title--packages">Pakete</div>
                 <div class="src-packages-box">
                     <button class="src-mini-btn src-mini-btn--wide" id="src-build-packages" type="button">Pakete erzeugen</button>
@@ -565,7 +563,7 @@ function src_shortcode_output_v7() {
                 </div>
             </div>
 
-            <div id="src-license-section" class="src-sidebar-section src-license-section src-hidden">
+            <div id="src-license-section" class="src-sidebar-section src-license-section src-collapse">
                 <div class="src-sidebar-title src-sidebar-title--rights">Nutzungsrechte &amp; Lizenzen</div>
                 <div id="src-license-text" class="src-license-box"></div>
             </div>
@@ -632,7 +630,7 @@ function src_shortcode_output_v7() {
         <div class="src-modal__backdrop" data-modal-close></div>
         <div class="src-modal__content" role="dialog" aria-modal="true" aria-labelledby="src-export-title">
             <div class="src-modal__header">
-                <h2 id="src-export-title">Angebot als PDF + Mailtext</h2>
+                <h2 id="src-export-title">Angebot exportieren</h2>
                 <button class="src-modal__close" type="button" data-modal-close>&times;</button>
             </div>
             <div class="src-modal__body">
@@ -644,19 +642,27 @@ function src_shortcode_output_v7() {
                     </div>
                 </div>
                 <div class="src-modal-section">
-                    <div class="src-modal-label">Export-Umfang</div>
+                    <div class="src-modal-label">Format</div>
                     <label class="src-check"><input type="checkbox" id="src-export-pdf" checked> PDF erzeugen</label>
                     <label class="src-check"><input type="checkbox" id="src-export-email" checked> Mailtext kopieren</label>
-                    <label class="src-check"><input type="checkbox" id="src-export-breakdown"> Rechenweg anhängen</label>
-                    <label class="src-check"><input type="checkbox" id="src-export-risk"> Risiko-/Rechte-Check anhängen</label>
+                    <div class="src-modal-subsection">
+                        <div class="src-modal-label">Anhänge</div>
+                        <label class="src-check"><input type="checkbox" id="src-export-breakdown"> Rechenweg anhängen</label>
+                        <label class="src-check"><input type="checkbox" id="src-export-risk"> Hinweise anhängen</label>
+                    </div>
                 </div>
                 <div class="src-modal-section">
                     <div class="src-modal-label">Preisstrategie</div>
                     <label class="src-check"><input type="radio" name="src-export-pricing" value="range" checked> Range (Min–Max)</label>
                     <label class="src-check"><input type="radio" name="src-export-pricing" value="mean"> Mittelwert</label>
-                    <label class="src-check"><input type="radio" name="src-export-pricing" value="package"> Paket (Basic/Standard/Premium)</label>
+                    <label class="src-check"><input type="radio" name="src-export-pricing" value="package"> Paket</label>
                     <div id="src-export-package-wrap" class="src-modal-subsection">
-                        <select id="src-export-package" class="src-select">
+                        <div class="src-modal-package-grid" role="listbox" aria-label="Paketauswahl">
+                            <button class="src-modal-package-card" type="button" data-export-package-card="basic">Basic</button>
+                            <button class="src-modal-package-card" type="button" data-export-package-card="standard">Standard</button>
+                            <button class="src-modal-package-card" type="button" data-export-package-card="premium">Premium</button>
+                        </div>
+                        <select id="src-export-package" class="src-select src-sr-only" aria-hidden="true" tabindex="-1">
                             <option value="basic">Basic</option>
                             <option value="standard">Standard</option>
                             <option value="premium">Premium</option>
@@ -669,9 +675,12 @@ function src_shortcode_output_v7() {
                     <label class="src-check"><input type="radio" name="src-export-client" value="agency"> Agentur</label>
                 </div>
                 <div class="src-modal-section">
-                    <div class="src-modal-label">Angebotsdetails</div>
-                    <input type="text" id="src-export-projectname" class="src-input-text" placeholder="Angebotsnummer / Projektname (optional)">
-                    <input type="text" id="src-export-validity" class="src-input-text" placeholder="Gültigkeit (z.B. 14 Tage)">
+                    <div class="src-modal-label">Optionale Felder</div>
+                    <div class="src-modal-grid">
+                        <input type="text" id="src-export-projectname" class="src-input-text" placeholder="Projektname (optional)">
+                        <input type="text" id="src-export-offer-id" class="src-input-text" placeholder="Angebotsnummer (optional)">
+                        <input type="text" id="src-export-validity" class="src-input-text" placeholder="Gültigkeit (z.B. 14 Tage)">
+                    </div>
                     <div class="src-modal-subsection">
                         <div class="src-modal-label">Lieferumfang (Text)</div>
                         <label class="src-check"><input type="checkbox" class="src-export-scope" value="1 Take"> 1 Take</label>
