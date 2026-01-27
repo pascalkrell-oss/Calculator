@@ -5,6 +5,11 @@ let srcRatesData = {};
 let calculatedMinutes = 0;
 let currentResult = { low:0, mid:0, high:0 };
 let dynamicLicenseText = "";
+let pendingMainAmountUpdate = null;
+let mainAmountAnimationToken = 0;
+let mainAmountFallbackTimer = null;
+let lastValidMainAmountText = "";
+let mainAmountExitListener = null;
 
 document.addEventListener('DOMContentLoaded', () => { 
     // DATEN IMPORTIEREN (Vom PHP übergeben)
@@ -135,6 +140,88 @@ const srcUpdateAnimatedValue = function(target, nextText) {
     });
 }
 
+const updateMainAmountAnimated = function(nextText) {
+    const target = document.getElementById('src-display-total');
+    if(!target) return;
+    const trimmed = typeof nextText === 'string' ? nextText.trim() : '';
+    if(!trimmed) {
+        nextText = lastValidMainAmountText || '–';
+    }
+    if(typeof nextText !== 'string') {
+        nextText = lastValidMainAmountText || '–';
+    }
+    if(typeof nextText === 'string' && nextText.includes('NaN')) {
+        console.warn('SRC: Ungültiger Betrag erkannt, behalte letzten Wert.');
+        nextText = lastValidMainAmountText || '–';
+    }
+    pendingMainAmountUpdate = nextText;
+    mainAmountAnimationToken += 1;
+    const token = mainAmountAnimationToken;
+    if(mainAmountFallbackTimer) {
+        clearTimeout(mainAmountFallbackTimer);
+        mainAmountFallbackTimer = null;
+    }
+    if(mainAmountExitListener) {
+        target.removeEventListener('transitionend', mainAmountExitListener);
+        mainAmountExitListener = null;
+    }
+    target.classList.remove('src-amount-enter', 'src-amount-exit');
+    target.style.opacity = '1';
+    target.style.transform = 'translateY(0)';
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if(prefersReducedMotion) {
+        const safeText = pendingMainAmountUpdate || lastValidMainAmountText || '–';
+        target.textContent = safeText;
+        lastValidMainAmountText = safeText;
+        pendingMainAmountUpdate = null;
+        return;
+    }
+    requestAnimationFrame(() => {
+        if(token !== mainAmountAnimationToken) return;
+        const safeText = pendingMainAmountUpdate || lastValidMainAmountText || '–';
+        pendingMainAmountUpdate = null;
+        const current = target.textContent.trim();
+        if(current === safeText.trim()) {
+            lastValidMainAmountText = safeText;
+            return;
+        }
+        const finalize = () => {
+            target.classList.remove('src-amount-enter', 'src-amount-exit');
+            target.style.opacity = '1';
+            target.style.transform = 'translateY(0)';
+            lastValidMainAmountText = safeText;
+        };
+        const onExit = (event) => {
+            if(event.propertyName !== 'transform' && event.propertyName !== 'opacity') return;
+            target.removeEventListener('transitionend', onExit);
+            mainAmountExitListener = null;
+            target.textContent = safeText;
+            target.classList.remove('src-amount-exit');
+            requestAnimationFrame(() => {
+                target.classList.add('src-amount-enter');
+                requestAnimationFrame(() => {
+                    target.classList.remove('src-amount-enter');
+                    finalize();
+                });
+            });
+        };
+        mainAmountExitListener = onExit;
+        target.addEventListener('transitionend', onExit);
+        requestAnimationFrame(() => {
+            target.classList.add('src-amount-exit');
+        });
+        mainAmountFallbackTimer = setTimeout(() => {
+            if(mainAmountExitListener) {
+                target.removeEventListener('transitionend', mainAmountExitListener);
+                mainAmountExitListener = null;
+            }
+            if(token !== mainAmountAnimationToken) return;
+            target.textContent = safeText;
+            finalize();
+        }, 350);
+    });
+}
+
 const srcUpdateMeanValue = function(wrapper, target, nextText) {
     if(!wrapper || !target) return;
     const current = target.textContent.trim();
@@ -151,6 +238,21 @@ const srcUpdateMeanValue = function(wrapper, target, nextText) {
             wrapper.classList.remove('is-updating');
         });
     });
+}
+
+const srcAdjustRangeForScript = function(values, hasScript) {
+    if(!hasScript || !Array.isArray(values) || values.length < 3) return values;
+    const min = values[0];
+    const mid = values[1];
+    const max = values[2];
+    if(!Number.isFinite(min) || !Number.isFinite(mid) || !Number.isFinite(max)) return values;
+    if(mid <= 0) return values;
+    const delta = Math.round(mid * 0.12);
+    let low = Math.max(min, mid - delta);
+    let high = Math.min(max, mid + delta);
+    if(low > mid) low = mid;
+    if(high < mid) high = mid;
+    return [low, mid, high];
 }
 
 const srcEnsurePriceTriple = function(value, fallback = [0, 0, 0]) {
@@ -387,10 +489,12 @@ window.srcValidateFinalFee = function() {
 window.srcCalc = function() {
     const genre = document.getElementById('src-genre').value;
     const finalFeeWrap = document.getElementById('src-final-fee-wrapper');
+    const scriptText = document.getElementById('src-text').value || '';
+    const hasScript = scriptText.trim().length > 0;
 
     if(!genre) {
         document.getElementById('src-calc-breakdown').style.display = 'none';
-        srcUpdateAnimatedValue(document.getElementById('src-display-total'), "0 €");
+        updateMainAmountAnimated("0 €");
         srcUpdateMeanValue(
             document.getElementById('src-mean-fade'),
             document.getElementById('src-display-range'),
@@ -539,6 +643,10 @@ window.srcCalc = function() {
                 info.push(`Überlänge (+ ${extraConfig.chunks}x ${unitCount} ${unitSuffix}): <strong>+${extraCost} €</strong>`);
             }
 
+            if(tierUnit === 'minutes' && hasScript && calculatedMinutes > 0) {
+                final = srcAdjustRangeForScript(final, true);
+            }
+
             const licenseExtras = data.license_extras || {};
             const socialExtra = srcGetLicenseExtraAmount(licenseExtras, 'social_organic');
             const eventExtra = srcGetLicenseExtraAmount(licenseExtras, 'event_pos');
@@ -590,7 +698,7 @@ window.srcCalc = function() {
         info.push(`Rabatt (${discountPct}%): <strong style="color:green">-${disc} €</strong>`);
     }
 
-    srcUpdateAnimatedValue(document.getElementById('src-display-total'), `${final[0]} - ${final[2]} €`);
+    updateMainAmountAnimated(`${final[0]} - ${final[2]} €`);
     srcUpdateMeanValue(
         document.getElementById('src-mean-fade'),
         document.getElementById('src-display-range'),
