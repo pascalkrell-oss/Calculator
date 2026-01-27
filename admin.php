@@ -188,7 +188,12 @@ function src_get_default_json() {
             "audioguide": { "text": "Nutzung im Guide-System. Zeitlich unbegrenzt." },
             "podcast": { "text": "Redaktioneller Inhalt (1 Folge). Weltweit online." },
             "doku": { "text": "TV-Ausstrahlung / Mediathek (Redaktionell)." },
-            "phone": { "text": "Nutzung in 1 Telefonanlage. Zeitlich unbegrenzt." }
+            "phone": { "text": "" }
+        },
+        "project_tips": {
+            "imagefilm": ["Tipp: Für interne Nutzung reicht oft Internet Basic.", "Bei Social Media Zusatzlizenz Projektumfang checken."],
+            "tv": ["Tipp: Laufzeit und Gebiet treiben den Preis stark.", "Bei Worldwide + Unlimited lieber prüfen ob nötig."],
+            "phone": ["Telefonansagen sind oft modulbasiert kalkuliert.", "Zusatzmodule sauber im Briefing aufführen."]
         },
         "options_by_project": {
             "tv": { "allow_cutdown": true },

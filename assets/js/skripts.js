@@ -10,6 +10,10 @@ let mainAmountAnimationToken = 0;
 let mainAmountFallbackTimer = null;
 let lastValidMainAmountText = "";
 let mainAmountExitListener = null;
+let currentBreakdownData = null;
+let currentRiskChecks = [];
+let compareState = { enabled: false, A: null, B: null, activeTab: 'A' };
+let packagesState = null;
 
 document.addEventListener('DOMContentLoaded', () => { 
     // DATEN IMPORTIEREN (Vom PHP übergeben)
@@ -76,12 +80,97 @@ document.addEventListener('DOMContentLoaded', () => {
         icon.addEventListener('mouseleave', () => tipEl.classList.remove('is-visible'));
     });
 
+    const exportModal = document.getElementById('src-export-modal');
+    if(exportModal) {
+        exportModal.addEventListener('click', (event) => {
+            const target = event.target;
+            if(target && target.hasAttribute('data-modal-close')) {
+                srcCloseExportModal();
+            }
+        });
+    }
+
+    const exportStartBtn = document.getElementById('src-export-start');
+    if(exportStartBtn) {
+        exportStartBtn.addEventListener('click', () => srcHandleExportStart());
+    }
+
+    document.querySelectorAll('input[name="src-export-pricing"]').forEach(input => {
+        input.addEventListener('change', () => srcUpdateExportPackageVisibility());
+    });
+
+    const compareToggle = document.getElementById('src-compare-toggle');
+    if(compareToggle) {
+        compareToggle.addEventListener('click', () => srcToggleCompare());
+    }
+    const compareSaveA = document.getElementById('src-compare-save-a');
+    if(compareSaveA) {
+        compareSaveA.addEventListener('click', () => srcSaveCompareSnapshot('A'));
+    }
+    const compareSaveB = document.getElementById('src-compare-save-b');
+    if(compareSaveB) {
+        compareSaveB.addEventListener('click', () => srcSaveCompareSnapshot('B'));
+    }
+
+    const breakdownToggle = document.getElementById('src-breakdown-toggle');
+    if(breakdownToggle) {
+        breakdownToggle.addEventListener('click', () => srcToggleBreakdownAccordion());
+    }
+
+    const buildPackagesBtn = document.getElementById('src-build-packages');
+    if(buildPackagesBtn) {
+        buildPackagesBtn.addEventListener('click', () => srcRenderPackages());
+    }
+
     // Erster UI Check
     srcUIUpdate();
     srcAuditRatesAgainstVDS();
 });
 
 /* --- HELPER FUNCTIONS --- */
+
+const SRC_I18N = {
+    de: {
+        subject: "Angebot Sprecherleistung",
+        intro: "Vielen Dank für die Anfrage. Anbei das Angebot auf Basis der aktuellen Angaben.",
+        pricingRange: "Preisrahmen (Netto)",
+        pricingMean: "Mittelwert (Netto)",
+        pricingPackage: "Paketpreis (Netto)",
+        assumptions: "Auf Basis VDS Gagenkompass 2025. Alle Preise zzgl. MwSt.",
+        project: "Projekt",
+        duration: "Dauer",
+        region: "Region",
+        modules: "Module",
+        length: "Länge",
+        addOns: "Zusatzlizenzen/Optionen",
+        breakdown: "Rechenweg",
+        risks: "Risiko-/Rechte-Check",
+        validity: "Gültigkeit",
+        scope: "Lieferumfang",
+        customerTypeDirect: "Direktkunde",
+        customerTypeAgency: "Agentur"
+    },
+    en: {
+        subject: "Voice Over Offer",
+        intro: "Thank you for your request. Below is the offer based on the current inputs.",
+        pricingRange: "Price range (net)",
+        pricingMean: "Average (net)",
+        pricingPackage: "Package price (net)",
+        assumptions: "Based on VDS Gagenkompass 2025. All prices excl. VAT.",
+        project: "Project",
+        duration: "Duration",
+        region: "Region",
+        modules: "Modules",
+        length: "Length",
+        addOns: "Add-ons / options",
+        breakdown: "Calculation details",
+        risks: "Risk/rights check",
+        validity: "Validity",
+        scope: "Scope of delivery",
+        customerTypeDirect: "Direct client",
+        customerTypeAgency: "Agency"
+    }
+};
 
 window.toggleElement = function(id, show) {
     const el = document.getElementById(id);
@@ -110,6 +199,41 @@ window.srcSyncOptionRowStates = function() {
     document.querySelectorAll('.src-opt-card .src-toggle-wrapper input[type="checkbox"], .src-option-row .src-toggle-wrapper input[type="checkbox"]').forEach(toggleEl => {
         srcSetOptionRowState(toggleEl);
     });
+}
+
+const srcFormatCurrency = function(value) {
+    if(!Number.isFinite(value)) return "–";
+    return `${Math.round(value)} €`;
+}
+
+const srcGetStateFromUI = function() {
+    const regionInput = document.querySelector('input[name="region"]:checked');
+    const genre = document.getElementById('src-genre').value;
+    const minutes = Math.max(0.1, calculatedMinutes);
+    const scriptText = document.getElementById('src-text').value || '';
+    return {
+        projectKey: genre,
+        language: document.getElementById('src-language').value,
+        layoutMode: document.getElementById('src-layout-mode').checked,
+        posType: document.getElementById('src-pos-type') ? document.getElementById('src-pos-type').value : 'pos_spot',
+        region: regionInput ? regionInput.value : 'national',
+        duration: parseInt(document.getElementById('src-time-slider').value, 10) || 1,
+        packageOnline: document.getElementById('src-pkg-online') ? document.getElementById('src-pkg-online').checked : false,
+        packageAtv: document.getElementById('src-pkg-atv') ? document.getElementById('src-pkg-atv').checked : false,
+        licenseSocial: document.getElementById('src-lic-social') ? document.getElementById('src-lic-social').checked : false,
+        licenseEvent: document.getElementById('src-lic-event') ? document.getElementById('src-lic-event').checked : false,
+        cutdown: document.getElementById('src-cutdown') ? document.getElementById('src-cutdown').checked : false,
+        phoneCount: parseInt(document.getElementById('src-phone-count').value, 10) || 1,
+        minutes,
+        hasScript: scriptText.trim().length > 0,
+        studioFee: document.getElementById('src-own-studio').checked ? (parseInt(document.getElementById('src-studio-fee').value, 10) || 0) : 0,
+        expressToggle: document.getElementById('src-express-toggle').checked,
+        expressType: document.getElementById('src-express-type').value,
+        discountToggle: document.getElementById('src-discount-toggle').checked,
+        discountPct: parseFloat(document.getElementById('src-discount-percent').value) || 0,
+        discountReason: document.getElementById('src-discount-reason').value || '',
+        finalFeeInput: parseFloat(document.getElementById('src-final-fee-user').value)
+    };
 }
 
 const srcUpdateAnimatedValue = function(target, nextText) {
@@ -301,7 +425,7 @@ const srcAuditRatesAgainstVDS = function() {
     if(params.get('src_audit') !== '1') return;
     const expected = (srcPluginData && srcPluginData.vdsExpected) ? srcPluginData.vdsExpected : {};
     const found = srcRatesData || {};
-    const ignoreKeys = new Set(['rights_guidance', 'options_by_project']);
+    const ignoreKeys = new Set(['rights_guidance', 'options_by_project', 'project_tips']);
     const fieldsToCheck = ['base', 'tiers', 'extra', 'extra_unit', 'extra_after', 'tier_unit', 'license_extras', 'variants', 'limit', 'per_min', 'min'];
     const diffs = [];
 
@@ -351,6 +475,419 @@ const srcUpdateCutdownVisibility = function(genre, layoutMode) {
     }
 }
 
+const srcHasRightsControls = function(genre) {
+    if(!genre) return false;
+    if(['tv','online_paid','radio','cinema','pos'].includes(genre)) return true;
+    if(['imagefilm','explainer','app'].includes(genre)) return true;
+    return false;
+}
+
+const srcUpdateRightsSectionVisibility = function(genre, layoutMode) {
+    const calcRoot = document.getElementById('src-calc-v6');
+    if(!calcRoot) return;
+    const rightsGuidance = srcRatesData.rights_guidance || {};
+    const guidance = rightsGuidance[genre] && typeof rightsGuidance[genre].text === 'string'
+        ? rightsGuidance[genre].text.trim()
+        : '';
+    const hasControls = srcHasRightsControls(genre);
+    let showRights = false;
+    if(!genre || layoutMode) {
+        showRights = false;
+    } else if(genre !== 'phone') {
+        showRights = true;
+    } else {
+        showRights = Boolean(guidance) || hasControls;
+    }
+    calcRoot.classList.toggle('src-show-rights-section', showRights);
+    calcRoot.dataset.project = genre || '';
+}
+
+const srcRenderProjectTips = function(genre) {
+    const tipsWrap = document.getElementById('src-project-tips');
+    if(!tipsWrap) return;
+    if(!genre) {
+        tipsWrap.innerHTML = '';
+        return;
+    }
+    const tips = (srcRatesData.project_tips && srcRatesData.project_tips[genre]) || [];
+    const selectedTips = tips.slice(0, 4);
+    tipsWrap.innerHTML = selectedTips.map(tip => `<div class="src-project-tip">${tip}</div>`).join('');
+}
+
+const srcToggleBreakdownAccordion = function() {
+    const panel = document.getElementById('src-breakdown-panel');
+    const btn = document.getElementById('src-breakdown-toggle');
+    if(!panel || !btn) return;
+    const isOpen = panel.classList.contains('open');
+    panel.classList.toggle('open', !isOpen);
+    btn.classList.toggle('is-open', !isOpen);
+}
+
+const srcRenderBreakdown = function(breakdown) {
+    const panel = document.getElementById('src-breakdown-panel');
+    if(!panel) return;
+    if(!breakdown) {
+        panel.innerHTML = '';
+        return;
+    }
+    const base = breakdown.base || {};
+    const steps = Array.isArray(breakdown.steps) ? breakdown.steps : [];
+    const final = breakdown.final || {};
+    const lines = [];
+    lines.push(`<div class="src-breakdown-step"><span>Basis</span><strong>${srcFormatCurrency(base.mid)} (${srcFormatCurrency(base.min)}–${srcFormatCurrency(base.max)})</strong></div>`);
+    steps.forEach(step => {
+        lines.push(`<div class="src-breakdown-step"><span>${step.label}</span><strong>${step.amountOrFactor}</strong></div>`);
+    });
+    lines.push(`<div class="src-breakdown-summary">Final: ${srcFormatCurrency(final.mid)} (${srcFormatCurrency(final.min)}–${srcFormatCurrency(final.max)})</div>`);
+    panel.innerHTML = lines.join('');
+}
+
+const srcBuildRiskChecks = function(state) {
+    const checks = [];
+    if(!state || !state.projectKey) return checks;
+    if(['tv','online_paid','radio','cinema','pos'].includes(state.projectKey)) {
+        if(state.region === 'world' && state.duration === 4) {
+            checks.push({ severity: 'warning', text: 'Worldwide + Unlimited ist ein sehr hoher Buyout. Prüfen, ob beides wirklich nötig ist.' });
+        }
+        if(state.duration >= 3 && state.region === 'dach') {
+            checks.push({ severity: 'info', text: 'Lange Laufzeit + großes Gebiet: ggf. alternative Lizenzstaffel prüfen.' });
+        }
+    }
+    if(state.licenseSocial && state.projectKey === 'imagefilm') {
+        checks.push({ severity: 'info', text: 'Social Media Zusatzlizenz aktiv. Bitte Scope (organisch vs. paid) im Angebot klar benennen.' });
+    }
+    if(state.packageAtv && state.projectKey !== 'online_paid') {
+        checks.push({ severity: 'info', text: 'ATV/CTV Paket ist typischerweise für Paid Media vorgesehen.' });
+    }
+    if(state.packageOnline && state.projectKey !== 'radio') {
+        checks.push({ severity: 'info', text: 'Online Audio Paket passt typischerweise zu Funkspot-Projekten.' });
+    }
+    return checks;
+}
+
+const srcRenderRiskChecks = function(checks) {
+    const list = document.getElementById('src-risk-list');
+    if(!list) return;
+    if(!checks || checks.length === 0) {
+        list.innerHTML = '<div class="src-risk-item info">Keine besonderen Hinweise.</div>';
+        return;
+    }
+    list.innerHTML = checks.map(check => `<div class="src-risk-item ${check.severity}">${check.text}</div>`).join('');
+}
+
+const srcToggleCompare = function() {
+    compareState.enabled = !compareState.enabled;
+    renderCompareView();
+}
+
+const srcSaveCompareSnapshot = function(slot) {
+    const state = srcGetStateFromUI();
+    if(!state.projectKey) return;
+    const result = srcComputeResult(state);
+    compareState[slot] = {
+        state,
+        result
+    };
+    compareState.enabled = true;
+    renderCompareView();
+}
+
+const srcCompareDiffList = function(aState, bState) {
+    const diffs = [];
+    if(aState.region !== bState.region) diffs.push(`Region: ${aState.region} → ${bState.region}`);
+    if(aState.duration !== bState.duration) diffs.push(`Dauer: ${aState.duration} → ${bState.duration}`);
+    if(aState.language !== bState.language) diffs.push(`Sprache: ${aState.language} → ${bState.language}`);
+    if(aState.projectKey === 'phone' && aState.phoneCount !== bState.phoneCount) diffs.push(`Module: ${aState.phoneCount} → ${bState.phoneCount}`);
+    if(aState.projectKey !== 'phone' && aState.minutes !== bState.minutes) diffs.push(`Länge: ${aState.minutes.toFixed(2)} → ${bState.minutes.toFixed(2)} Min`);
+    if(aState.licenseSocial !== bState.licenseSocial) diffs.push(`Social License: ${aState.licenseSocial ? 'ja' : 'nein'} → ${bState.licenseSocial ? 'ja' : 'nein'}`);
+    if(aState.licenseEvent !== bState.licenseEvent) diffs.push(`Event License: ${aState.licenseEvent ? 'ja' : 'nein'} → ${bState.licenseEvent ? 'ja' : 'nein'}`);
+    if(aState.packageOnline !== bState.packageOnline) diffs.push(`Online Audio: ${aState.packageOnline ? 'ja' : 'nein'} → ${bState.packageOnline ? 'ja' : 'nein'}`);
+    if(aState.packageAtv !== bState.packageAtv) diffs.push(`ATV/CTV: ${aState.packageAtv ? 'ja' : 'nein'} → ${bState.packageAtv ? 'ja' : 'nein'}`);
+    if(aState.cutdown !== bState.cutdown) diffs.push(`Cut-down: ${aState.cutdown ? 'ja' : 'nein'} → ${bState.cutdown ? 'ja' : 'nein'}`);
+    return diffs;
+}
+
+const renderCompareView = function() {
+    const compareBox = document.getElementById('src-compare-view');
+    if(!compareBox) return;
+    if(!compareState.enabled) {
+        compareBox.innerHTML = '<div class="src-risk-item info">Vergleich ist deaktiviert.</div>';
+        return;
+    }
+    const a = compareState.A;
+    const b = compareState.B;
+    if(!a || !b) {
+        compareBox.innerHTML = '<div class="src-risk-item info">Speichere zwei Szenarien (A &amp; B), um den Vergleich zu sehen.</div>';
+        return;
+    }
+    const deltaMid = b.result.final[1] - a.result.final[1];
+    const diffs = srcCompareDiffList(a.state, b.state);
+    compareBox.innerHTML = `
+        <div class="src-compare-tabs">
+            <button class="src-mini-btn" type="button" data-compare-tab="A">Szenario A</button>
+            <button class="src-mini-btn" type="button" data-compare-tab="B">Szenario B</button>
+        </div>
+        <div class="src-compare-grid" data-active="${compareState.activeTab}">
+            <div class="src-compare-card" data-compare="A">
+                <h4>Szenario A</h4>
+                <div>Range: ${srcFormatCurrency(a.result.final[0])}–${srcFormatCurrency(a.result.final[2])}</div>
+                <div>Mittelwert: ${srcFormatCurrency(a.result.final[1])}</div>
+            </div>
+            <div class="src-compare-card" data-compare="B">
+                <h4>Szenario B</h4>
+                <div>Range: ${srcFormatCurrency(b.result.final[0])}–${srcFormatCurrency(b.result.final[2])}</div>
+                <div>Mittelwert: ${srcFormatCurrency(b.result.final[1])}</div>
+            </div>
+        </div>
+        <div class="src-compare-card">
+            <div class="src-compare-delta">Δ ${srcFormatCurrency(deltaMid)}</div>
+            <div>${diffs.length ? diffs.join('<br>') : 'Keine Unterschiede in den gewählten Inputs.'}</div>
+        </div>
+    `;
+    compareBox.querySelectorAll('[data-compare-tab]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            compareState.activeTab = btn.getAttribute('data-compare-tab');
+            const grid = compareBox.querySelector('.src-compare-grid');
+            if(grid) grid.setAttribute('data-active', compareState.activeTab);
+        });
+    });
+}
+
+const srcBuildPackages = function(currentState) {
+    const data = srcRatesData[currentState.projectKey] || {};
+    const baseState = { ...currentState };
+    const hasDurationControl = ['tv','online_paid','radio','cinema','pos'].includes(baseState.projectKey);
+    const makeState = (overrides) => Object.assign({}, baseState, overrides);
+    const disableExtras = {
+        licenseSocial: false,
+        licenseEvent: false,
+        packageOnline: false,
+        packageAtv: false,
+        cutdown: false,
+        expressToggle: false,
+        discountToggle: false,
+        discountPct: 0,
+        studioFee: 0
+    };
+    const basicState = makeState(Object.assign({}, disableExtras, {
+        duration: hasDurationControl ? 1 : baseState.duration
+    }));
+    const standardState = makeState(Object.assign({}, {
+        duration: baseState.duration
+    }));
+    const premiumDuration = hasDurationControl ? 4 : baseState.duration;
+    const premiumState = makeState(Object.assign({}, {
+        duration: premiumDuration,
+        licenseSocial: Boolean(data.license_extras && data.license_extras.social_organic),
+        packageAtv: baseState.projectKey === 'online_paid',
+        packageOnline: baseState.projectKey === 'radio'
+    }));
+    const basicResult = srcComputeResult(basicState);
+    const standardResult = srcComputeResult(standardState);
+    const premiumResult = srcComputeResult(premiumState);
+    return {
+        basic: {
+            label: 'Basic',
+            price: basicResult.final[0],
+            meta: ['Min-Preis', hasDurationControl ? 'Dauer: 1 Jahr' : 'Dauer: Standard', 'Ohne Zusatzlizenzen'],
+            state: basicState
+        },
+        standard: {
+            label: 'Standard',
+            price: standardResult.final[1],
+            meta: ['Mittelwert', 'Dauer: aktuell', 'Aktuelle Optionen'],
+            state: standardState
+        },
+        premium: {
+            label: 'Premium',
+            price: premiumResult.final[2],
+            meta: ['Max-Preis', hasDurationControl ? 'Dauer: Unlimited' : 'Dauer: Standard', 'inkl. Social/Extras'],
+            state: premiumState
+        }
+    };
+}
+
+const srcRenderPackages = function() {
+    const list = document.getElementById('src-packages-list');
+    if(!list) return;
+    const state = srcGetStateFromUI();
+    if(!state.projectKey) {
+        list.innerHTML = '<div class="src-risk-item info">Bitte zuerst ein Projekt wählen.</div>';
+        return;
+    }
+    packagesState = srcBuildPackages(state);
+    list.innerHTML = Object.keys(packagesState).map(key => {
+        const pkg = packagesState[key];
+        return `
+            <div class="src-package-card">
+                <h4>${pkg.label}</h4>
+                <div class="src-package-price">${srcFormatCurrency(pkg.price)}</div>
+                <div class="src-package-meta">${pkg.meta.join(' · ')}</div>
+                <div class="src-package-actions">
+                    <button class="src-mini-btn" type="button" data-export-package="${key}">Als Angebot exportieren</button>
+                </div>
+            </div>
+        `;
+    }).join('');
+    list.querySelectorAll('[data-export-package]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const pkg = btn.getAttribute('data-export-package');
+            srcOpenExportModal({ pricingMode: 'package', selectedPackage: pkg });
+        });
+    });
+}
+
+const srcUpdateExportPackageVisibility = function() {
+    const wrap = document.getElementById('src-export-package-wrap');
+    if(!wrap) return;
+    const mode = document.querySelector('input[name="src-export-pricing"]:checked');
+    wrap.style.display = mode && mode.value === 'package' ? 'block' : 'none';
+}
+
+window.srcOpenExportModal = function(options = {}) {
+    const modal = document.getElementById('src-export-modal');
+    if(!modal) return;
+    modal.classList.add('is-open');
+    modal.setAttribute('aria-hidden', 'false');
+    if(options.pricingMode) {
+        const input = document.querySelector(`input[name="src-export-pricing"][value="${options.pricingMode}"]`);
+        if(input) input.checked = true;
+    }
+    if(options.selectedPackage) {
+        const select = document.getElementById('src-export-package');
+        if(select) select.value = options.selectedPackage;
+    }
+    srcUpdateExportPackageVisibility();
+}
+
+const srcCloseExportModal = function() {
+    const modal = document.getElementById('src-export-modal');
+    if(!modal) return;
+    modal.classList.remove('is-open');
+    modal.setAttribute('aria-hidden', 'true');
+}
+
+const srcCopyToClipboard = async function(text) {
+    if(navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text);
+        return true;
+    }
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textarea);
+    return true;
+}
+
+const srcBuildOfferEmailText = function({ lang, pricingMode, selectedPackage, includeBreakdown, includeRisk, extraSettings }) {
+    const i18n = SRC_I18N[lang] || SRC_I18N.de;
+    const state = srcGetStateFromUI();
+    const result = srcComputeResult(state);
+    const projectName = state.layoutMode ? "Layout / Pitch" : (srcRatesData[state.projectKey] ? srcRatesData[state.projectKey].name : state.projectKey);
+    const pricingLabel = pricingMode === 'mean' ? i18n.pricingMean : pricingMode === 'package' ? i18n.pricingPackage : i18n.pricingRange;
+    let priceText = `${result.final[0]} € – ${result.final[2]} €`;
+    if(pricingMode === 'mean') {
+        priceText = `${result.final[1]} €`;
+    }
+    if(pricingMode === 'package') {
+        if(!packagesState) {
+            packagesState = srcBuildPackages(state);
+        }
+        const pkg = packagesState[selectedPackage] || packagesState.standard;
+        priceText = `${pkg.price} € (${pkg.label})`;
+    }
+    const parts = [];
+    parts.push(`Betreff: ${i18n.subject}`);
+    parts.push('');
+    parts.push(i18n.intro);
+    parts.push('');
+    if(extraSettings.projectName) {
+        parts.push(`${i18n.project}: ${extraSettings.projectName}`);
+    }
+    parts.push(`${i18n.project}: ${projectName}`);
+    if(extraSettings.customerType) {
+        const typeLabel = extraSettings.customerType === 'agency' ? i18n.customerTypeAgency : i18n.customerTypeDirect;
+        parts.push(`Kundentyp: ${typeLabel}`);
+    }
+    if(state.projectKey === 'phone') {
+        parts.push(`${i18n.modules}: ${state.phoneCount}`);
+    } else {
+        parts.push(`${i18n.length}: ${state.minutes.toFixed(2)} Min`);
+    }
+    if(['tv','online_paid','radio','cinema','pos'].includes(state.projectKey)) {
+        parts.push(`${i18n.region}: ${state.region}`);
+        parts.push(`${i18n.duration}: ${state.duration === 4 ? 'Unlimited' : `${state.duration} Jahr(e)`}`);
+    }
+    const addons = [];
+    if(state.packageOnline) addons.push('Online Audio');
+    if(state.packageAtv) addons.push('ATV/CTV');
+    if(state.licenseSocial) addons.push('Social Media');
+    if(state.licenseEvent) addons.push('Event / Messe / POS');
+    if(state.cutdown) addons.push('Cut-down');
+    if(state.expressToggle) addons.push('Express');
+    if(state.studioFee > 0) addons.push('Studio');
+    if(addons.length) {
+        parts.push(`${i18n.addOns}: ${addons.join(', ')}`);
+    }
+    if(extraSettings.validity) {
+        parts.push(`${i18n.validity}: ${extraSettings.validity}`);
+    }
+    parts.push(`${pricingLabel}: ${priceText}`);
+    if(extraSettings.scope.length) {
+        parts.push(`${i18n.scope}: ${extraSettings.scope.join(', ')}`);
+    }
+    parts.push('');
+    parts.push(i18n.assumptions);
+    if(includeBreakdown && currentBreakdownData) {
+        parts.push('');
+        parts.push(`${i18n.breakdown}:`);
+        parts.push(`Basis: ${srcFormatCurrency(currentBreakdownData.base.mid)} (${srcFormatCurrency(currentBreakdownData.base.min)}–${srcFormatCurrency(currentBreakdownData.base.max)})`);
+        currentBreakdownData.steps.forEach(step => {
+            parts.push(`- ${step.label}: ${step.amountOrFactor}`);
+        });
+    }
+    if(includeRisk && currentRiskChecks.length) {
+        parts.push('');
+        parts.push(`${i18n.risks}:`);
+        currentRiskChecks.forEach(check => {
+            parts.push(`- ${check.text}`);
+        });
+    }
+    return parts.join('\n');
+}
+
+const srcHandleExportStart = async function() {
+    const modal = document.getElementById('src-export-modal');
+    if(!modal) return;
+    const state = srcGetStateFromUI();
+    if(!state.projectKey) {
+        srcCloseExportModal();
+        return;
+    }
+    const lang = document.querySelector('input[name="src-export-lang"]:checked')?.value || 'de';
+    const pricingMode = document.querySelector('input[name="src-export-pricing"]:checked')?.value || 'range';
+    const selectedPackage = document.getElementById('src-export-package')?.value || 'standard';
+    const includePdf = document.getElementById('src-export-pdf')?.checked;
+    const includeEmail = document.getElementById('src-export-email')?.checked;
+    const includeBreakdown = document.getElementById('src-export-breakdown')?.checked;
+    const includeRisk = document.getElementById('src-export-risk')?.checked;
+    const projectName = document.getElementById('src-export-projectname')?.value || '';
+    const validity = document.getElementById('src-export-validity')?.value || '';
+    const scope = Array.from(document.querySelectorAll('.src-export-scope:checked')).map(el => el.value);
+    const customerType = document.querySelector('input[name="src-export-client"]:checked')?.value || 'direct';
+    const extraSettings = { projectName, validity, scope, customerType };
+    if(includePdf) {
+        srcGeneratePDFv6({ lang, pricingMode, selectedPackage, includeBreakdown, includeRisk, extraSettings });
+    }
+    if(includeEmail) {
+        const emailText = srcBuildOfferEmailText({ lang, pricingMode, selectedPackage, includeBreakdown, includeRisk, extraSettings });
+        await srcCopyToClipboard(emailText);
+    }
+    srcCloseExportModal();
+}
+
 window.toggleAccordion = function(head) {
     const item = head.parentElement;
     const wasOpen = item.classList.contains('open');
@@ -397,6 +934,17 @@ window.srcReset = function() {
     licBox.innerHTML = '';
     licBox.classList.remove('hidden');
     if(licSection) licSection.classList.add('src-hidden');
+
+    compareState = { enabled: false, A: null, B: null, activeTab: 'A' };
+    packagesState = null;
+    const packagesList = document.getElementById('src-packages-list');
+    if(packagesList) packagesList.innerHTML = '';
+    const riskList = document.getElementById('src-risk-list');
+    if(riskList) riskList.innerHTML = '';
+    const breakdownPanel = document.getElementById('src-breakdown-panel');
+    const breakdownToggle = document.getElementById('src-breakdown-toggle');
+    if(breakdownPanel) breakdownPanel.classList.remove('open');
+    if(breakdownToggle) breakdownToggle.classList.remove('is-open');
     
     srcUIUpdate();
     srcCalc();
@@ -431,6 +979,8 @@ window.srcUIUpdate = function() {
     srcUpdateCutdownVisibility(genre, layoutMode);
     srcSyncOptionRowStates();
     srcAnalyzeText();
+    srcUpdateRightsSectionVisibility(genre, layoutMode);
+    srcRenderProjectTips(genre);
 }
 
 window.srcToggleManualTime = function() {
@@ -486,11 +1036,240 @@ window.srcValidateFinalFee = function() {
     }
 }
 
+const srcComputeResult = function(state) {
+    const genre = state.projectKey;
+    if(!genre) {
+        return { final: [0,0,0], info: [], licenseText: "", breakdown: null, licMeta: [] };
+    }
+    const data = srcRatesData[genre];
+    if(!data) {
+        return { final: [0,0,0], info: [], licenseText: "", breakdown: null, licMeta: [] };
+    }
+    let base = [0,0,0];
+    let final = [0,0,0];
+    let info = [];
+    let licParts = [];
+    let licMeta = [];
+    let licBaseText = "";
+    let breakdownSteps = [];
+    let breakdownBase = null;
+    const lang = state.language;
+    let langFactor = 1.0;
+    let langLabel = "";
+    if(lang === 'en') { langFactor = 1.3; langLabel = " (Englisch)"; }
+    if(lang === 'other') { langFactor = 1.5; langLabel = " (Fremdsprache)"; }
+
+    if(state.layoutMode) {
+        final = [250, 300, 350];
+        breakdownBase = { min: final[0], mid: final[1], max: final[2] };
+        info.push("<strong>Pauschale Layout / Casting</strong>");
+        info.push("Verwendung: Intern / Pitch");
+        licBaseText = "Nur interne Nutzung / Pitch (Keine Veröffentlichung).";
+    } else {
+        licParts.push("Projekt: " + data.name);
+        licBaseText = data.lic || "";
+        if(['tv','online_paid','radio','cinema','pos'].includes(genre)) {
+            let adName = data.name;
+            let adBase = data.base;
+            if(genre === 'pos') {
+                const variants = data.variants || {};
+                const variant = variants[state.posType] || variants.pos_spot || variants.ladenfunk;
+                if(variant) {
+                    adName = variant.name || adName;
+                    adBase = variant.base || adBase;
+                    if(variant.lic) {
+                        licBaseText = variant.lic;
+                    }
+                    licMeta.push(`POS Typ: ${variant.name || state.posType}`);
+                }
+            }
+            base = srcEnsurePriceTriple(adBase, base);
+            base = base.map(v => Math.round(v * langFactor));
+            breakdownBase = { min: base[0], mid: base[1], max: base[2] };
+            if(langFactor !== 1) {
+                breakdownSteps.push({ label: `Sprache${langLabel}`, amountOrFactor: `x${langFactor}`, effectOnRange: 'multiply' });
+            }
+            info.push(`Basisgage (${adName}${langLabel}): <strong>${base[1]} €</strong>`);
+
+            const region = state.region;
+            let regionMult = 1.0;
+            if(region === 'regional') { regionMult = 0.8; info.push(`Gebiet: Regional (x0.8): <strong style="color:green">-${Math.round(base[1]*0.2)} €</strong>`); }
+            if(region === 'national') { info.push("Gebiet: National (Basis)"); }
+            if(region === 'dach') { regionMult = 2.5; info.push(`Gebiet: DACH (x2.5): <strong>+${Math.round(base[1]*1.5)} €</strong>`); }
+            if(region === 'world') { regionMult = 4.0; info.push(`Gebiet: Weltweit (x4.0): <strong>+${Math.round(base[1]*3.0)} €</strong>`); }
+            licMeta.push(`Gebiet: ${region === 'regional' ? 'Regional' : region === 'national' ? 'National' : region === 'dach' ? 'DACH' : 'Weltweit'}`);
+
+            const years = state.duration;
+            let timeMult = 1;
+            if(years === 4) {
+                timeMult = 4;
+                let intermediate = base[1] * regionMult;
+                info.push(`Laufzeit: Unlimited (x4.0): <strong>+${Math.round(intermediate*3)} €</strong>`);
+                licParts.push("Unlimited");
+                licMeta.push("Laufzeit: Unlimited");
+            } else {
+                timeMult = years;
+                let intermediate = base[1] * regionMult;
+                if(years > 1) { info.push(`Laufzeit: ${years} Jahre (x${years}.0): <strong>+${Math.round(intermediate*(years-1))} €</strong>`); }
+                else { info.push("Laufzeit: 1 Jahr"); }
+                licParts.push(years + " Jahr(e)");
+                licMeta.push(`Laufzeit: ${years} ${years === 1 ? 'Jahr' : 'Jahre'}`);
+            }
+            breakdownSteps.push({ label: `Region`, amountOrFactor: `x${regionMult}`, effectOnRange: 'multiply' });
+            breakdownSteps.push({ label: `Laufzeit`, amountOrFactor: `x${timeMult}`, effectOnRange: 'multiply' });
+
+            if(genre === 'radio' && state.packageOnline) {
+                base = base.map(v => Math.round(v * 1.6));
+                breakdownSteps.push({ label: "Paket: Online Audio", amountOrFactor: "x1.6", effectOnRange: 'multiply' });
+                info.push("Paket: + Online Audio (x1.6)"); licParts.push("inkl. Online Audio");
+                licMeta.push("Paket: Online Audio");
+            }
+            if(genre === 'online_paid' && state.packageAtv) {
+                base = base.map(v => Math.round(v * 1.6));
+                breakdownSteps.push({ label: "Paket: ATV/CTV", amountOrFactor: "x1.6", effectOnRange: 'multiply' });
+                info.push("Paket: + ATV/CTV (x1.6)"); licParts.push("inkl. ATV/CTV");
+                licMeta.push("Paket: ATV/CTV");
+            }
+
+            final = base.map(v => Math.round(v * regionMult * timeMult));
+
+            if(state.cutdown) {
+                let oldMid = final[1];
+                final = final.map(v => Math.round(v * 0.5));
+                breakdownSteps.push({ label: "Cut-down", amountOrFactor: "x0.5", effectOnRange: 'multiply' });
+                info.push(`Cut-down (50%): <strong style="color:green">-${oldMid - final[1]} €</strong>`);
+                licParts.push("Typ: Cut-down");
+                licMeta.push("Typ: Cut-down");
+            }
+        }
+        else if(Array.isArray(data.tiers)) {
+            const tierUnit = data.tier_unit || 'minutes';
+            const units = tierUnit === 'modules'
+                ? state.phoneCount
+                : Math.max(0.1, state.minutes);
+            const unitLabel = tierUnit === 'modules' ? 'Module' : 'Min';
+            const tier = srcGetTierForUnits(data.tiers, units);
+            const tierPrices = tier && tier.p ? tier.p : data.base;
+            final = srcEnsurePriceTriple(tierPrices, final).map(v => Math.round(v * langFactor));
+            breakdownBase = { min: final[0], mid: final[1], max: final[2] };
+            const tierLimit = tier && typeof tier.limit === 'number' ? tier.limit : data.limit;
+            const tierLabel = tierLimit ? `bis ${tierLimit} ${unitLabel}` : 'Basis';
+            info.push(`Basispreis (${tierLabel}${langLabel}): <strong>${final[1]} €</strong>`);
+            if(langFactor !== 1) {
+                breakdownSteps.push({ label: `Sprache${langLabel}`, amountOrFactor: `x${langFactor}`, effectOnRange: 'multiply' });
+            }
+
+            const extraConfig = srcGetExtraChunks(data, units, tierLimit, tierUnit === 'modules' ? 1 : 5);
+            if(extraConfig.chunks > 0) {
+                const extraRates = srcEnsurePriceTriple(data.extra, [0, 0, 0]);
+                const extraCost = extraConfig.chunks * extraRates[1];
+                final[0] += extraConfig.chunks * extraRates[0];
+                final[1] += extraCost;
+                final[2] += extraConfig.chunks * extraRates[2];
+                const unitSuffix = tierUnit === 'modules' ? 'Modul' : 'Min';
+                const unitCount = extraConfig.extraUnit || (tierUnit === 'modules' ? 1 : 5);
+                breakdownSteps.push({ label: `Überlänge ${extraConfig.chunks}x`, amountOrFactor: `+${extraCost} €`, effectOnRange: 'add' });
+                info.push(`Überlänge (+ ${extraConfig.chunks}x ${unitCount} ${unitSuffix}): <strong>+${extraCost} €</strong>`);
+            }
+
+            if(tierUnit === 'minutes' && state.hasScript && state.minutes > 0) {
+                final = srcAdjustRangeForScript(final, true);
+                breakdownSteps.push({ label: "Skript vorhanden", amountOrFactor: "Range enger", effectOnRange: 'adjust' });
+            }
+
+            const licenseExtras = data.license_extras || {};
+            const socialExtra = srcGetLicenseExtraAmount(licenseExtras, 'social_organic');
+            const eventExtra = srcGetLicenseExtraAmount(licenseExtras, 'event_pos');
+            if(state.licenseSocial) {
+                const extraRates = socialExtra || [150, 150, 150];
+                final = final.map((v, idx) => v + extraRates[idx]);
+                breakdownSteps.push({ label: "Social Media", amountOrFactor: `+${extraRates[1]} €`, effectOnRange: 'add' });
+                info.push(`Social Media: <strong>+${extraRates[1]} €</strong>`);
+                licParts.push("+ Social Media");
+            }
+            if(state.licenseEvent) {
+                const extraRates = eventExtra || [150, 150, 150];
+                final = final.map((v, idx) => v + extraRates[idx]);
+                breakdownSteps.push({ label: "Event", amountOrFactor: `+${extraRates[1]} €`, effectOnRange: 'add' });
+                info.push(`Event: <strong>+${extraRates[1]} €</strong>`);
+                licParts.push("+ Event");
+            }
+        }
+        else {
+            const baseData = data.base || data.min;
+            final = srcEnsurePriceTriple(baseData, final).map(v => Math.round(v * langFactor));
+            breakdownBase = { min: final[0], mid: final[1], max: final[2] };
+            info.push(`Basis (Standard${langLabel}): <strong>${final[1]} €</strong>`);
+        }
+    }
+
+    if(state.licenseSocial) { licMeta.push("Zusatzlizenz: Social Media (organisch)"); }
+    if(state.licenseEvent) { licMeta.push("Zusatzlizenz: Event / Messe / POS"); }
+
+    if(state.studioFee > 0) {
+        final = final.map(v => v + state.studioFee);
+        breakdownSteps.push({ label: "Studiokosten", amountOrFactor: `+${state.studioFee} €`, effectOnRange: 'add' });
+        info.push(`Studiokosten: <strong>+${state.studioFee} €</strong>`);
+    }
+    if(state.expressToggle) {
+        const expressType = state.expressType;
+        let expressFactor = (expressType === '4h') ? 1.0 : 0.5;
+        let expressAmount = Math.round(final[1] * expressFactor);
+        final = final.map(v => Math.round(v * (1 + expressFactor)));
+        let eLabel = (expressType === '4h') ? "4h (+100%)" : "24h (+50%)";
+        breakdownSteps.push({ label: `Express ${eLabel}`, amountOrFactor: `+${expressAmount} €`, effectOnRange: 'multiply' });
+        info.push(`Express (${eLabel}): <strong>+${expressAmount} €</strong>`);
+    }
+    if(state.discountToggle && state.discountPct > 0) {
+        let disc = Math.round(final[1] * (state.discountPct/100));
+        final = final.map(v => Math.round(v * (1 - state.discountPct/100)));
+        breakdownSteps.push({ label: `Rabatt ${state.discountPct}%`, amountOrFactor: `-${disc} €`, effectOnRange: 'add' });
+        info.push(`Rabatt (${state.discountPct}%): <strong style="color:green">-${disc} €</strong>`);
+    }
+
+    if(!breakdownBase) {
+        breakdownBase = { min: final[0], mid: final[1], max: final[2] };
+    }
+    const breakdown = {
+        base: breakdownBase,
+        steps: breakdownSteps,
+        final: { min: final[0], mid: final[1], max: final[2] }
+    };
+
+    const rightsGuidance = srcRatesData.rights_guidance || {};
+    const defaultGuidance = rightsGuidance.default || {};
+    const guidanceEntry = rightsGuidance[state.layoutMode ? 'default' : genre] || defaultGuidance;
+    let guidanceText = guidanceEntry.text || defaultGuidance.text || "";
+    if(licBaseText && (state.layoutMode || !guidanceEntry.text || licBaseText !== (data.lic || ""))) {
+        guidanceText = licBaseText;
+    }
+    if(!guidanceText) {
+        guidanceText = "Nutzungsrechte abhängig von Verbreitungsgebiet, Dauer und Zusatzlizenzen. Bitte Projekt auswählen bzw. Konfiguration prüfen.";
+    }
+    const extras = Object.assign({}, defaultGuidance.extras || {}, guidanceEntry.extras || {});
+    const extrasText = [];
+    if(state.licenseSocial && extras.social_organic) {
+        extrasText.push(extras.social_organic);
+    }
+    if(state.licenseEvent && extras.event_pos) {
+        extrasText.push(extras.event_pos);
+    }
+    const extraBlock = extrasText.length ? `<br><span class="src-license-extras">${extrasText.join(' ')}</span>` : "";
+    const licMetaText = licMeta.length ? `<br><span class="src-license-meta">${licMeta.join(' · ')}</span>` : "";
+    const licenseText = `${guidanceText || ""}${extraBlock}${licMetaText}`;
+    return {
+        final,
+        info,
+        licenseText,
+        breakdown,
+        licMeta
+    };
+}
+
 window.srcCalc = function() {
     const genre = document.getElementById('src-genre').value;
     const finalFeeWrap = document.getElementById('src-final-fee-wrapper');
-    const scriptText = document.getElementById('src-text').value || '';
-    const hasScript = scriptText.trim().length > 0;
+    const state = srcGetStateFromUI();
 
     if(!genre) {
         document.getElementById('src-calc-breakdown').style.display = 'none';
@@ -504,6 +1283,11 @@ window.srcCalc = function() {
         const licSection = document.getElementById('src-license-section');
         if(licSection) licSection.classList.add('src-hidden');
         if(finalFeeWrap) finalFeeWrap.style.display = 'none'; // Hide if no genre
+        currentBreakdownData = null;
+        currentRiskChecks = [];
+        srcRenderBreakdown(null);
+        srcRenderRiskChecks([]);
+        renderCompareView();
         return;
     }
     
@@ -515,187 +1299,16 @@ window.srcCalc = function() {
     }
 
     document.getElementById('src-calc-breakdown').style.display = 'block';
+    const result = srcComputeResult(state);
+    const final = result.final;
+    const info = result.info;
+    const licText = result.licenseText;
+    currentBreakdownData = result.breakdown;
+    currentRiskChecks = srcBuildRiskChecks(state);
 
-    const data = srcRatesData[genre];
-    if(!data) return; 
-
-    let base = [0,0,0]; 
-    let final = [0,0,0];
-    let info = []; 
-    let licParts = []; 
-    let licMeta = [];
-    let licBaseText = "";
-    let studioFee = document.getElementById('src-own-studio').checked ? (parseInt(document.getElementById('src-studio-fee').value)||0) : 0;
-    const layoutMode = document.getElementById('src-layout-mode').checked;
-    
-    const lang = document.getElementById('src-language').value;
-    let langFactor = 1.0;
-    let langLabel = "";
-    if(lang === 'en') { langFactor = 1.3; langLabel = " (Englisch)"; }
-    if(lang === 'other') { langFactor = 1.5; langLabel = " (Fremdsprache)"; }
-
-    if(layoutMode) {
-        final = [250, 300, 350]; 
-        info.push("<strong>Pauschale Layout / Casting</strong>");
-        info.push("Verwendung: Intern / Pitch");
-        licBaseText = "Nur interne Nutzung / Pitch (Keine Veröffentlichung).";
-    } else {
-        licParts.push("Projekt: " + data.name);
-        licBaseText = data.lic || "";
-
-        // ADS
-        if(['tv','online_paid','radio','cinema','pos'].includes(genre)) {
-            let adName = data.name;
-            let adBase = data.base;
-            if(genre === 'pos') {
-                const posTypeEl = document.getElementById('src-pos-type');
-                const posType = posTypeEl ? posTypeEl.value : 'pos_spot';
-                const variants = data.variants || {};
-                const variant = variants[posType] || variants.pos_spot || variants.ladenfunk;
-                if(variant) {
-                    adName = variant.name || adName;
-                    adBase = variant.base || adBase;
-                    if(variant.lic) {
-                        licBaseText = variant.lic;
-                    }
-                    licMeta.push(`POS Typ: ${variant.name || posType}`);
-                }
-            }
-            base = srcEnsurePriceTriple(adBase, base);
-            base = base.map(v => Math.round(v * langFactor));
-            
-            info.push(`Basisgage (${adName}${langLabel}): <strong>${base[1]} €</strong>`);
-
-            const regionInput = document.querySelector('input[name="region"]:checked');
-            const region = regionInput ? regionInput.value : 'national';
-            let regionMult = 1.0;
-            if(region === 'regional') { regionMult = 0.8; info.push(`Gebiet: Regional (x0.8): <strong style="color:green">-${Math.round(base[1]*0.2)} €</strong>`); }
-            if(region === 'national') { info.push("Gebiet: National (Basis)"); }
-            if(region === 'dach') { regionMult = 2.5; info.push(`Gebiet: DACH (x2.5): <strong>+${Math.round(base[1]*1.5)} €</strong>`); }
-            if(region === 'world') { regionMult = 4.0; info.push(`Gebiet: Weltweit (x4.0): <strong>+${Math.round(base[1]*3.0)} €</strong>`); }
-            licMeta.push(`Gebiet: ${region === 'regional' ? 'Regional' : region === 'national' ? 'National' : region === 'dach' ? 'DACH' : 'Weltweit'}`);
-            
-            const years = parseInt(document.getElementById('src-time-slider').value);
-            const sliderLabel = document.getElementById('src-slider-val');
-            
-            let timeMult = 1;
-            if(years === 4) { 
-                sliderLabel.innerText = "Unlimited";
-                timeMult = 4; 
-                let intermediate = base[1] * regionMult;
-                info.push(`Laufzeit: Unlimited (x4.0): <strong>+${Math.round(intermediate*3)} €</strong>`); 
-                licParts.push("Unlimited");
-                licMeta.push("Laufzeit: Unlimited");
-            } else {
-                sliderLabel.innerText = years + (years === 1 ? " Jahr" : " Jahre");
-                timeMult = years;
-                let intermediate = base[1] * regionMult;
-                if(years > 1) { info.push(`Laufzeit: ${years} Jahre (x${years}.0): <strong>+${Math.round(intermediate*(years-1))} €</strong>`); }
-                else { info.push("Laufzeit: 1 Jahr"); }
-                licParts.push(years + " Jahr(e)");
-                licMeta.push(`Laufzeit: ${years} ${years === 1 ? 'Jahr' : 'Jahre'}`);
-            }
-
-            if(genre === 'radio' && document.getElementById('src-pkg-online').checked) {
-                base = base.map(v => Math.round(v * 1.6));
-                info.push("Paket: + Online Audio (x1.6)"); licParts.push("inkl. Online Audio");
-                licMeta.push("Paket: Online Audio");
-            }
-            if(genre === 'online_paid' && document.getElementById('src-pkg-atv').checked) {
-                base = base.map(v => Math.round(v * 1.6));
-                info.push("Paket: + ATV/CTV (x1.6)"); licParts.push("inkl. ATV/CTV");
-                licMeta.push("Paket: ATV/CTV");
-            }
-
-            final = base.map(v => Math.round(v * regionMult * timeMult));
-
-            if(document.getElementById('src-cutdown').checked) {
-                let oldMid = final[1];
-                final = final.map(v => Math.round(v * 0.5));
-                info.push(`Cut-down (50%): <strong style="color:green">-${oldMid - final[1]} €</strong>`);
-                licParts.push("Typ: Cut-down");
-                licMeta.push("Typ: Cut-down");
-            }
-        } 
-        // PHONE
-        else if(Array.isArray(data.tiers)) {
-            const tierUnit = data.tier_unit || 'minutes';
-            const units = tierUnit === 'modules'
-                ? (parseInt(document.getElementById('src-phone-count').value, 10) || 1)
-                : Math.max(0.1, calculatedMinutes);
-            const unitLabel = tierUnit === 'modules' ? 'Module' : 'Min';
-            const tier = srcGetTierForUnits(data.tiers, units);
-            const tierPrices = tier && tier.p ? tier.p : data.base;
-            final = srcEnsurePriceTriple(tierPrices, final).map(v => Math.round(v * langFactor));
-            const tierLimit = tier && typeof tier.limit === 'number' ? tier.limit : data.limit;
-            const tierLabel = tierLimit ? `bis ${tierLimit} ${unitLabel}` : 'Basis';
-            info.push(`Basispreis (${tierLabel}${langLabel}): <strong>${final[1]} €</strong>`);
-
-            const extraConfig = srcGetExtraChunks(data, units, tierLimit, tierUnit === 'modules' ? 1 : 5);
-            if(extraConfig.chunks > 0) {
-                const extraRates = srcEnsurePriceTriple(data.extra, [0, 0, 0]);
-                const extraCost = extraConfig.chunks * extraRates[1];
-                final[0] += extraConfig.chunks * extraRates[0];
-                final[1] += extraCost;
-                final[2] += extraConfig.chunks * extraRates[2];
-                const unitSuffix = tierUnit === 'modules' ? 'Modul' : 'Min';
-                const unitCount = extraConfig.extraUnit || (tierUnit === 'modules' ? 1 : 5);
-                info.push(`Überlänge (+ ${extraConfig.chunks}x ${unitCount} ${unitSuffix}): <strong>+${extraCost} €</strong>`);
-            }
-
-            if(tierUnit === 'minutes' && hasScript && calculatedMinutes > 0) {
-                final = srcAdjustRangeForScript(final, true);
-            }
-
-            const licenseExtras = data.license_extras || {};
-            const socialExtra = srcGetLicenseExtraAmount(licenseExtras, 'social_organic');
-            const eventExtra = srcGetLicenseExtraAmount(licenseExtras, 'event_pos');
-            if(document.getElementById('src-lic-social').checked) {
-                const extraRates = socialExtra || [150, 150, 150];
-                final = final.map((v, idx) => v + extraRates[idx]);
-                info.push(`Social Media: <strong>+${extraRates[1]} €</strong>`);
-                licParts.push("+ Social Media");
-            }
-            if(document.getElementById('src-lic-event').checked) {
-                const extraRates = eventExtra || [150, 150, 150];
-                final = final.map((v, idx) => v + extraRates[idx]);
-                info.push(`Event: <strong>+${extraRates[1]} €</strong>`);
-                licParts.push("+ Event");
-            }
-        }
-        // CONTENT
-        else {
-            const baseData = data.base || data.min;
-            final = srcEnsurePriceTriple(baseData, final).map(v => Math.round(v * langFactor));
-            info.push(`Basis (Standard${langLabel}): <strong>${final[1]} €</strong>`);
-        }
-    }
-
-    if(document.getElementById('src-lic-social').checked) { licMeta.push("Zusatzlizenz: Social Media (organisch)"); }
-    if(document.getElementById('src-lic-event').checked) { licMeta.push("Zusatzlizenz: Event / Messe / POS"); }
-
-    // ADD ONS
-    if(studioFee > 0) {
-        final = final.map(v => v + studioFee);
-        info.push(`Studiokosten: <strong>+${studioFee} €</strong>`);
-    }
-    const expressToggle = document.getElementById('src-express-toggle').checked;
-    if(expressToggle) {
-        const expressType = document.getElementById('src-express-type').value;
-        let expressFactor = (expressType === '4h') ? 1.0 : 0.5;
-        let expressAmount = Math.round(final[1] * expressFactor);
-        final = final.map(v => Math.round(v * (1 + expressFactor)));
-        let eLabel = (expressType === '4h') ? "4h (+100%)" : "24h (+50%)";
-        info.push(`Express (${eLabel}): <strong>+${expressAmount} €</strong>`);
-    }
-
-    // DISCOUNT
-    const discountToggle = document.getElementById('src-discount-toggle').checked;
-    const discountPct = parseFloat(document.getElementById('src-discount-percent').value) || 0;
-    if(discountToggle && discountPct > 0) {
-        let disc = Math.round(final[1] * (discountPct/100));
-        final = final.map(v => Math.round(v * (1 - discountPct/100)));
-        info.push(`Rabatt (${discountPct}%): <strong style="color:green">-${disc} €</strong>`);
+    const sliderLabel = document.getElementById('src-slider-val');
+    if(sliderLabel) {
+        sliderLabel.innerText = state.duration === 4 ? "Unlimited" : `${state.duration} ${state.duration === 1 ? "Jahr" : "Jahre"}`;
     }
 
     updateMainAmountAnimated(`${final[0]} - ${final[2]} €`);
@@ -718,30 +1331,9 @@ window.srcCalc = function() {
         return `<div class="src-breakdown-row"><span>${line}</span></div>`;
     }).join('');
     
-    const rightsGuidance = srcRatesData.rights_guidance || {};
-    const defaultGuidance = rightsGuidance.default || {};
-    const guidanceEntry = rightsGuidance[layoutMode ? 'default' : genre] || defaultGuidance;
-    let guidanceText = guidanceEntry.text || defaultGuidance.text || "";
-    if(licBaseText && (layoutMode || !guidanceEntry.text || licBaseText !== (data.lic || ""))) {
-        guidanceText = licBaseText;
-    }
-    if(!guidanceText) {
-        guidanceText = "Nutzungsrechte abhängig von Verbreitungsgebiet, Dauer und Zusatzlizenzen. Bitte Projekt auswählen bzw. Konfiguration prüfen.";
-    }
-    const extras = Object.assign({}, defaultGuidance.extras || {}, guidanceEntry.extras || {});
-    const extrasText = [];
-    if(document.getElementById('src-lic-social').checked && extras.social_organic) {
-        extrasText.push(extras.social_organic);
-    }
-    if(document.getElementById('src-lic-event').checked && extras.event_pos) {
-        extrasText.push(extras.event_pos);
-    }
-    const extraBlock = extrasText.length ? `<br><span class="src-license-extras">${extrasText.join(' ')}</span>` : "";
-    const licMetaText = licMeta.length ? `<br><span class="src-license-meta">${licMeta.join(' · ')}</span>` : "";
-    dynamicLicenseText = `${guidanceText || ""}${extraBlock}${licMetaText}`;
+    dynamicLicenseText = licText;
     const licBox = document.getElementById('src-license-text');
     const licSection = document.getElementById('src-license-section');
-    
     licBox.innerHTML = dynamicLicenseText;
     licBox.classList.remove('hidden');
     licBox.style.display = '';
@@ -749,35 +1341,115 @@ window.srcCalc = function() {
 
     currentResult = { low: final[0], mid: final[1], high: final[2] };
     window.srcBreakdown = info;
+    srcRenderBreakdown(currentBreakdownData);
+    srcRenderRiskChecks(currentRiskChecks);
+    renderCompareView();
+    if(packagesState) {
+        srcRenderPackages();
+    }
     srcValidateFinalFee(); 
 }
 
-window.srcGeneratePDFv6 = function() {
+window.srcGeneratePDFv6 = function(options = {}) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
-    doc.setFillColor(26, 147, 238); doc.rect(0, 0, 210, 25, 'F');
-    doc.setFontSize(20); doc.setTextColor(255, 255, 255); doc.text("Gagen-Kalkulation", 15, 17);
-    doc.setFontSize(10); doc.setTextColor(50); doc.text(`Datum: ${new Date().toLocaleDateString('de-DE')}`, 160, 17);
+    const lang = options.lang || 'de';
+    const i18n = SRC_I18N[lang] || SRC_I18N.de;
+    const pricingMode = options.pricingMode || 'range';
+    const selectedPackage = options.selectedPackage || 'standard';
+    const includeBreakdown = Boolean(options.includeBreakdown);
+    const includeRisk = Boolean(options.includeRisk);
+    const extraSettings = options.extraSettings || {};
 
-    const sel = document.getElementById('src-genre');
-    const layoutMode = document.getElementById('src-layout-mode').checked;
-    const title = layoutMode ? "Layout / Pitch (Intern)" : sel.options[sel.selectedIndex].text;
-    
-    // CHECK IF USER HAS FINAL FEE
-    const userFee = parseFloat(document.getElementById('src-final-fee-user').value);
-    const finalPriceDisplay = (userFee && !document.getElementById('src-final-fee-user').classList.contains('error')) ? userFee + ' €' : `${currentResult.low} € - ${currentResult.high} €`;
+    doc.setFillColor(26, 147, 238);
+    doc.rect(0, 0, 210, 25, 'F');
+    doc.setFontSize(20);
+    doc.setTextColor(255, 255, 255);
+    doc.text(lang === 'en' ? 'Offer Overview' : 'Angebotsübersicht', 15, 17);
+    doc.setFontSize(10);
+    doc.setTextColor(50);
+    doc.text(`Datum: ${new Date().toLocaleDateString(lang === 'en' ? 'en-US' : 'de-DE')}`, 160, 17);
 
-    doc.setTextColor(0); doc.setFontSize(14); doc.text(`Projekt: ${title}`, 15, 40);
-    doc.setFontSize(12); doc.setTextColor(26, 147, 238); doc.text(`Kalkulation (Netto): ${finalPriceDisplay}`, 15, 50);
+    const state = srcGetStateFromUI();
+    const result = srcComputeResult(state);
+    const projectName = state.layoutMode ? "Layout / Pitch (Intern)" : (srcRatesData[state.projectKey] ? srcRatesData[state.projectKey].name : state.projectKey);
+    let priceLabel = i18n.pricingRange;
+    let priceText = `${result.final[0]} € - ${result.final[2]} €`;
+    if(pricingMode === 'mean') {
+        priceLabel = i18n.pricingMean;
+        priceText = `${result.final[1]} €`;
+    }
+    if(pricingMode === 'package') {
+        if(!packagesState) {
+            packagesState = srcBuildPackages(state);
+        }
+        const pkg = packagesState[selectedPackage] || packagesState.standard;
+        priceLabel = i18n.pricingPackage;
+        priceText = `${pkg.price} € (${pkg.label})`;
+    }
+
+    doc.setTextColor(0);
+    doc.setFontSize(14);
+    doc.text(`${i18n.project}: ${extraSettings.projectName ? `${extraSettings.projectName} - ` : ''}${projectName}`, 15, 40);
+    doc.setFontSize(12);
+    doc.setTextColor(26, 147, 238);
+    doc.text(`${priceLabel}: ${priceText}`, 15, 50);
+    doc.setFontSize(10);
+    doc.setTextColor(50);
+    let infoYOffset = 58;
+    if(extraSettings.customerType) {
+        const typeLabel = extraSettings.customerType === 'agency' ? i18n.customerTypeAgency : i18n.customerTypeDirect;
+        doc.text(`Kundentyp: ${typeLabel}`, 15, infoYOffset);
+        infoYOffset += 6;
+    }
+    if(extraSettings.validity) {
+        doc.text(`${i18n.validity}: ${extraSettings.validity}`, 15, infoYOffset);
+        infoYOffset += 6;
+    }
+    if(extraSettings.scope && extraSettings.scope.length) {
+        doc.text(`${i18n.scope}: ${extraSettings.scope.join(', ')}`, 15, infoYOffset);
+    }
 
     const rows = (window.srcBreakdown || []).map(t => [t.replace(/<[^>]*>?/gm, '').replace(':', '')]);
-    doc.autoTable({ startY: 60, head: [['Details']], body: rows, theme: 'grid', headStyles: { fillColor: [26, 147, 238] } });
+    const tableStart = infoYOffset + 7;
+    doc.autoTable({ startY: tableStart, head: [['Details']], body: rows, theme: 'grid', headStyles: { fillColor: [26, 147, 238] } });
+
+    let currentY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 10 : 75;
+    if(includeBreakdown && currentBreakdownData) {
+        doc.setFontSize(11);
+        doc.setTextColor(26, 147, 238);
+        doc.text(i18n.breakdown, 15, currentY);
+        currentY += 6;
+        doc.setFontSize(9);
+        doc.setTextColor(50);
+        const breakdownLines = [
+            `Basis: ${currentBreakdownData.base.mid} € (${currentBreakdownData.base.min}–${currentBreakdownData.base.max} €)`
+        ].concat(currentBreakdownData.steps.map(step => `${step.label}: ${step.amountOrFactor}`));
+        doc.text(doc.splitTextToSize(breakdownLines.join('\n'), 180), 15, currentY);
+        currentY += breakdownLines.length * 4 + 6;
+    }
+    if(includeRisk && currentRiskChecks.length) {
+        doc.setFontSize(11);
+        doc.setTextColor(26, 147, 238);
+        doc.text(i18n.risks, 15, currentY);
+        currentY += 6;
+        doc.setFontSize(9);
+        doc.setTextColor(50);
+        doc.text(doc.splitTextToSize(currentRiskChecks.map(check => `- ${check.text}`).join('\n'), 180), 15, currentY);
+        currentY += currentRiskChecks.length * 4 + 6;
+    }
 
     const cleanLicText = dynamicLicenseText.replace(/<br>/g, "\n").replace(/<strong>|<\/strong>/g, "");
     if(cleanLicText) {
-        const finalY = doc.lastAutoTable.finalY + 10;
-        doc.setFontSize(10); doc.setTextColor(0); 
-        doc.text(doc.splitTextToSize(cleanLicText, 180), 15, finalY);
+        doc.setFontSize(9);
+        doc.setTextColor(0);
+        doc.text(doc.splitTextToSize(cleanLicText, 180), 15, currentY);
+    }
+    if(i18n.assumptions) {
+        const noteY = currentY + 12;
+        doc.setFontSize(9);
+        doc.setTextColor(80);
+        doc.text(doc.splitTextToSize(i18n.assumptions, 180), 15, noteY);
     }
     doc.save('Gagen_Angebot.pdf');
 }

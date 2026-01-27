@@ -123,6 +123,7 @@ function src_shortcode_output_v7() {
                         </optgroup>
                     </select>
                     <span class="src-top-sub">Was wird produziert?</span>
+                    <div id="src-project-tips" class="src-project-tips"></div>
                 </div>
                 
                 <div>
@@ -170,6 +171,7 @@ function src_shortcode_output_v7() {
                 </div>
             </div>
 
+            <div class="src-rights-section">
             <div class="src-section-head src-section-head--rights">
                 <div class="src-section-head__title">Nutzungsrechte &amp; Lizenzen</div>
             </div>
@@ -301,6 +303,7 @@ function src_shortcode_output_v7() {
                         </div>
                     </div>
                 </div>
+            </div>
             </div>
 
             <div id="src-global-settings" class="src-group" style="margin-top:15px; padding-top:15px;">
@@ -449,6 +452,11 @@ function src_shortcode_output_v7() {
                         </div>
                     </div>
                     <div class="src-price-note">Alle Preise zzgl. MwSt.</div>
+                    <div class="src-compare-controls">
+                        <button class="src-mini-btn" id="src-compare-toggle" type="button">Vergleich</button>
+                        <button class="src-mini-btn" id="src-compare-save-a" type="button">Als A speichern</button>
+                        <button class="src-mini-btn" id="src-compare-save-b" type="button">Als B speichern</button>
+                    </div>
                     
                     <div id="src-final-fee-wrapper" class="src-final-fee-wrap src-hidden-initially">
                         <label class="src-final-fee-label">
@@ -467,6 +475,28 @@ function src_shortcode_output_v7() {
                     <div id="src-breakdown-list">
                         <div class="src-breakdown-row">Bitte Projekt wählen..</div>
                     </div>
+                    <div class="src-breakdown-accordion">
+                        <button class="src-accordion-btn" type="button" id="src-breakdown-toggle">Rechenweg anzeigen</button>
+                        <div class="src-accordion-panel" id="src-breakdown-panel"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="src-sidebar-section" id="src-risk-section">
+                <div class="src-sidebar-title src-sidebar-title--risk">Hinweise</div>
+                <div class="src-risk-box" id="src-risk-list"></div>
+            </div>
+
+            <div class="src-sidebar-section" id="src-compare-section">
+                <div class="src-sidebar-title src-sidebar-title--compare">Vergleich</div>
+                <div class="src-compare-box" id="src-compare-view"></div>
+            </div>
+
+            <div class="src-sidebar-section" id="src-packages-section">
+                <div class="src-sidebar-title src-sidebar-title--packages">Pakete</div>
+                <div class="src-packages-box">
+                    <button class="src-mini-btn src-mini-btn--wide" id="src-build-packages" type="button">Pakete erzeugen</button>
+                    <div id="src-packages-list"></div>
                 </div>
             </div>
 
@@ -523,7 +553,7 @@ function src_shortcode_output_v7() {
             </div>
 
             <div class="src-footer-actions">
-                <button class="src-btn" onclick="srcGeneratePDFv6()">
+                <button class="src-btn" onclick="srcOpenExportModal()">
                     <span class="dashicons dashicons-pdf"></span> Angebot speichern
                 </button>
                 <div class="src-note-text">
@@ -533,6 +563,64 @@ function src_shortcode_output_v7() {
         </div>
     </div>
     <div id="src-tooltip-fixed"></div>
+    <div id="src-export-modal" class="src-modal" aria-hidden="true">
+        <div class="src-modal__backdrop" data-modal-close></div>
+        <div class="src-modal__content" role="dialog" aria-modal="true" aria-labelledby="src-export-title">
+            <div class="src-modal__header">
+                <h2 id="src-export-title">Angebot als PDF + Mailtext</h2>
+                <button class="src-modal__close" type="button" data-modal-close>&times;</button>
+            </div>
+            <div class="src-modal__body">
+                <div class="src-modal-section">
+                    <div class="src-modal-label">Sprache</div>
+                    <div class="src-segmented">
+                        <label><input type="radio" name="src-export-lang" value="de" checked> DE</label>
+                        <label><input type="radio" name="src-export-lang" value="en"> EN</label>
+                    </div>
+                </div>
+                <div class="src-modal-section">
+                    <div class="src-modal-label">Export-Umfang</div>
+                    <label class="src-check"><input type="checkbox" id="src-export-pdf" checked> PDF erzeugen</label>
+                    <label class="src-check"><input type="checkbox" id="src-export-email" checked> Mailtext kopieren</label>
+                    <label class="src-check"><input type="checkbox" id="src-export-breakdown"> Rechenweg anhängen</label>
+                    <label class="src-check"><input type="checkbox" id="src-export-risk"> Risiko-/Rechte-Check anhängen</label>
+                </div>
+                <div class="src-modal-section">
+                    <div class="src-modal-label">Preisstrategie</div>
+                    <label class="src-check"><input type="radio" name="src-export-pricing" value="range" checked> Range (Min–Max)</label>
+                    <label class="src-check"><input type="radio" name="src-export-pricing" value="mean"> Mittelwert</label>
+                    <label class="src-check"><input type="radio" name="src-export-pricing" value="package"> Paket (Basic/Standard/Premium)</label>
+                    <div id="src-export-package-wrap" class="src-modal-subsection">
+                        <select id="src-export-package" class="src-select">
+                            <option value="basic">Basic</option>
+                            <option value="standard">Standard</option>
+                            <option value="premium">Premium</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="src-modal-section">
+                    <div class="src-modal-label">Kundentyp</div>
+                    <label class="src-check"><input type="radio" name="src-export-client" value="direct" checked> Direktkunde</label>
+                    <label class="src-check"><input type="radio" name="src-export-client" value="agency"> Agentur</label>
+                </div>
+                <div class="src-modal-section">
+                    <div class="src-modal-label">Angebotsdetails</div>
+                    <input type="text" id="src-export-projectname" class="src-input-text" placeholder="Angebotsnummer / Projektname (optional)">
+                    <input type="text" id="src-export-validity" class="src-input-text" placeholder="Gültigkeit (z.B. 14 Tage)">
+                    <div class="src-modal-subsection">
+                        <div class="src-modal-label">Lieferumfang (Text)</div>
+                        <label class="src-check"><input type="checkbox" class="src-export-scope" value="1 Take"> 1 Take</label>
+                        <label class="src-check"><input type="checkbox" class="src-export-scope" value="2 Korrekturen"> 2 Korrekturen</label>
+                        <label class="src-check"><input type="checkbox" class="src-export-scope" value="WAV/MP3 Lieferung"> WAV/MP3 Lieferung</label>
+                    </div>
+                </div>
+            </div>
+            <div class="src-modal__footer">
+                <button class="src-btn src-btn--ghost" type="button" data-modal-close>Abbrechen</button>
+                <button class="src-btn" type="button" id="src-export-start">Export starten</button>
+            </div>
+        </div>
+    </div>
     <?php
     return ob_get_clean();
 }
