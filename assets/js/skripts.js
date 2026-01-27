@@ -77,6 +77,17 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+    document.querySelectorAll('.src-accordion-trigger[data-src-collapse-target]').forEach(trigger => {
+        trigger.addEventListener('click', () => {
+            const targetId = trigger.getAttribute('data-src-collapse-target');
+            const target = targetId ? document.getElementById(targetId) : null;
+            if(!target) return;
+            const isOpen = target.classList.contains('is-open');
+            srcToggleCollapse(target, !isOpen);
+            trigger.setAttribute('aria-expanded', (!isOpen).toString());
+        });
+    });
     
     // Attach Tooltip events
     const tipEl = document.getElementById('src-tooltip-fixed');
@@ -158,7 +169,7 @@ document.addEventListener('DOMContentLoaded', () => {
     srcUpdateExportPackageVisibility();
     updateStickyOffset();
     window.addEventListener('resize', updateStickyOffset);
-    window.addEventListener('scroll', updateStickyOffset, { passive: true });
+    setTimeout(updateStickyOffset, 300);
 
     // Erster UI Check
     srcUIUpdate();
@@ -223,6 +234,26 @@ const SRC_I18N = {
 const srcToggleCollapse = function(element, isOpen) {
     if(!element) return;
     element.classList.toggle('is-open', Boolean(isOpen));
+}
+
+const srcSetHasProjectState = function(projectKey) {
+    const hasProject = Boolean(projectKey) && projectKey !== '' && projectKey !== '0' && projectKey !== 'Bitte auswählen...';
+    const root = document.getElementById('src-calc-v6') || document.querySelector('.src-calc-v6');
+    if(root) {
+        root.classList.toggle('src-has-project', hasProject);
+    }
+    return hasProject;
+}
+
+const srcShowExportError = function(message) {
+    const errorEl = document.getElementById('src-export-error');
+    if(errorEl) {
+        errorEl.textContent = message;
+    }
+}
+
+const srcClearExportError = function() {
+    srcShowExportError('');
 }
 
 const srcUpdateSidebarCollapse = function() {
@@ -970,6 +1001,7 @@ window.srcOpenExportModal = function(options = {}) {
     if(!modal) return;
     modal.classList.add('is-open');
     modal.setAttribute('aria-hidden', 'false');
+    srcClearExportError();
     if(options.pricingMode) {
         exportModalState.pricing = options.pricingMode;
     }
@@ -1098,32 +1130,43 @@ const srcBuildOfferEmailText = function({ lang, pricingMode, selectedPackage, in
 const srcHandleExportStart = async function() {
     const modal = document.getElementById('src-export-modal');
     if(!modal) return;
-    const state = srcGetStateFromUI();
-    if(!state.projectKey) {
+    srcClearExportError();
+    try {
+        const state = srcGetStateFromUI();
+        if(!state.projectKey) {
+            srcCloseExportModal();
+            return;
+        }
+        const lang = exportModalState.lang || 'de';
+        const pricingMode = exportModalState.pricing || 'range';
+        const selectedPackage = document.getElementById('src-export-package')?.value || exportModalState.selectedPackage || 'standard';
+        const includePdf = exportModalState.pdf;
+        const includeEmail = exportModalState.email;
+        const includeBreakdown = exportModalState.breakdown;
+        const includeRisk = exportModalState.risk;
+        const projectName = document.getElementById('src-export-projectname')?.value || '';
+        const offerId = document.getElementById('src-export-offer-id')?.value || '';
+        const validity = document.getElementById('src-export-validity')?.value || '';
+        const scope = Array.from(document.querySelectorAll('.src-export-scope:checked')).map(el => el.value);
+        const customerType = exportModalState.client || 'direct';
+        const extraSettings = { projectName, validity, scope, customerType, offerId };
+        if(includePdf) {
+            const hasJsPDF = !!(window.jspdf && window.jspdf.jsPDF) || !!window.jsPDF;
+            if(!hasJsPDF) {
+                srcShowExportError('PDF Export fehlgeschlagen – jsPDF nicht geladen.');
+                return;
+            }
+            srcGeneratePDFv6({ lang, pricingMode, selectedPackage, includeBreakdown, includeRisk, extraSettings });
+        }
+        if(includeEmail) {
+            const emailText = srcBuildOfferEmailText({ lang, pricingMode, selectedPackage, includeBreakdown, includeRisk, extraSettings });
+            await srcCopyToClipboard(emailText);
+        }
         srcCloseExportModal();
-        return;
+    } catch (err) {
+        console.error('[SRC PDF Export] failed', err);
+        srcShowExportError('PDF Export fehlgeschlagen – Konsole prüfen.');
     }
-    const lang = exportModalState.lang || 'de';
-    const pricingMode = exportModalState.pricing || 'range';
-    const selectedPackage = document.getElementById('src-export-package')?.value || exportModalState.selectedPackage || 'standard';
-    const includePdf = exportModalState.pdf;
-    const includeEmail = exportModalState.email;
-    const includeBreakdown = exportModalState.breakdown;
-    const includeRisk = exportModalState.risk;
-    const projectName = document.getElementById('src-export-projectname')?.value || '';
-    const offerId = document.getElementById('src-export-offer-id')?.value || '';
-    const validity = document.getElementById('src-export-validity')?.value || '';
-    const scope = Array.from(document.querySelectorAll('.src-export-scope:checked')).map(el => el.value);
-    const customerType = exportModalState.client || 'direct';
-    const extraSettings = { projectName, validity, scope, customerType, offerId };
-    if(includePdf) {
-        srcGeneratePDFv6({ lang, pricingMode, selectedPackage, includeBreakdown, includeRisk, extraSettings });
-    }
-    if(includeEmail) {
-        const emailText = srcBuildOfferEmailText({ lang, pricingMode, selectedPackage, includeBreakdown, includeRisk, extraSettings });
-        await srcCopyToClipboard(emailText);
-    }
-    srcCloseExportModal();
 }
 
 const srcHandleExportTileToggle = function(tile) {
@@ -1157,22 +1200,57 @@ const srcSyncExportTiles = function() {
     });
 }
 
-const updateStickyOffset = function() {
+const getStickyHeaderHeight = function() {
     const selectors = [
         '.site-header.is-sticky',
         'header.sticky',
         '#masthead',
         '.elementor-sticky',
         '.site-header',
+        '.header',
+        '.sticky',
         'header'
     ];
-    let header = null;
-    for(const selector of selectors) {
-        header = document.querySelector(selector);
-        if(header) break;
+    const candidates = [];
+    selectors.forEach(selector => {
+        document.querySelectorAll(selector).forEach(el => candidates.push(el));
+    });
+
+    const isCandidate = function(el) {
+        if(!el) return false;
+        const style = window.getComputedStyle(el);
+        if(style.position !== 'fixed' && style.position !== 'sticky') return false;
+        const top = parseFloat(style.top || '0');
+        const rect = el.getBoundingClientRect();
+        const zIndex = parseInt(style.zIndex || '0', 10);
+        return rect.height > 40 && (Math.abs(top) <= 2 || rect.top <= 2) && zIndex > 10;
+    };
+
+    let best = null;
+    candidates.forEach(el => {
+        if(isCandidate(el)) {
+            if(!best || el.getBoundingClientRect().height > best.getBoundingClientRect().height) {
+                best = el;
+            }
+        }
+    });
+
+    if(!best) {
+        document.body.querySelectorAll('*').forEach(el => {
+            if(isCandidate(el)) {
+                if(!best || el.getBoundingClientRect().height > best.getBoundingClientRect().height) {
+                    best = el;
+                }
+            }
+        });
     }
+
+    return best ? Math.round(best.getBoundingClientRect().height) : 78;
+}
+
+const updateStickyOffset = function() {
     const baseOffset = 12;
-    const height = header ? header.getBoundingClientRect().height : 78;
+    const height = getStickyHeaderHeight();
     const offset = Math.max(60, Math.round(height + baseOffset));
     document.documentElement.style.setProperty('--src-sticky-offset', `${offset}px`);
 }
@@ -1249,6 +1327,11 @@ window.srcReset = function() {
     }
     const breakdownBox = document.getElementById('src-calc-breakdown');
     if(breakdownBox) breakdownBox.classList.remove('is-open');
+    const complexityBody = document.getElementById('src-complexity-body');
+    const complexityTrigger = document.querySelector('[data-src-collapse-target="src-complexity-body"]');
+    if(complexityBody) srcToggleCollapse(complexityBody, false);
+    if(complexityTrigger) complexityTrigger.setAttribute('aria-expanded', 'false');
+    srcSetHasProjectState('');
     
     srcUIUpdate();
     srcCalc();
@@ -1257,12 +1340,7 @@ window.srcReset = function() {
 window.srcUIUpdate = function() {
     const genre = document.getElementById('src-genre').value;
     const layoutMode = document.getElementById('src-layout-mode').checked;
-    const hasGenre = Boolean(genre) && genre !== "0";
-    const calcRoot = document.getElementById('src-calc-v6');
-
-    if (calcRoot) {
-        calcRoot.classList.toggle('src-has-project', hasGenre);
-    }
+    const hasGenre = srcSetHasProjectState(genre);
 
     // TOGGLE GLOBAL SETTINGS VISIBILITY
     const glob = document.getElementById('src-global-settings');
@@ -1717,8 +1795,13 @@ window.srcCalc = function() {
 }
 
 window.srcGeneratePDFv6 = function(options = {}) {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
+    const JsPDF = (window.jspdf && window.jspdf.jsPDF) ? window.jspdf.jsPDF : window.jsPDF;
+    if(!JsPDF) {
+        console.error('[SRC PDF Export] jsPDF not available');
+        srcShowExportError('PDF Export fehlgeschlagen – jsPDF nicht geladen.');
+        return;
+    }
+    const doc = new JsPDF({ unit: 'pt', format: 'a4' });
     const lang = options.lang || 'de';
     const i18n = SRC_I18N[lang] || SRC_I18N.de;
     const pricingMode = options.pricingMode || 'range';
@@ -1727,14 +1810,15 @@ window.srcGeneratePDFv6 = function(options = {}) {
     const includeRisk = Boolean(options.includeRisk);
     const extraSettings = options.extraSettings || {};
 
+    const pageWidth = doc.internal.pageSize.getWidth();
     doc.setFillColor(26, 147, 238);
-    doc.rect(0, 0, 210, 25, 'F');
+    doc.rect(0, 0, pageWidth, 32, 'F');
     doc.setFontSize(20);
     doc.setTextColor(255, 255, 255);
-    doc.text(lang === 'en' ? 'Offer Overview' : 'Angebotsübersicht', 15, 17);
+    doc.text(lang === 'en' ? 'Offer Overview' : 'Angebotsübersicht', 20, 22);
     doc.setFontSize(10);
     doc.setTextColor(50);
-    doc.text(`${i18n.dateLabel}: ${new Date().toLocaleDateString(lang === 'en' ? 'en-US' : 'de-DE')}`, 160, 17);
+    doc.text(`${i18n.dateLabel}: ${new Date().toLocaleDateString(lang === 'en' ? 'en-US' : 'de-DE')}`, pageWidth - 20, 22, { align: 'right' });
 
     const state = srcGetStateFromUI();
     const result = srcComputeResult(state);
@@ -1756,70 +1840,86 @@ window.srcGeneratePDFv6 = function(options = {}) {
 
     doc.setTextColor(0);
     doc.setFontSize(14);
-    doc.text(`${i18n.project}: ${extraSettings.projectName ? `${extraSettings.projectName} - ` : ''}${projectName}`, 15, 40);
+    doc.text(`${i18n.project}: ${extraSettings.projectName ? `${extraSettings.projectName} - ` : ''}${projectName}`, 20, 52);
     doc.setFontSize(12);
     doc.setTextColor(26, 147, 238);
-    doc.text(`${priceLabel}: ${priceText}`, 15, 50);
+    doc.text(`${priceLabel}: ${priceText}`, 20, 66);
     doc.setFontSize(10);
     doc.setTextColor(50);
-    let infoYOffset = 58;
+    let infoYOffset = 80;
     if(extraSettings.customerType) {
         const typeLabel = extraSettings.customerType === 'agency' ? i18n.customerTypeAgency : i18n.customerTypeDirect;
-        doc.text(`${i18n.customerTypeLabel}: ${typeLabel}`, 15, infoYOffset);
-        infoYOffset += 6;
+        doc.text(`${i18n.customerTypeLabel}: ${typeLabel}`, 20, infoYOffset);
+        infoYOffset += 12;
     }
     if(extraSettings.offerId) {
-        doc.text(`${i18n.offerNumberLabel}: ${extraSettings.offerId}`, 15, infoYOffset);
-        infoYOffset += 6;
+        doc.text(`${i18n.offerNumberLabel}: ${extraSettings.offerId}`, 20, infoYOffset);
+        infoYOffset += 12;
     }
     if(extraSettings.validity) {
-        doc.text(`${i18n.validity}: ${extraSettings.validity}`, 15, infoYOffset);
-        infoYOffset += 6;
+        doc.text(`${i18n.validity}: ${extraSettings.validity}`, 20, infoYOffset);
+        infoYOffset += 12;
     }
     if(extraSettings.scope && extraSettings.scope.length) {
-        doc.text(`${i18n.scope}: ${extraSettings.scope.join(', ')}`, 15, infoYOffset);
+        doc.text(`${i18n.scope}: ${extraSettings.scope.join(', ')}`, 20, infoYOffset);
     }
 
     const rows = (window.srcBreakdown || []).map(t => [t.replace(/<[^>]*>?/gm, '').replace(':', '')]);
-    const tableStart = infoYOffset + 7;
-    doc.autoTable({ startY: tableStart, head: [['Details']], body: rows, theme: 'grid', headStyles: { fillColor: [26, 147, 238] } });
+    const tableStart = infoYOffset + 14;
+    if(doc.autoTable) {
+        try {
+            doc.autoTable({ startY: tableStart, head: [['Details']], body: rows, theme: 'grid', headStyles: { fillColor: [26, 147, 238] } });
+        } catch (err) {
+            console.error('[SRC PDF Export] autoTable failed', err);
+            doc.setFontSize(9);
+            doc.setTextColor(50);
+            const fallbackText = rows.length ? rows.map(row => `• ${row[0]}`).join('\n') : '';
+            if(fallbackText) {
+                doc.text(doc.splitTextToSize(fallbackText, pageWidth - 40), 20, tableStart);
+            }
+        }
+    } else if(rows.length) {
+        doc.setFontSize(9);
+        doc.setTextColor(50);
+        doc.text(doc.splitTextToSize(rows.map(row => `• ${row[0]}`).join('\n'), pageWidth - 40), 20, tableStart);
+    }
 
-    let currentY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 10 : 75;
+    let currentY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 16 : tableStart + 12;
     if(includeBreakdown && currentBreakdownData) {
         doc.setFontSize(11);
         doc.setTextColor(26, 147, 238);
-        doc.text(i18n.breakdown, 15, currentY);
-        currentY += 6;
+        doc.text(i18n.breakdown, 20, currentY);
+        currentY += 12;
         doc.setFontSize(9);
         doc.setTextColor(50);
         const breakdownLines = [
             `Basis: ${currentBreakdownData.base.mid} € (${currentBreakdownData.base.min}–${currentBreakdownData.base.max} €)`
         ].concat(currentBreakdownData.steps.map(step => `${step.label}: ${step.amountOrFactor}`));
-        doc.text(doc.splitTextToSize(breakdownLines.join('\n'), 180), 15, currentY);
-        currentY += breakdownLines.length * 4 + 6;
+        doc.text(doc.splitTextToSize(breakdownLines.join('\n'), pageWidth - 40), 20, currentY);
+        currentY += breakdownLines.length * 10 + 10;
     }
     if(includeRisk && currentRiskChecks.length) {
         doc.setFontSize(11);
         doc.setTextColor(26, 147, 238);
-        doc.text(i18n.risks, 15, currentY);
-        currentY += 6;
+        doc.text(i18n.risks, 20, currentY);
+        currentY += 12;
         doc.setFontSize(9);
         doc.setTextColor(50);
-        doc.text(doc.splitTextToSize(currentRiskChecks.map(check => `- ${check.text}`).join('\n'), 180), 15, currentY);
-        currentY += currentRiskChecks.length * 4 + 6;
+        doc.text(doc.splitTextToSize(currentRiskChecks.map(check => `- ${check.text}`).join('\n'), pageWidth - 40), 20, currentY);
+        currentY += currentRiskChecks.length * 10 + 10;
     }
 
     const cleanLicText = dynamicLicenseText.replace(/<br>/g, "\n").replace(/<strong>|<\/strong>/g, "");
     if(cleanLicText) {
         doc.setFontSize(9);
         doc.setTextColor(0);
-        doc.text(doc.splitTextToSize(cleanLicText, 180), 15, currentY);
+        doc.text(doc.splitTextToSize(cleanLicText, pageWidth - 40), 20, currentY);
     }
     if(i18n.assumptions) {
-        const noteY = currentY + 12;
+        const noteY = currentY + 18;
         doc.setFontSize(9);
         doc.setTextColor(80);
-        doc.text(doc.splitTextToSize(i18n.assumptions, 180), 15, noteY);
+        doc.text(doc.splitTextToSize(i18n.assumptions, pageWidth - 40), 20, noteY);
     }
     doc.save('Gagen_Angebot.pdf');
 }

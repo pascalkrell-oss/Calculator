@@ -314,10 +314,11 @@ function src_shortcode_output_v7() {
             </div>
 
             <div class="src-group src-complexity-group" id="src-complexity-group">
-                <div class="src-section-head">
+                <button class="src-section-head src-accordion-trigger" type="button" data-src-collapse-target="src-complexity-body" aria-expanded="false">
                     <div class="src-section-head__title">Produktion &amp; Aufwand</div>
-                </div>
-                <div class="src-complexity-grid">
+                    <span class="src-accordion-icon" aria-hidden="true"></span>
+                </button>
+                <div id="src-complexity-body" class="src-complexity-grid src-collapse">
                     <label class="src-complexity-field">
                         <span>Anzahl Versionen/Varianten</span>
                         <select id="src-complexity-variants" class="src-select" onchange="srcCalc()">
@@ -366,8 +367,8 @@ function src_shortcode_output_v7() {
                             <option value="multiple">mehrere</option>
                         </select>
                     </label>
+                    <div class="src-complexity-note">Alle Angaben sind optional und erhöhen den Aufwand nur, wenn tatsächlich benötigt.</div>
                 </div>
-                <div class="src-complexity-note">Alle Angaben sind optional und erhöhen den Aufwand nur, wenn tatsächlich benötigt.</div>
             </div>
 
             <div id="src-global-settings" class="src-group" style="margin-top:15px; padding-top:15px;">
@@ -500,7 +501,8 @@ function src_shortcode_output_v7() {
         <div class="src-col-right">
             <div class="src-sidebar">
                 <div class="src-sidebar-sticky" id="srcSidebarSticky">
-                    <div class="src-sidebar-section">
+                    <div class="src-sidebar-content">
+                        <div class="src-sidebar-section">
                         <div class="src-sidebar-title">Kalkulation</div>
                         <div class="src-result-card">
                             <div class="src-price-label">Kalkulierte Gage (Netto)</div>
@@ -534,86 +536,87 @@ function src_shortcode_output_v7() {
                         </div>
                     </div>
 
-                    <div class="src-sidebar-section">
-                        <div class="src-sidebar-title src-sidebar-title--pricedetails">Preis-Details</div>
-                        <div id="src-calc-breakdown" class="src-breakdown-box src-collapse">
-                            <div id="src-breakdown-list">
-                                <div class="src-breakdown-row">Bitte Projekt wählen..</div>
+                        <div class="src-sidebar-section src-sidebar-box--price-details">
+                            <div class="src-sidebar-title src-sidebar-title--pricedetails">Preis-Details</div>
+                            <div id="src-calc-breakdown" class="src-breakdown-box src-collapse">
+                                <div id="src-breakdown-list">
+                                    <div class="src-breakdown-row">Bitte Projekt wählen..</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="src-sidebar-section src-collapse src-sidebar-box--hints" id="src-risk-section">
+                            <div class="src-sidebar-title src-sidebar-title--risk">Hinweise</div>
+                            <div class="src-risk-box" id="src-risk-list"></div>
+                        </div>
+
+                        <div class="src-sidebar-section src-collapse src-sidebar-box--compare" id="src-compare-section">
+                            <div class="src-sidebar-title src-sidebar-title--compare">Vergleich</div>
+                            <div class="src-compare-box" id="src-compare-view"></div>
+                        </div>
+
+                        <div class="src-sidebar-section src-collapse src-sidebar-box--packages" id="src-packages-section">
+                            <div class="src-sidebar-title src-sidebar-title--packages">Pakete</div>
+                            <div class="src-packages-box">
+                                <button class="src-mini-btn src-mini-btn--wide" id="src-build-packages" type="button">Pakete erzeugen</button>
+                                <div id="src-packages-list"></div>
+                            </div>
+                        </div>
+
+                        <div id="src-license-section" class="src-sidebar-section src-license-section src-collapse">
+                            <div class="src-sidebar-title src-sidebar-title--rights">Nutzungsrechte &amp; Lizenzen</div>
+                            <div id="src-license-text" class="src-license-box"></div>
+                        </div>
+
+                        <div class="src-sidebar-section src-info-section">
+                            <div class="src-sidebar-title src-sidebar-title--knowledge">Wissenswertes</div>
+                            <div class="src-info-box">
+                                <div class="src-acc-item">
+                                    <div class="src-acc-head" onclick="toggleAccordion(this)">Berechnungsgrundlage</div>
+                                    <div class="src-acc-body">
+                                        Anders als bei stundenbasierten Jobs bezahlst du hier primär für die Nutzung der Aufnahme. Die "Verwertungsrechte" definieren den Preis. Entscheidend sind: Wo läuft es (Medium)? Wie lange (Zeitraum)? Und wo (Gebiet)? Je mehr Reichweite, desto höher die Gage.
+                                    </div>
+                                </div>
+                                
+                                <div class="src-acc-item">
+                                    <div class="src-acc-head" onclick="toggleAccordion(this)">Textlänge & Dauer</div>
+                                    <div class="src-acc-body">
+                                        Als Faustregel gilt: 900 Zeichen (inkl. Leerzeichen) entsprechen ca. 1 Minute gesprochenem Text. Zahlen und Abkürzungen sollten ausgeschrieben gezählt werden, da sie beim Sprechen länger sind als im geschriebenen Text.
+                                    </div>
+                                </div>
+
+                                <div class="src-acc-item">
+                                    <div class="src-acc-head" onclick="toggleAccordion(this)">Buyouts & Unlimited</div>
+                                    <div class="src-acc-body">
+                                        Ein "Buyout" ist der Einkauf der Nutzungsrechte. Willst du eine Aufnahme zeitlich unbegrenzt nutzen, vervielfacht sich der Basispreis (oft x3 oder x4), da der Sprecher durch die dauerhafte Bindung seine Stimme für Konkurrenzprodukte in diesem Zeitraum oft nicht mehr zur Verfügung stellen kann.
+                                    </div>
+                                </div>
+
+                                <div class="src-acc-item">
+                                    <div class="src-acc-head" onclick="toggleAccordion(this)">Studio & Technik</div>
+                                    <div class="src-acc-body">
+                                        Die reine Sprechergage deckt die kreative Leistung und die Lizenz ab. Technische Leistungen wie Aufnahmeleitung, Schnitt, Cleaning und Datei-Export sind oft separat als Studiokosten ausgewiesen, wenn der Sprecher dies im eigenen Studio übernimmt.
+                                    </div>
+                                </div>
+
+                                <div class="src-acc-item">
+                                    <div class="src-acc-head" onclick="toggleAccordion(this)">Korrekturen & Revisionen</div>
+                                    <div class="src-acc-body">
+                                        Planbare Korrekturschleifen (z.B. 1–2 Takes) sind oft inklusive. Größere Textänderungen oder zusätzliche Versionen sollten jedoch neu kalkuliert werden, da sie zusätzlichen Produktionsaufwand bedeuten.
+                                    </div>
+                                </div>
+
+                                <div class="src-acc-item">
+                                    <div class="src-acc-head" onclick="toggleAccordion(this)">Exklusivität & Konkurrenzschutz</div>
+                                    <div class="src-acc-body">
+                                        Bei längeren Nutzungsrechten oder exklusiven Kampagnen kann ein Konkurrenzschutz gelten. Das verhindert parallele Aufträge in derselben Branche und beeinflusst die Gage entsprechend.
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="src-sidebar-section src-collapse src-sidebar-box--hints" id="src-risk-section">
-                        <div class="src-sidebar-title src-sidebar-title--risk">Hinweise</div>
-                        <div class="src-risk-box" id="src-risk-list"></div>
-                    </div>
-
-                    <div class="src-sidebar-section src-collapse src-sidebar-box--compare" id="src-compare-section">
-                        <div class="src-sidebar-title src-sidebar-title--compare">Vergleich</div>
-                        <div class="src-compare-box" id="src-compare-view"></div>
-                    </div>
-
-                    <div class="src-sidebar-section src-collapse src-sidebar-box--packages" id="src-packages-section">
-                        <div class="src-sidebar-title src-sidebar-title--packages">Pakete</div>
-                        <div class="src-packages-box">
-                            <button class="src-mini-btn src-mini-btn--wide" id="src-build-packages" type="button">Pakete erzeugen</button>
-                            <div id="src-packages-list"></div>
-                        </div>
-                    </div>
-
-                    <div id="src-license-section" class="src-sidebar-section src-license-section src-collapse">
-                        <div class="src-sidebar-title src-sidebar-title--rights">Nutzungsrechte &amp; Lizenzen</div>
-                        <div id="src-license-text" class="src-license-box"></div>
-                    </div>
-
-                    <div class="src-sidebar-section src-info-section">
-                        <div class="src-sidebar-title src-sidebar-title--knowledge">Wissenswertes</div>
-                        <div class="src-info-box">
-                            <div class="src-acc-item">
-                                <div class="src-acc-head" onclick="toggleAccordion(this)">Berechnungsgrundlage</div>
-                                <div class="src-acc-body">
-                                    Anders als bei stundenbasierten Jobs bezahlst du hier primär für die Nutzung der Aufnahme. Die "Verwertungsrechte" definieren den Preis. Entscheidend sind: Wo läuft es (Medium)? Wie lange (Zeitraum)? Und wo (Gebiet)? Je mehr Reichweite, desto höher die Gage.
-                                </div>
-                            </div>
-                            
-                            <div class="src-acc-item">
-                                <div class="src-acc-head" onclick="toggleAccordion(this)">Textlänge & Dauer</div>
-                                <div class="src-acc-body">
-                                    Als Faustregel gilt: 900 Zeichen (inkl. Leerzeichen) entsprechen ca. 1 Minute gesprochenem Text. Zahlen und Abkürzungen sollten ausgeschrieben gezählt werden, da sie beim Sprechen länger sind als im geschriebenen Text.
-                                </div>
-                            </div>
-
-                            <div class="src-acc-item">
-                                <div class="src-acc-head" onclick="toggleAccordion(this)">Buyouts & Unlimited</div>
-                                <div class="src-acc-body">
-                                    Ein "Buyout" ist der Einkauf der Nutzungsrechte. Willst du eine Aufnahme zeitlich unbegrenzt nutzen, vervielfacht sich der Basispreis (oft x3 oder x4), da der Sprecher durch die dauerhafte Bindung seine Stimme für Konkurrenzprodukte in diesem Zeitraum oft nicht mehr zur Verfügung stellen kann.
-                                </div>
-                            </div>
-
-                            <div class="src-acc-item">
-                                <div class="src-acc-head" onclick="toggleAccordion(this)">Studio & Technik</div>
-                                <div class="src-acc-body">
-                                    Die reine Sprechergage deckt die kreative Leistung und die Lizenz ab. Technische Leistungen wie Aufnahmeleitung, Schnitt, Cleaning und Datei-Export sind oft separat als Studiokosten ausgewiesen, wenn der Sprecher dies im eigenen Studio übernimmt.
-                                </div>
-                            </div>
-
-                            <div class="src-acc-item">
-                                <div class="src-acc-head" onclick="toggleAccordion(this)">Korrekturen & Revisionen</div>
-                                <div class="src-acc-body">
-                                    Planbare Korrekturschleifen (z.B. 1–2 Takes) sind oft inklusive. Größere Textänderungen oder zusätzliche Versionen sollten jedoch neu kalkuliert werden, da sie zusätzlichen Produktionsaufwand bedeuten.
-                                </div>
-                            </div>
-
-                            <div class="src-acc-item">
-                                <div class="src-acc-head" onclick="toggleAccordion(this)">Exklusivität & Konkurrenzschutz</div>
-                                <div class="src-acc-body">
-                                    Bei längeren Nutzungsrechten oder exklusiven Kampagnen kann ein Konkurrenzschutz gelten. Das verhindert parallele Aufträge in derselben Branche und beeinflusst die Gage entsprechend.
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="src-footer-actions">
+                    <div class="src-sidebar-footer">
                         <button class="src-btn" onclick="srcOpenExportModal()">
                             <span class="dashicons dashicons-pdf"></span> Angebot speichern
                         </button>
@@ -751,6 +754,7 @@ function src_shortcode_output_v7() {
 
             <div class="src-modal__footer">
                 <button type="button" class="src-btn src-btn--primary src-btn--full" id="src-export-start">Export starten</button>
+                <div id="src-export-error" class="src-export-error" role="status" aria-live="polite"></div>
             </div>
         </div>
     </div>

@@ -26,7 +26,7 @@
     background: var(--src-card-bg); border-radius: var(--src-radius); 
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05);
     border: 1px solid var(--src-border-light);
-    display: grid; grid-template-columns: 1.3fr 0.9fr; overflow: hidden;
+    display: grid; grid-template-columns: 1.3fr 0.9fr; overflow: visible;
     align-items: stretch;
 }
 
@@ -50,12 +50,43 @@
 .src-section-head {
     margin: 18px 0 10px;
 }
+.src-accordion-trigger {
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: none;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    cursor: pointer;
+}
 .src-section-head__title {
     font-size: 14px;
     font-weight: 700;
     letter-spacing: 0.02em;
     text-transform: uppercase;
     color: rgb(15, 23, 42);
+}
+.src-accordion-icon {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 1px solid var(--src-border-light);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    color: #94a3b8;
+}
+.src-accordion-icon::before {
+    content: "+";
+    font-weight: 700;
+    line-height: 1;
+}
+.src-accordion-trigger[aria-expanded="true"] .src-accordion-icon::before {
+    content: "−";
 }
 .src-left-card {
     border: 1px solid var(--src-border-light);
@@ -86,7 +117,7 @@
     font-weight: 600;
     color: #0f172a;
     letter-spacing: 0.01em;
-    margin-bottom: 12px;
+    margin-bottom: 10px;
 }
 .src-rights-inner {
     display: grid;
@@ -1101,7 +1132,33 @@
     top: var(--src-sticky-offset, 90px);
     display: flex;
     flex-direction: column;
+    height: calc(100vh - var(--src-sticky-offset, 90px));
     gap: 0;
+}
+.src-sidebar-content {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+    padding-right: 4px;
+}
+.src-sidebar-footer {
+    margin-top: auto;
+    padding-top: 12px;
+}
+
+#src-calc-v6:not(.src-has-project) .src-sidebar-box--price-details {
+    display: none;
+}
+
+.src-export-error {
+    margin-top: 10px;
+    font-size: 12px;
+    color: #b91c1c;
+    text-align: center;
+    min-height: 16px;
 }
 
 /* HIDE GLOBAL SETTINGS INITIALLY */
@@ -1159,6 +1216,11 @@
     }
     .src-sidebar-sticky {
         position: static;
+        height: auto;
+    }
+    .src-sidebar-content {
+        overflow: visible;
+        padding-right: 0;
     }
     .src-modal__grid {
         grid-template-columns: 1fr;
