@@ -175,15 +175,12 @@ function src_shortcode_output_v7() {
                     <label style="font-size:13px; font-weight:700; color:var(--src-primary); display:block; margin-bottom:5px;">Anzahl der Module / Ansagen</label>
                     <input type="number" id="src-phone-count" class="src-input-text" value="1" min="1" oninput="srcCalc()">
                     <div style="font-size:11px; color:#64748b; margin-top:5px;">Bis zu 3 Module sind in der Pauschale enthalten. Jedes weitere Modul kostet extra.</div>
-                    <div id="src-project-tips-phone" class="src-project-tips src-collapse"></div>
                 </div>
             </div>
 
-            <div class="src-left-card src-rights-card src-collapse">
-                <div class="src-left-card__head">
-                    <div class="src-left-card__title">Nutzungsrechte &amp; Lizenzen</div>
-                </div>
-                <div class="src-left-card__body">
+            <div class="src-left-section src-rights-card src-collapse">
+                <div class="src-left-section__title">Nutzungsrechte &amp; Lizenzen</div>
+                <div class="src-rights-inner">
                     <div id="mod-ads" class="src-slide-wrap">
                         <div class="src-light-box-wrapper">
                             <div id="src-pos-type-wrap" class="src-slide-wrap" style="margin-bottom:15px;">
@@ -501,197 +498,259 @@ function src_shortcode_output_v7() {
         </div>
 
         <div class="src-col-right">
-            
-            <div class="src-sidebar-section">
-                <div class="src-sidebar-title">Kalkulation</div>
-                <div class="src-result-card">
-                    <div class="src-price-label">Kalkulierte Gage (Netto)</div>
-                    <div class="src-price-main-box">
-                        <div class="src-price-main">
-                            <div class="src-amount-anim">
-                                <span class="src-amount-anim__value" id="src-display-total">0 €</span>
+            <div class="src-sidebar">
+                <div class="src-sidebar-sticky" id="srcSidebarSticky">
+                    <div class="src-sidebar-section">
+                        <div class="src-sidebar-title">Kalkulation</div>
+                        <div class="src-result-card">
+                            <div class="src-price-label">Kalkulierte Gage (Netto)</div>
+                            <div class="src-price-main-box">
+                                <div class="src-price-main">
+                                    <div class="src-amount-anim">
+                                        <span class="src-amount-anim__value" id="src-display-total">0 €</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="src-price-sub">
+                                <div class="src-mean-fade" id="src-mean-fade">
+                                    <span id="src-display-range">Ø Mittelwert: 0 €</span>
+                                </div>
+                            </div>
+                            <div class="src-price-note">Alle Preise zzgl. MwSt.</div>
+                            <div class="src-compare-controls">
+                                <button class="src-mini-btn" id="src-compare-toggle" type="button">Vergleich</button>
+                                <button class="src-mini-btn" id="src-compare-save-a" type="button">Als A speichern</button>
+                                <button class="src-mini-btn" id="src-compare-save-b" type="button">Als B speichern</button>
+                            </div>
+                            
+                            <div id="src-final-fee-wrapper" class="src-final-fee-wrap src-hidden-initially">
+                                <label class="src-final-fee-label">
+                                    Dein Angebotspreis (Netto)
+                                    <span class="src-tooltip-icon" data-tip="Der eingetragene Angebotspreis wird im fertigen Angebot übernommen.">?</span>
+                                </label>
+                                <input type="number" id="src-final-fee-user" class="src-final-fee-input" placeholder="z.B. 650" oninput="srcValidateFinalFee()">
+                                <div id="src-final-fee-msg" class="src-final-fee-msg">Betrag liegt außerhalb der kalkulierten Spanne!</div>
                             </div>
                         </div>
                     </div>
-                    <div class="src-price-sub">
-                        <div class="src-mean-fade" id="src-mean-fade">
-                            <span id="src-display-range">Ø Mittelwert: 0 €</span>
-                        </div>
-                    </div>
-                    <div class="src-price-note">Alle Preise zzgl. MwSt.</div>
-                    <div class="src-compare-controls">
-                        <button class="src-mini-btn" id="src-compare-toggle" type="button">Vergleich</button>
-                        <button class="src-mini-btn" id="src-compare-save-a" type="button">Als A speichern</button>
-                        <button class="src-mini-btn" id="src-compare-save-b" type="button">Als B speichern</button>
-                    </div>
-                    
-                    <div id="src-final-fee-wrapper" class="src-final-fee-wrap src-hidden-initially">
-                        <label class="src-final-fee-label">
-                            Dein Angebotspreis (Netto)
-                            <span class="src-tooltip-icon" data-tip="Der eingetragene Angebotspreis wird im fertigen Angebot übernommen.">?</span>
-                        </label>
-                        <input type="number" id="src-final-fee-user" class="src-final-fee-input" placeholder="z.B. 650" oninput="srcValidateFinalFee()">
-                        <div id="src-final-fee-msg" class="src-final-fee-msg">Betrag liegt außerhalb der kalkulierten Spanne!</div>
-                    </div>
-                </div>
-            </div>
 
-            <div class="src-sidebar-section">
-                <div class="src-sidebar-title src-sidebar-title--pricedetails">Preis-Details</div>
-                <div id="src-calc-breakdown" class="src-breakdown-box src-collapse">
-                    <div id="src-breakdown-list">
-                        <div class="src-breakdown-row">Bitte Projekt wählen..</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="src-sidebar-section src-collapse src-sidebar-box--hints" id="src-risk-section">
-                <div class="src-sidebar-title src-sidebar-title--risk">Hinweise</div>
-                <div class="src-risk-box" id="src-risk-list"></div>
-            </div>
-
-            <div class="src-sidebar-section src-collapse src-sidebar-box--compare" id="src-compare-section">
-                <div class="src-sidebar-title src-sidebar-title--compare">Vergleich</div>
-                <div class="src-compare-box" id="src-compare-view"></div>
-            </div>
-
-            <div class="src-sidebar-section src-collapse src-sidebar-box--packages" id="src-packages-section">
-                <div class="src-sidebar-title src-sidebar-title--packages">Pakete</div>
-                <div class="src-packages-box">
-                    <button class="src-mini-btn src-mini-btn--wide" id="src-build-packages" type="button">Pakete erzeugen</button>
-                    <div id="src-packages-list"></div>
-                </div>
-            </div>
-
-            <div id="src-license-section" class="src-sidebar-section src-license-section src-collapse">
-                <div class="src-sidebar-title src-sidebar-title--rights">Nutzungsrechte &amp; Lizenzen</div>
-                <div id="src-license-text" class="src-license-box"></div>
-            </div>
-
-            <div class="src-sidebar-section src-info-section">
-                <div class="src-sidebar-title src-sidebar-title--knowledge">Wissenswertes</div>
-                <div class="src-info-box">
-                    <div class="src-acc-item">
-                        <div class="src-acc-head" onclick="toggleAccordion(this)">Berechnungsgrundlage</div>
-                        <div class="src-acc-body">
-                            Anders als bei stundenbasierten Jobs bezahlst du hier primär für die Nutzung der Aufnahme. Die "Verwertungsrechte" definieren den Preis. Entscheidend sind: Wo läuft es (Medium)? Wie lange (Zeitraum)? Und wo (Gebiet)? Je mehr Reichweite, desto höher die Gage.
-                        </div>
-                    </div>
-                    
-                    <div class="src-acc-item">
-                        <div class="src-acc-head" onclick="toggleAccordion(this)">Textlänge & Dauer</div>
-                        <div class="src-acc-body">
-                            Als Faustregel gilt: 900 Zeichen (inkl. Leerzeichen) entsprechen ca. 1 Minute gesprochenem Text. Zahlen und Abkürzungen sollten ausgeschrieben gezählt werden, da sie beim Sprechen länger sind als im geschriebenen Text.
+                    <div class="src-sidebar-section">
+                        <div class="src-sidebar-title src-sidebar-title--pricedetails">Preis-Details</div>
+                        <div id="src-calc-breakdown" class="src-breakdown-box src-collapse">
+                            <div id="src-breakdown-list">
+                                <div class="src-breakdown-row">Bitte Projekt wählen..</div>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="src-acc-item">
-                        <div class="src-acc-head" onclick="toggleAccordion(this)">Buyouts & Unlimited</div>
-                        <div class="src-acc-body">
-                            Ein "Buyout" ist der Einkauf der Nutzungsrechte. Willst du eine Aufnahme zeitlich unbegrenzt nutzen, vervielfacht sich der Basispreis (oft x3 oder x4), da der Sprecher durch die dauerhafte Bindung seine Stimme für Konkurrenzprodukte in diesem Zeitraum oft nicht mehr zur Verfügung stellen kann.
+                    <div class="src-sidebar-section src-collapse src-sidebar-box--hints" id="src-risk-section">
+                        <div class="src-sidebar-title src-sidebar-title--risk">Hinweise</div>
+                        <div class="src-risk-box" id="src-risk-list"></div>
+                    </div>
+
+                    <div class="src-sidebar-section src-collapse src-sidebar-box--compare" id="src-compare-section">
+                        <div class="src-sidebar-title src-sidebar-title--compare">Vergleich</div>
+                        <div class="src-compare-box" id="src-compare-view"></div>
+                    </div>
+
+                    <div class="src-sidebar-section src-collapse src-sidebar-box--packages" id="src-packages-section">
+                        <div class="src-sidebar-title src-sidebar-title--packages">Pakete</div>
+                        <div class="src-packages-box">
+                            <button class="src-mini-btn src-mini-btn--wide" id="src-build-packages" type="button">Pakete erzeugen</button>
+                            <div id="src-packages-list"></div>
                         </div>
                     </div>
 
-                    <div class="src-acc-item">
-                        <div class="src-acc-head" onclick="toggleAccordion(this)">Studio & Technik</div>
-                        <div class="src-acc-body">
-                            Die reine Sprechergage deckt die kreative Leistung und die Lizenz ab. Technische Leistungen wie Aufnahmeleitung, Schnitt, Cleaning und Datei-Export sind oft separat als Studiokosten ausgewiesen, wenn der Sprecher dies im eigenen Studio übernimmt.
+                    <div id="src-license-section" class="src-sidebar-section src-license-section src-collapse">
+                        <div class="src-sidebar-title src-sidebar-title--rights">Nutzungsrechte &amp; Lizenzen</div>
+                        <div id="src-license-text" class="src-license-box"></div>
+                    </div>
+
+                    <div class="src-sidebar-section src-info-section">
+                        <div class="src-sidebar-title src-sidebar-title--knowledge">Wissenswertes</div>
+                        <div class="src-info-box">
+                            <div class="src-acc-item">
+                                <div class="src-acc-head" onclick="toggleAccordion(this)">Berechnungsgrundlage</div>
+                                <div class="src-acc-body">
+                                    Anders als bei stundenbasierten Jobs bezahlst du hier primär für die Nutzung der Aufnahme. Die "Verwertungsrechte" definieren den Preis. Entscheidend sind: Wo läuft es (Medium)? Wie lange (Zeitraum)? Und wo (Gebiet)? Je mehr Reichweite, desto höher die Gage.
+                                </div>
+                            </div>
+                            
+                            <div class="src-acc-item">
+                                <div class="src-acc-head" onclick="toggleAccordion(this)">Textlänge & Dauer</div>
+                                <div class="src-acc-body">
+                                    Als Faustregel gilt: 900 Zeichen (inkl. Leerzeichen) entsprechen ca. 1 Minute gesprochenem Text. Zahlen und Abkürzungen sollten ausgeschrieben gezählt werden, da sie beim Sprechen länger sind als im geschriebenen Text.
+                                </div>
+                            </div>
+
+                            <div class="src-acc-item">
+                                <div class="src-acc-head" onclick="toggleAccordion(this)">Buyouts & Unlimited</div>
+                                <div class="src-acc-body">
+                                    Ein "Buyout" ist der Einkauf der Nutzungsrechte. Willst du eine Aufnahme zeitlich unbegrenzt nutzen, vervielfacht sich der Basispreis (oft x3 oder x4), da der Sprecher durch die dauerhafte Bindung seine Stimme für Konkurrenzprodukte in diesem Zeitraum oft nicht mehr zur Verfügung stellen kann.
+                                </div>
+                            </div>
+
+                            <div class="src-acc-item">
+                                <div class="src-acc-head" onclick="toggleAccordion(this)">Studio & Technik</div>
+                                <div class="src-acc-body">
+                                    Die reine Sprechergage deckt die kreative Leistung und die Lizenz ab. Technische Leistungen wie Aufnahmeleitung, Schnitt, Cleaning und Datei-Export sind oft separat als Studiokosten ausgewiesen, wenn der Sprecher dies im eigenen Studio übernimmt.
+                                </div>
+                            </div>
+
+                            <div class="src-acc-item">
+                                <div class="src-acc-head" onclick="toggleAccordion(this)">Korrekturen & Revisionen</div>
+                                <div class="src-acc-body">
+                                    Planbare Korrekturschleifen (z.B. 1–2 Takes) sind oft inklusive. Größere Textänderungen oder zusätzliche Versionen sollten jedoch neu kalkuliert werden, da sie zusätzlichen Produktionsaufwand bedeuten.
+                                </div>
+                            </div>
+
+                            <div class="src-acc-item">
+                                <div class="src-acc-head" onclick="toggleAccordion(this)">Exklusivität & Konkurrenzschutz</div>
+                                <div class="src-acc-body">
+                                    Bei längeren Nutzungsrechten oder exklusiven Kampagnen kann ein Konkurrenzschutz gelten. Das verhindert parallele Aufträge in derselben Branche und beeinflusst die Gage entsprechend.
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="src-acc-item">
-                        <div class="src-acc-head" onclick="toggleAccordion(this)">Korrekturen & Revisionen</div>
-                        <div class="src-acc-body">
-                            Planbare Korrekturschleifen (z.B. 1–2 Takes) sind oft inklusive. Größere Textänderungen oder zusätzliche Versionen sollten jedoch neu kalkuliert werden, da sie zusätzlichen Produktionsaufwand bedeuten.
+                    <div class="src-footer-actions">
+                        <button class="src-btn" onclick="srcOpenExportModal()">
+                            <span class="dashicons dashicons-pdf"></span> Angebot speichern
+                        </button>
+                        <div class="src-note-text">
+                            Auf Basis VDS Gagenkompass 2025. Alle Preise zzgl. MwSt.
                         </div>
                     </div>
-
-                    <div class="src-acc-item">
-                        <div class="src-acc-head" onclick="toggleAccordion(this)">Exklusivität & Konkurrenzschutz</div>
-                        <div class="src-acc-body">
-                            Bei längeren Nutzungsrechten oder exklusiven Kampagnen kann ein Konkurrenzschutz gelten. Das verhindert parallele Aufträge in derselben Branche und beeinflusst die Gage entsprechend.
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="src-footer-actions">
-                <button class="src-btn" onclick="srcOpenExportModal()">
-                    <span class="dashicons dashicons-pdf"></span> Angebot speichern
-                </button>
-                <div class="src-note-text">
-                    Auf Basis VDS Gagenkompass 2025. Alle Preise zzgl. MwSt.
                 </div>
             </div>
         </div>
     </div>
     <div id="src-tooltip-fixed"></div>
-    <div id="src-export-modal" class="src-modal" aria-hidden="true">
-        <div class="src-modal__backdrop" data-modal-close></div>
-        <div class="src-modal__content" role="dialog" aria-modal="true" aria-labelledby="src-export-title">
-            <div class="src-modal__header">
-                <h2 id="src-export-title">Angebot exportieren</h2>
-                <button class="src-modal__close" type="button" data-modal-close>&times;</button>
+    <div id="src-export-modal" class="src-modal-overlay" aria-hidden="true">
+        <div class="src-modal" role="dialog" aria-modal="true" aria-labelledby="srcModalTitle">
+            <div class="src-modal__head">
+                <div>
+                    <div class="src-modal__title" id="srcModalTitle">Angebot exportieren</div>
+                    <div class="src-modal__subtitle">Wie soll dein Angebot erstellt werden?</div>
+                </div>
+                <button class="src-modal__close" type="button" aria-label="Schließen" data-modal-close>×</button>
             </div>
-            <div class="src-modal__body">
-                <div class="src-modal-section">
-                    <div class="src-modal-label">Sprache</div>
-                    <div class="src-segmented">
-                        <label><input type="radio" name="src-export-lang" value="de" checked> DE</label>
-                        <label><input type="radio" name="src-export-lang" value="en"> EN</label>
-                    </div>
-                </div>
-                <div class="src-modal-section">
-                    <div class="src-modal-label">Format</div>
-                    <label class="src-check"><input type="checkbox" id="src-export-pdf" checked> PDF erzeugen</label>
-                    <label class="src-check"><input type="checkbox" id="src-export-email" checked> Mailtext kopieren</label>
-                    <div class="src-modal-subsection">
-                        <div class="src-modal-label">Anhänge</div>
-                        <label class="src-check"><input type="checkbox" id="src-export-breakdown"> Rechenweg anhängen</label>
-                        <label class="src-check"><input type="checkbox" id="src-export-risk"> Hinweise anhängen</label>
-                    </div>
-                </div>
-                <div class="src-modal-section">
-                    <div class="src-modal-label">Preisstrategie</div>
-                    <label class="src-check"><input type="radio" name="src-export-pricing" value="range" checked> Range (Min–Max)</label>
-                    <label class="src-check"><input type="radio" name="src-export-pricing" value="mean"> Mittelwert</label>
-                    <label class="src-check"><input type="radio" name="src-export-pricing" value="package"> Paket</label>
-                    <div id="src-export-package-wrap" class="src-modal-subsection">
-                        <div class="src-modal-package-grid" role="listbox" aria-label="Paketauswahl">
-                            <button class="src-modal-package-card" type="button" data-export-package-card="basic">Basic</button>
-                            <button class="src-modal-package-card" type="button" data-export-package-card="standard">Standard</button>
-                            <button class="src-modal-package-card" type="button" data-export-package-card="premium">Premium</button>
+
+            <div class="src-modal__grid">
+                <button type="button" class="src-opt-tile is-on" data-opt="pdf" aria-pressed="true">
+                    <span class="src-opt-tile__check" aria-hidden="true"></span>
+                    <span class="src-opt-tile__text">
+                        <span class="src-opt-tile__title">PDF Angebot</span>
+                        <span class="src-opt-tile__sub">Zusammenfassung &amp; Details</span>
+                    </span>
+                </button>
+                <button type="button" class="src-opt-tile is-on" data-opt="email" aria-pressed="true">
+                    <span class="src-opt-tile__check" aria-hidden="true"></span>
+                    <span class="src-opt-tile__text">
+                        <span class="src-opt-tile__title">Mailtext kopieren</span>
+                        <span class="src-opt-tile__sub">Kurztext für die E-Mail</span>
+                    </span>
+                </button>
+                <button type="button" class="src-opt-tile" data-opt="breakdown" aria-pressed="false">
+                    <span class="src-opt-tile__check" aria-hidden="true"></span>
+                    <span class="src-opt-tile__text">
+                        <span class="src-opt-tile__title">Rechenweg anhängen</span>
+                        <span class="src-opt-tile__sub">Detaillierte Kalkulation</span>
+                    </span>
+                </button>
+                <button type="button" class="src-opt-tile" data-opt="risk" aria-pressed="false">
+                    <span class="src-opt-tile__check" aria-hidden="true"></span>
+                    <span class="src-opt-tile__text">
+                        <span class="src-opt-tile__title">Hinweise anhängen</span>
+                        <span class="src-opt-tile__sub">Rechte- &amp; Risiko-Check</span>
+                    </span>
+                </button>
+                <button type="button" class="src-opt-tile is-on" data-opt-group="lang" data-value="de" aria-pressed="true">
+                    <span class="src-opt-tile__check" aria-hidden="true"></span>
+                    <span class="src-opt-tile__text">
+                        <span class="src-opt-tile__title">Sprache: Deutsch</span>
+                        <span class="src-opt-tile__sub">Standardversion</span>
+                    </span>
+                </button>
+                <button type="button" class="src-opt-tile" data-opt-group="lang" data-value="en" aria-pressed="false">
+                    <span class="src-opt-tile__check" aria-hidden="true"></span>
+                    <span class="src-opt-tile__text">
+                        <span class="src-opt-tile__title">Sprache: Englisch</span>
+                        <span class="src-opt-tile__sub">Internationales Angebot</span>
+                    </span>
+                </button>
+                <button type="button" class="src-opt-tile is-on" data-opt-group="pricing" data-value="range" aria-pressed="true">
+                    <span class="src-opt-tile__check" aria-hidden="true"></span>
+                    <span class="src-opt-tile__text">
+                        <span class="src-opt-tile__title">Preisstrategie: Range</span>
+                        <span class="src-opt-tile__sub">Min–Max Spanne</span>
+                    </span>
+                </button>
+                <button type="button" class="src-opt-tile" data-opt-group="pricing" data-value="mean" aria-pressed="false">
+                    <span class="src-opt-tile__check" aria-hidden="true"></span>
+                    <span class="src-opt-tile__text">
+                        <span class="src-opt-tile__title">Preisstrategie: Mittelwert</span>
+                        <span class="src-opt-tile__sub">Fester Durchschnittspreis</span>
+                    </span>
+                </button>
+                <button type="button" class="src-opt-tile" data-opt-group="pricing" data-value="package" aria-pressed="false">
+                    <span class="src-opt-tile__check" aria-hidden="true"></span>
+                    <span class="src-opt-tile__text">
+                        <span class="src-opt-tile__title">Preisstrategie: Paket</span>
+                        <span class="src-opt-tile__sub">Basic, Standard, Premium</span>
+                    </span>
+                </button>
+                <button type="button" class="src-opt-tile is-on" data-opt-group="client" data-value="direct" aria-pressed="true">
+                    <span class="src-opt-tile__check" aria-hidden="true"></span>
+                    <span class="src-opt-tile__text">
+                        <span class="src-opt-tile__title">Kundentyp: Direktkunde</span>
+                        <span class="src-opt-tile__sub">Endkunde / Unternehmen</span>
+                    </span>
+                </button>
+                <button type="button" class="src-opt-tile" data-opt-group="client" data-value="agency" aria-pressed="false">
+                    <span class="src-opt-tile__check" aria-hidden="true"></span>
+                    <span class="src-opt-tile__text">
+                        <span class="src-opt-tile__title">Kundentyp: Agentur</span>
+                        <span class="src-opt-tile__sub">B2B / Vermittlung</span>
+                    </span>
+                </button>
+                <div class="src-opt-tile src-opt-tile--full src-opt-tile--panel" aria-hidden="true">
+                    <div class="src-opt-tile__panel">
+                        <div class="src-opt-panel-title">Paket auswählen (optional)</div>
+                        <div id="src-export-package-wrap" class="src-opt-panel-group">
+                            <div class="src-modal-package-grid" role="listbox" aria-label="Paketauswahl">
+                                <button class="src-modal-package-card" type="button" data-export-package-card="basic">Basic</button>
+                                <button class="src-modal-package-card" type="button" data-export-package-card="standard">Standard</button>
+                                <button class="src-modal-package-card" type="button" data-export-package-card="premium">Premium</button>
+                            </div>
+                            <select id="src-export-package" class="src-select src-sr-only" aria-hidden="true" tabindex="-1">
+                                <option value="basic">Basic</option>
+                                <option value="standard">Standard</option>
+                                <option value="premium">Premium</option>
+                            </select>
                         </div>
-                        <select id="src-export-package" class="src-select src-sr-only" aria-hidden="true" tabindex="-1">
-                            <option value="basic">Basic</option>
-                            <option value="standard">Standard</option>
-                            <option value="premium">Premium</option>
-                        </select>
                     </div>
                 </div>
-                <div class="src-modal-section">
-                    <div class="src-modal-label">Kundentyp</div>
-                    <label class="src-check"><input type="radio" name="src-export-client" value="direct" checked> Direktkunde</label>
-                    <label class="src-check"><input type="radio" name="src-export-client" value="agency"> Agentur</label>
-                </div>
-                <div class="src-modal-section">
-                    <div class="src-modal-label">Optionale Felder</div>
-                    <div class="src-modal-grid">
-                        <input type="text" id="src-export-projectname" class="src-input-text" placeholder="Projektname (optional)">
-                        <input type="text" id="src-export-offer-id" class="src-input-text" placeholder="Angebotsnummer (optional)">
-                        <input type="text" id="src-export-validity" class="src-input-text" placeholder="Gültigkeit (z.B. 14 Tage)">
-                    </div>
-                    <div class="src-modal-subsection">
-                        <div class="src-modal-label">Lieferumfang (Text)</div>
-                        <label class="src-check"><input type="checkbox" class="src-export-scope" value="1 Take"> 1 Take</label>
-                        <label class="src-check"><input type="checkbox" class="src-export-scope" value="2 Korrekturen"> 2 Korrekturen</label>
-                        <label class="src-check"><input type="checkbox" class="src-export-scope" value="WAV/MP3 Lieferung"> WAV/MP3 Lieferung</label>
+                <div class="src-opt-tile src-opt-tile--full src-opt-tile--panel" aria-hidden="true">
+                    <div class="src-opt-tile__panel">
+                        <div class="src-opt-panel-title">Optionale Felder</div>
+                        <div class="src-modal-grid">
+                            <input type="text" id="src-export-projectname" class="src-input-text" placeholder="Projektname (optional)">
+                            <input type="text" id="src-export-offer-id" class="src-input-text" placeholder="Angebotsnummer (optional)">
+                            <input type="text" id="src-export-validity" class="src-input-text" placeholder="Gültigkeit (z.B. 14 Tage)">
+                        </div>
+                        <div class="src-opt-panel-title src-opt-panel-title--small">Lieferumfang (Text)</div>
+                        <div class="src-opt-panel-group src-modal-scope">
+                            <label class="src-check"><input type="checkbox" class="src-export-scope" value="1 Take"> 1 Take</label>
+                            <label class="src-check"><input type="checkbox" class="src-export-scope" value="2 Korrekturen"> 2 Korrekturen</label>
+                            <label class="src-check"><input type="checkbox" class="src-export-scope" value="WAV/MP3 Lieferung"> WAV/MP3 Lieferung</label>
+                        </div>
                     </div>
                 </div>
             </div>
+
             <div class="src-modal__footer">
-                <button class="src-btn src-btn--ghost" type="button" data-modal-close>Abbrechen</button>
-                <button class="src-btn" type="button" id="src-export-start">Export starten</button>
+                <button type="button" class="src-btn src-btn--primary src-btn--full" id="src-export-start">Export starten</button>
             </div>
         </div>
     </div>
