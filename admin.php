@@ -167,6 +167,100 @@ function src_get_default_json() {
             "extra_after": 3,
             "lic": "Nutzung in 1 Telefonanlage. Zeitlich unbegrenzt."
         },
+        "script_estimation": {
+            "wpm": { "de": 150, "en": 160, "other": 150 },
+            "min_minutes": 0.1,
+            "max_minutes": 20
+        },
+        "complexity_factors": {
+            "corridor": { "min": 0.08, "max": 0.15 },
+            "variants": {
+                "label": "Versionen/Varianten",
+                "options": [
+                    { "key": "1", "label": "1", "factor": 1.0 },
+                    { "key": "2-3", "label": "2–3", "factor": 1.05 },
+                    { "key": "4+", "label": "4+", "factor": 1.1 }
+                ]
+            },
+            "revisions": {
+                "label": "Korrekturschleifen",
+                "options": [
+                    { "key": "1", "label": "inkl. 1", "factor": 1.0 },
+                    { "key": "2", "label": "2", "factor": 1.05 },
+                    { "key": "3+", "label": "3+", "factor": 1.1 }
+                ]
+            },
+            "style": {
+                "label": "Spezialstil",
+                "options": [
+                    { "key": "normal", "label": "normal", "factor": 1.0 },
+                    { "key": "technical", "label": "technisch", "factor": 1.05 },
+                    { "key": "medical", "label": "medizinisch", "factor": 1.1 },
+                    { "key": "emotional", "label": "sehr emotional", "factor": 1.12 }
+                ]
+            },
+            "timing": {
+                "label": "Timing/Synchro",
+                "options": [
+                    { "key": "free", "label": "frei", "factor": 1.0 },
+                    { "key": "guided", "label": "an Bild grob", "factor": 1.05 },
+                    { "key": "lipsync", "label": "lipsync", "factor": 1.15 }
+                ]
+            },
+            "editing": {
+                "label": "Schnitt/Editing",
+                "options": [
+                    { "key": "none", "label": "keins", "factor": 1.0 },
+                    { "key": "basic", "label": "Basic", "factor": 1.05 },
+                    { "key": "advanced", "label": "umfangreich", "factor": 1.12 }
+                ]
+            },
+            "deliverables": {
+                "label": "Deliverables",
+                "options": [
+                    { "key": "single", "label": "ein Format", "factor": 1.0 },
+                    { "key": "multiple", "label": "mehrere", "factor": 1.03 }
+                ]
+            }
+        },
+        "field_tips": {
+            "default": {
+                "length": "Tipp: Text oder Dauer eingeben für eine präzisere Schätzung.",
+                "region": "Tipp: Größere Gebiete erhöhen Reichweite und Lizenzkosten.",
+                "duration": "Tipp: Längere Nutzungsdauer wirkt wie ein Buyout."
+            },
+            "imagefilm": {
+                "duration": "Tipp: Für interne Nutzung reicht oft 1 Jahr oder unbegrenzt ohne Paid Media.",
+                "region": "Tipp: Bei internen Projekten meist national oder DACH ausreichend."
+            },
+            "radio": {
+                "duration": "Tipp: Lokale Kampagnen bleiben oft bei 1 Jahr.",
+                "region": "Tipp: Regional reicht meist – national nur bei echter Ausspielung."
+            }
+        },
+        "packages": {
+            "basic": {
+                "label": "Basic",
+                "pricing": "min",
+                "duration": "short",
+                "extras": "minimal",
+                "meta": ["Min-Preis", "kurze Dauer", "ohne Extras"]
+            },
+            "standard": {
+                "label": "Standard",
+                "pricing": "mid",
+                "duration": "current",
+                "extras": "current",
+                "meta": ["Mittelwert", "aktuelle Dauer", "aktuelle Optionen"]
+            },
+            "premium": {
+                "label": "Premium",
+                "pricing": "max",
+                "duration": "max",
+                "extras": "full",
+                "meta": ["Max-Preis", "erweiterte Dauer", "inkl. Extras"]
+            }
+        },
         "rights_guidance": {
             "default": {
                 "headline": "Nutzungsrechte & Lizenzen",

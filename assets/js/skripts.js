@@ -3,6 +3,7 @@
 // Globale Variablen für State-Management
 let srcRatesData = {}; 
 let calculatedMinutes = 0;
+let estimatedMinutes = 0;
 let currentResult = { low:0, mid:0, high:0 };
 let dynamicLicenseText = "";
 let pendingMainAmountUpdate = null;
@@ -70,7 +71,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const tipEl = document.getElementById('src-tooltip-fixed');
     document.querySelectorAll('.src-tooltip-icon').forEach(icon => {
         icon.addEventListener('mouseenter', e => {
-            tipEl.innerText = e.target.getAttribute('data-tip');
+            const tipText = e.target.getAttribute('data-tip');
+            if(!tipText) return;
+            tipEl.innerText = tipText;
             tipEl.classList.add('is-visible');
             // Initial Pos
             const rect = e.target.getBoundingClientRect();
@@ -93,6 +96,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const exportStartBtn = document.getElementById('src-export-start');
     if(exportStartBtn) {
         exportStartBtn.addEventListener('click', () => srcHandleExportStart());
+    }
+
+    const applyEstimateBtn = document.getElementById('src-apply-estimate');
+    if(applyEstimateBtn) {
+        applyEstimateBtn.addEventListener('click', () => srcApplyScriptEstimate());
     }
 
     document.querySelectorAll('input[name="src-export-pricing"]').forEach(input => {
@@ -131,6 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 const SRC_I18N = {
     de: {
+        subjectLabel: "Betreff",
         subject: "Angebot Sprecherleistung",
         intro: "Vielen Dank für die Anfrage. Anbei das Angebot auf Basis der aktuellen Angaben.",
         pricingRange: "Preisrahmen (Netto)",
@@ -147,10 +156,13 @@ const SRC_I18N = {
         risks: "Risiko-/Rechte-Check",
         validity: "Gültigkeit",
         scope: "Lieferumfang",
+        dateLabel: "Datum",
+        customerTypeLabel: "Kundentyp",
         customerTypeDirect: "Direktkunde",
         customerTypeAgency: "Agentur"
     },
     en: {
+        subjectLabel: "Subject",
         subject: "Voice Over Offer",
         intro: "Thank you for your request. Below is the offer based on the current inputs.",
         pricingRange: "Price range (net)",
@@ -167,6 +179,8 @@ const SRC_I18N = {
         risks: "Risk/rights check",
         validity: "Validity",
         scope: "Scope of delivery",
+        dateLabel: "Date",
+        customerTypeLabel: "Customer type",
         customerTypeDirect: "Direct client",
         customerTypeAgency: "Agency"
     }
@@ -206,11 +220,83 @@ const srcFormatCurrency = function(value) {
     return `${Math.round(value)} €`;
 }
 
+const srcFormatMinutes = function(minutes) {
+    if(!Number.isFinite(minutes)) return "0:00";
+    const safeMinutes = Math.max(0, minutes);
+    const m = Math.floor(safeMinutes);
+    const s = Math.round((safeMinutes - m) * 60);
+    return `${m}:${s.toString().padStart(2,'0')}`;
+}
+
+const srcGetScriptEstimationConfig = function() {
+    const config = srcRatesData.script_estimation || {};
+    return {
+        wpm: config.wpm || { de: 150, en: 160, other: 150 },
+        min: Number.isFinite(config.min_minutes) ? config.min_minutes : 0.1,
+        max: Number.isFinite(config.max_minutes) ? config.max_minutes : 20
+    };
+}
+
+const estimateDurationFromScript = function(scriptText, lang) {
+    const cleanText = (scriptText || '').trim();
+    const words = cleanText ? cleanText.split(/\s+/).filter(Boolean).length : 0;
+    const config = srcGetScriptEstimationConfig();
+    const wpmConfig = config.wpm || {};
+    const wpm = Number.isFinite(wpmConfig[lang]) ? wpmConfig[lang] : (Number.isFinite(wpmConfig.de) ? wpmConfig.de : 150);
+    if(words <= 0 || wpm <= 0) {
+        return { minutes: 0, words };
+    }
+    let minutes = words / wpm;
+    const minClamp = config.min;
+    const maxClamp = config.max;
+    if(Number.isFinite(minClamp)) minutes = Math.max(minClamp, minutes);
+    if(Number.isFinite(maxClamp)) minutes = Math.min(maxClamp, minutes);
+    return { minutes, words };
+}
+
+const srcGetComplexityConfig = function() {
+    return srcRatesData.complexity_factors || {};
+}
+
+const srcGetComplexitySelections = function() {
+    return {
+        variants: document.getElementById('src-complexity-variants')?.value || '1',
+        revisions: document.getElementById('src-complexity-revisions')?.value || '1',
+        style: document.getElementById('src-complexity-style')?.value || 'normal',
+        timing: document.getElementById('src-complexity-timing')?.value || 'free',
+        editing: document.getElementById('src-complexity-editing')?.value || 'none',
+        deliverables: document.getElementById('src-complexity-deliverables')?.value || 'single'
+    };
+}
+
+const srcResolveComplexity = function(selections) {
+    const config = srcGetComplexityConfig();
+    const corridor = config.corridor || { min: 0.08, max: 0.15 };
+    let factor = 1;
+    const picks = [];
+    ['variants', 'revisions', 'style', 'timing', 'editing', 'deliverables'].forEach(key => {
+        const entry = config[key] || {};
+        const options = Array.isArray(entry.options) ? entry.options : [];
+        const selectedKey = selections[key];
+        const option = options.find(opt => opt.key === selectedKey);
+        const optionFactor = option && Number.isFinite(option.factor) ? option.factor : 1;
+        const optionLabel = option && option.label ? option.label : selectedKey;
+        if(optionFactor !== 1) {
+            picks.push(`${entry.label || key}: ${optionLabel}`);
+        }
+        factor *= optionFactor;
+    });
+    return { factor, corridor, picks };
+}
+
 const srcGetStateFromUI = function() {
     const regionInput = document.querySelector('input[name="region"]:checked');
     const genre = document.getElementById('src-genre').value;
-    const minutes = Math.max(0.1, calculatedMinutes);
+    const minutesRaw = Number.isFinite(calculatedMinutes) ? calculatedMinutes : 0;
+    const minutes = Math.max(0.1, minutesRaw);
     const scriptText = document.getElementById('src-text').value || '';
+    const manualMinutesActive = document.getElementById('src-manual-time-check').checked;
+    const complexitySelections = srcGetComplexitySelections();
     return {
         projectKey: genre,
         language: document.getElementById('src-language').value,
@@ -225,6 +311,9 @@ const srcGetStateFromUI = function() {
         cutdown: document.getElementById('src-cutdown') ? document.getElementById('src-cutdown').checked : false,
         phoneCount: parseInt(document.getElementById('src-phone-count').value, 10) || 1,
         minutes,
+        minutesRaw,
+        estimatedMinutes,
+        manualMinutesActive,
         hasScript: scriptText.trim().length > 0,
         studioFee: document.getElementById('src-own-studio').checked ? (parseInt(document.getElementById('src-studio-fee').value, 10) || 0) : 0,
         expressToggle: document.getElementById('src-express-toggle').checked,
@@ -232,7 +321,8 @@ const srcGetStateFromUI = function() {
         discountToggle: document.getElementById('src-discount-toggle').checked,
         discountPct: parseFloat(document.getElementById('src-discount-percent').value) || 0,
         discountReason: document.getElementById('src-discount-reason').value || '',
-        finalFeeInput: parseFloat(document.getElementById('src-final-fee-user').value)
+        finalFeeInput: parseFloat(document.getElementById('src-final-fee-user').value),
+        complexitySelections
     };
 }
 
@@ -514,6 +604,24 @@ const srcRenderProjectTips = function(genre) {
     tipsWrap.innerHTML = selectedTips.map(tip => `<div class="src-project-tip">${tip}</div>`).join('');
 }
 
+const srcRenderFieldTips = function(genre) {
+    const tipsConfig = srcRatesData.field_tips || {};
+    const defaultTips = tipsConfig.default || {};
+    const projectTips = tipsConfig[genre] || {};
+    document.querySelectorAll('.src-field-tip').forEach(icon => {
+        const fieldKey = icon.getAttribute('data-field-tip');
+        if(!fieldKey) return;
+        const tipText = projectTips[fieldKey] || defaultTips[fieldKey] || icon.getAttribute('data-default-tip') || '';
+        if(tipText) {
+            icon.setAttribute('data-tip', tipText);
+            icon.style.display = 'inline-flex';
+        } else {
+            icon.removeAttribute('data-tip');
+            icon.style.display = 'none';
+        }
+    });
+}
+
 const srcToggleBreakdownAccordion = function() {
     const panel = document.getElementById('src-breakdown-panel');
     const btn = document.getElementById('src-breakdown-toggle');
@@ -545,6 +653,9 @@ const srcRenderBreakdown = function(breakdown) {
 const srcBuildRiskChecks = function(state) {
     const checks = [];
     if(!state || !state.projectKey) return checks;
+    if(!state.hasScript && (!state.manualMinutesActive || state.minutesRaw <= 0)) {
+        checks.push({ severity: 'info', text: 'Schätzung basiert auf wenigen Angaben. Für eine präzisere Spanne bitte Text oder Dauer ergänzen.' });
+    }
     if(['tv','online_paid','radio','cinema','pos'].includes(state.projectKey)) {
         if(state.region === 'world' && state.duration === 4) {
             checks.push({ severity: 'warning', text: 'Worldwide + Unlimited ist ein sehr hoher Buyout. Prüfen, ob beides wirklich nötig ist.' });
@@ -552,6 +663,10 @@ const srcBuildRiskChecks = function(state) {
         if(state.duration >= 3 && state.region === 'dach') {
             checks.push({ severity: 'info', text: 'Lange Laufzeit + großes Gebiet: ggf. alternative Lizenzstaffel prüfen.' });
         }
+    }
+    const mediaChannels = [state.packageOnline, state.packageAtv, state.licenseSocial, state.licenseEvent].filter(Boolean).length;
+    if(mediaChannels >= 2 && ['tv','online_paid','radio','cinema','pos'].includes(state.projectKey)) {
+        checks.push({ severity: 'info', text: 'Mehrkanal-Nutzung aktiv. Prüfen, ob Paket-/Buyout-Logik sauber passt.' });
     }
     if(state.licenseSocial && state.projectKey === 'imagefilm') {
         checks.push({ severity: 'info', text: 'Social Media Zusatzlizenz aktiv. Bitte Scope (organisch vs. paid) im Angebot klar benennen.' });
@@ -561,6 +676,9 @@ const srcBuildRiskChecks = function(state) {
     }
     if(state.packageOnline && state.projectKey !== 'radio') {
         checks.push({ severity: 'info', text: 'Online Audio Paket passt typischerweise zu Funkspot-Projekten.' });
+    }
+    if(state.discountToggle && state.discountPct > 25) {
+        checks.push({ severity: 'warning', text: 'Ungewöhnlich hoher Rabatt. Prüfen, ob die Begründung im Angebot klar benannt ist.' });
     }
     return checks;
 }
@@ -592,6 +710,13 @@ const srcSaveCompareSnapshot = function(slot) {
     renderCompareView();
 }
 
+const srcComplexitySummary = function(state) {
+    if(!state || !state.complexitySelections) return 'Standard';
+    const resolved = srcResolveComplexity(state.complexitySelections);
+    if(!resolved.picks.length) return 'Standard';
+    return resolved.picks.join(', ');
+}
+
 const srcCompareDiffList = function(aState, bState) {
     const diffs = [];
     if(aState.region !== bState.region) diffs.push(`Region: ${aState.region} → ${bState.region}`);
@@ -604,6 +729,9 @@ const srcCompareDiffList = function(aState, bState) {
     if(aState.packageOnline !== bState.packageOnline) diffs.push(`Online Audio: ${aState.packageOnline ? 'ja' : 'nein'} → ${bState.packageOnline ? 'ja' : 'nein'}`);
     if(aState.packageAtv !== bState.packageAtv) diffs.push(`ATV/CTV: ${aState.packageAtv ? 'ja' : 'nein'} → ${bState.packageAtv ? 'ja' : 'nein'}`);
     if(aState.cutdown !== bState.cutdown) diffs.push(`Cut-down: ${aState.cutdown ? 'ja' : 'nein'} → ${bState.cutdown ? 'ja' : 'nein'}`);
+    const aComplexity = srcComplexitySummary(aState);
+    const bComplexity = srcComplexitySummary(bState);
+    if(aComplexity !== bComplexity) diffs.push(`Aufwand: ${aComplexity} → ${bComplexity}`);
     return diffs;
 }
 
@@ -657,7 +785,12 @@ const srcBuildPackages = function(currentState) {
     const data = srcRatesData[currentState.projectKey] || {};
     const baseState = { ...currentState };
     const hasDurationControl = ['tv','online_paid','radio','cinema','pos'].includes(baseState.projectKey);
-    const makeState = (overrides) => Object.assign({}, baseState, overrides);
+    const packageConfig = srcRatesData.packages || {};
+    const defaultMeta = {
+        basic: ['Min-Preis', hasDurationControl ? 'Dauer: 1 Jahr' : 'Dauer: Standard', 'Ohne Zusatzlizenzen'],
+        standard: ['Mittelwert', 'Dauer: aktuell', 'Aktuelle Optionen'],
+        premium: ['Max-Preis', hasDurationControl ? 'Dauer: Unlimited' : 'Dauer: Standard', 'inkl. Social/Extras']
+    };
     const disableExtras = {
         licenseSocial: false,
         licenseEvent: false,
@@ -669,42 +802,54 @@ const srcBuildPackages = function(currentState) {
         discountPct: 0,
         studioFee: 0
     };
-    const basicState = makeState(Object.assign({}, disableExtras, {
-        duration: hasDurationControl ? 1 : baseState.duration
-    }));
-    const standardState = makeState(Object.assign({}, {
-        duration: baseState.duration
-    }));
-    const premiumDuration = hasDurationControl ? 4 : baseState.duration;
-    const premiumState = makeState(Object.assign({}, {
-        duration: premiumDuration,
-        licenseSocial: Boolean(data.license_extras && data.license_extras.social_organic),
-        packageAtv: baseState.projectKey === 'online_paid',
-        packageOnline: baseState.projectKey === 'radio'
-    }));
-    const basicResult = srcComputeResult(basicState);
-    const standardResult = srcComputeResult(standardState);
-    const premiumResult = srcComputeResult(premiumState);
-    return {
-        basic: {
-            label: 'Basic',
-            price: basicResult.final[0],
-            meta: ['Min-Preis', hasDurationControl ? 'Dauer: 1 Jahr' : 'Dauer: Standard', 'Ohne Zusatzlizenzen'],
-            state: basicState
-        },
-        standard: {
-            label: 'Standard',
-            price: standardResult.final[1],
-            meta: ['Mittelwert', 'Dauer: aktuell', 'Aktuelle Optionen'],
-            state: standardState
-        },
-        premium: {
-            label: 'Premium',
-            price: premiumResult.final[2],
-            meta: ['Max-Preis', hasDurationControl ? 'Dauer: Unlimited' : 'Dauer: Standard', 'inkl. Social/Extras'],
-            state: premiumState
+    const buildState = (config) => {
+        let state = { ...baseState };
+        if(config.extras === 'minimal') {
+            state = { ...state, ...disableExtras };
         }
+        if(config.extras === 'full') {
+            state = {
+                ...state,
+                licenseSocial: Boolean(data.license_extras && data.license_extras.social_organic),
+                licenseEvent: Boolean(data.license_extras && data.license_extras.event_pos),
+                packageAtv: baseState.projectKey === 'online_paid',
+                packageOnline: baseState.projectKey === 'radio'
+            };
+        }
+        if(config.duration === 'short') {
+            state.duration = hasDurationControl ? 1 : baseState.duration;
+        } else if(config.duration === 'max') {
+            state.duration = hasDurationControl ? 4 : baseState.duration;
+        } else if(typeof config.duration_years === 'number' && hasDurationControl) {
+            state.duration = config.duration_years;
+        } else {
+            state.duration = baseState.duration;
+        }
+        return state;
     };
+    const packageKeys = ['basic', 'standard', 'premium'];
+    const packages = {};
+    packageKeys.forEach(key => {
+        const config = packageConfig[key] || {};
+        const fallback = {
+            label: key === 'basic' ? 'Basic' : key === 'premium' ? 'Premium' : 'Standard',
+            pricing: key === 'basic' ? 'min' : key === 'premium' ? 'max' : 'mid',
+            duration: key === 'basic' ? 'short' : key === 'premium' ? 'max' : 'current',
+            extras: key === 'basic' ? 'minimal' : key === 'premium' ? 'full' : 'current'
+        };
+        const merged = { ...fallback, ...config };
+        const pkgState = buildState(merged);
+        const result = srcComputeResult(pkgState);
+        const pricing = merged.pricing;
+        const price = pricing === 'min' ? result.final[0] : pricing === 'max' ? result.final[2] : result.final[1];
+        packages[key] = {
+            label: merged.label || fallback.label,
+            price,
+            meta: Array.isArray(merged.meta) ? merged.meta : (defaultMeta[key] || []),
+            state: pkgState
+        };
+    });
+    return packages;
 }
 
 const srcRenderPackages = function() {
@@ -799,7 +944,7 @@ const srcBuildOfferEmailText = function({ lang, pricingMode, selectedPackage, in
         priceText = `${pkg.price} € (${pkg.label})`;
     }
     const parts = [];
-    parts.push(`Betreff: ${i18n.subject}`);
+    parts.push(`${i18n.subjectLabel}: ${i18n.subject}`);
     parts.push('');
     parts.push(i18n.intro);
     parts.push('');
@@ -809,7 +954,7 @@ const srcBuildOfferEmailText = function({ lang, pricingMode, selectedPackage, in
     parts.push(`${i18n.project}: ${projectName}`);
     if(extraSettings.customerType) {
         const typeLabel = extraSettings.customerType === 'agency' ? i18n.customerTypeAgency : i18n.customerTypeDirect;
-        parts.push(`Kundentyp: ${typeLabel}`);
+        parts.push(`${i18n.customerTypeLabel}: ${typeLabel}`);
     }
     if(state.projectKey === 'phone') {
         parts.push(`${i18n.modules}: ${state.phoneCount}`);
@@ -901,6 +1046,18 @@ window.srcReset = function() {
     document.getElementById('src-text').value = '';
     const posType = document.getElementById('src-pos-type');
     if(posType) posType.selectedIndex = 0;
+    const complexityDefaults = {
+        'src-complexity-variants': '1',
+        'src-complexity-revisions': '1',
+        'src-complexity-style': 'normal',
+        'src-complexity-timing': 'free',
+        'src-complexity-editing': 'none',
+        'src-complexity-deliverables': 'single'
+    };
+    Object.keys(complexityDefaults).forEach(id => {
+        const el = document.getElementById(id);
+        if(el) el.value = complexityDefaults[id];
+    });
     
     // Reset Inputs
     document.getElementById('src-manual-time-check').checked = false;
@@ -981,6 +1138,7 @@ window.srcUIUpdate = function() {
     srcAnalyzeText();
     srcUpdateRightsSectionVisibility(genre, layoutMode);
     srcRenderProjectTips(genre);
+    srcRenderFieldTips(genre);
 }
 
 window.srcToggleManualTime = function() {
@@ -998,22 +1156,58 @@ window.srcToggleStudio = function() {
 
 window.srcAnalyzeText = function() {
     let mins = 0;
-    if(document.getElementById('src-manual-time-check').checked) {
+    const manualCheck = document.getElementById('src-manual-time-check').checked;
+    const txt = document.getElementById('src-text').value || '';
+    const lang = document.getElementById('src-language').value || 'de';
+    const estimate = estimateDurationFromScript(txt, lang);
+    estimatedMinutes = estimate.minutes;
+    if(manualCheck) {
         let val = document.getElementById('src-manual-minutes').value;
         val = val.replace(',', '.');
         mins = parseFloat(val) || 0;
         document.getElementById('src-char-count').innerText = '-';
     } else {
-        const txt = document.getElementById('src-text').value;
         const chars = txt.length;
-        mins = chars / 900; 
         document.getElementById('src-char-count').innerText = chars;
+        mins = estimate.minutes || 0;
     }
-    const m = Math.floor(mins);
-    const s = Math.round((mins - m) * 60);
-    document.getElementById('src-min-count').innerText = `${m}:${s.toString().padStart(2,'0')}`;
+    document.getElementById('src-min-count').innerText = srcFormatMinutes(mins);
     calculatedMinutes = mins;
+    srcUpdateScriptEstimateDisplay({
+        hasScript: txt.trim().length > 0,
+        manualCheck,
+        estimatedMinutes
+    });
     srcCalc();
+}
+
+const srcUpdateScriptEstimateDisplay = function({ hasScript, manualCheck, estimatedMinutes }) {
+    const wrap = document.getElementById('src-script-estimate');
+    const valueEl = document.getElementById('src-script-estimate-value');
+    const btn = document.getElementById('src-apply-estimate');
+    if(!wrap || !valueEl) return;
+    if(!hasScript) {
+        wrap.classList.remove('is-visible');
+        if(btn) btn.classList.remove('is-visible');
+        return;
+    }
+    valueEl.textContent = `~${srcFormatMinutes(estimatedMinutes)}`;
+    wrap.classList.add('is-visible');
+    if(btn) {
+        btn.classList.toggle('is-visible', manualCheck);
+    }
+}
+
+const srcApplyScriptEstimate = function() {
+    const manualCheck = document.getElementById('src-manual-time-check');
+    const manualInput = document.getElementById('src-manual-minutes');
+    if(!manualCheck || !manualInput) return;
+    manualCheck.checked = true;
+    srcToggleManualTime();
+    if(Number.isFinite(estimatedMinutes)) {
+        manualInput.value = estimatedMinutes.toFixed(2).replace('.', ',');
+    }
+    srcAnalyzeText();
 }
 
 window.srcValidateFinalFee = function() {
@@ -1203,6 +1397,25 @@ const srcComputeResult = function(state) {
         }
     }
 
+    const complexity = srcResolveComplexity(state.complexitySelections || {});
+    if(complexity.factor !== 1 && Number.isFinite(final[1])) {
+        const baseMid = final[1];
+        const corridorMin = Number.isFinite(complexity.corridor?.min) ? complexity.corridor.min : 0.08;
+        const corridorMax = Number.isFinite(complexity.corridor?.max) ? complexity.corridor.max : 0.15;
+        const adjustedMid = Math.round(baseMid * complexity.factor);
+        const adjustedMin = Math.round(adjustedMid * (1 - corridorMin));
+        const adjustedMax = Math.round(adjustedMid * (1 + corridorMax));
+        final = [adjustedMin, adjustedMid, adjustedMax];
+        const factorLabel = complexity.factor.toFixed(2);
+        const picksText = complexity.picks.length ? complexity.picks.join(' · ') : 'Standard';
+        breakdownSteps.push({ label: "Produktion & Aufwand", amountOrFactor: picksText, effectOnRange: 'note' });
+        breakdownSteps.push({ label: "Komplexitätsfaktor", amountOrFactor: `x${factorLabel}`, effectOnRange: 'multiply' });
+        const diff = adjustedMid - baseMid;
+        const diffText = diff >= 0 ? `+${diff}` : `${diff}`;
+        const diffColor = diff >= 0 ? '' : ' style="color:green"';
+        info.push(`Produktion & Aufwand (x${factorLabel}): <strong${diffColor}>${diffText} €</strong>`);
+    }
+
     if(state.licenseSocial) { licMeta.push("Zusatzlizenz: Social Media (organisch)"); }
     if(state.licenseEvent) { licMeta.push("Zusatzlizenz: Event / Messe / POS"); }
 
@@ -1368,7 +1581,7 @@ window.srcGeneratePDFv6 = function(options = {}) {
     doc.text(lang === 'en' ? 'Offer Overview' : 'Angebotsübersicht', 15, 17);
     doc.setFontSize(10);
     doc.setTextColor(50);
-    doc.text(`Datum: ${new Date().toLocaleDateString(lang === 'en' ? 'en-US' : 'de-DE')}`, 160, 17);
+    doc.text(`${i18n.dateLabel}: ${new Date().toLocaleDateString(lang === 'en' ? 'en-US' : 'de-DE')}`, 160, 17);
 
     const state = srcGetStateFromUI();
     const result = srcComputeResult(state);
@@ -1399,7 +1612,7 @@ window.srcGeneratePDFv6 = function(options = {}) {
     let infoYOffset = 58;
     if(extraSettings.customerType) {
         const typeLabel = extraSettings.customerType === 'agency' ? i18n.customerTypeAgency : i18n.customerTypeDirect;
-        doc.text(`Kundentyp: ${typeLabel}`, 15, infoYOffset);
+        doc.text(`${i18n.customerTypeLabel}: ${typeLabel}`, 15, infoYOffset);
         infoYOffset += 6;
     }
     if(extraSettings.validity) {

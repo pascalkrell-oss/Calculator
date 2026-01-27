@@ -128,7 +128,7 @@ function src_shortcode_output_v7() {
                 
                 <div>
                     <div class="src-section-title"><span class="dashicons dashicons-translation"></span> Sprache</div>
-                    <select id="src-language" class="src-select" onchange="srcCalc()">
+                    <select id="src-language" class="src-select" onchange="srcAnalyzeText()">
                         <option value="de">Deutsch (Standard)</option>
                         <option value="en">Englisch (+30%)</option>
                         <option value="other">Fremdsprache (+50%)</option>
@@ -138,13 +138,20 @@ function src_shortcode_output_v7() {
             </div>
 
             <div class="src-group" id="src-group-text">
-                <div class="src-section-title"><span class="dashicons dashicons-editor-alignleft"></span> Skript / Länge</div>
+                <div class="src-section-title">
+                    <span class="dashicons dashicons-editor-alignleft"></span> Skript / Länge
+                    <span class="src-tooltip-icon src-field-tip" data-field-tip="length" data-default-tip="Tipp: Mit Skript kann die Dauer genauer geschätzt werden.">?</span>
+                </div>
                 <textarea id="src-text" class="src-textarea" placeholder="Skript hier einfügen für automatische Berechnung..." oninput="srcAnalyzeText()"></textarea>
                 
                 <div class="src-stats">
                     <span><span id="src-char-count">0</span> Zeichen</span>
                     <span>•</span>
                     <span>Ø <span id="src-min-count">0:00</span> Min.</span>
+                </div>
+                <div id="src-script-estimate" class="src-script-estimate">
+                    <span>Aus Skript geschätzt: <strong id="src-script-estimate-value">–</strong></span>
+                    <button class="src-mini-btn" type="button" id="src-apply-estimate">Schätzung übernehmen</button>
                 </div>
 
                 <div style="margin-top:5px;">
@@ -189,6 +196,7 @@ function src_shortcode_output_v7() {
                     <div class="src-group src-rights-panel" style="margin-bottom:20px;">
                         <div class="src-section-title" style="margin-bottom:10px;">
                             <span class="dashicons dashicons-location-alt"></span> Verbreitungsgebiet
+                            <span class="src-tooltip-icon src-field-tip" data-field-tip="region" data-default-tip="Tipp: Größere Gebiete bedeuten höhere Reichweite und höhere Lizenzkosten.">?</span>
                         </div>
                         <div class="src-tiles-grid">
                             <label>
@@ -224,12 +232,12 @@ function src_shortcode_output_v7() {
 
                     <div class="src-group src-rights-panel" style="margin-bottom:20px;">
                         <div class="src-slider-header">
-                            <div class="src-section-title" style="margin:0;">
-                                <span class="dashicons dashicons-calendar-alt"></span> Nutzungsdauer 
-                                <span class="src-tooltip-icon" data-tip="Wie lange darf die Aufnahme genutzt werden? Standard ist 1 Jahr.">?</span>
-                            </div>
-                            <div id="src-slider-val" class="src-slider-val">1 Jahr</div>
+                        <div class="src-section-title" style="margin:0;">
+                            <span class="dashicons dashicons-calendar-alt"></span> Nutzungsdauer
+                            <span class="src-tooltip-icon src-field-tip" data-field-tip="duration" data-default-tip="Wie lange darf die Aufnahme genutzt werden? Standard ist 1 Jahr.">?</span>
                         </div>
+                        <div id="src-slider-val" class="src-slider-val">1 Jahr</div>
+                    </div>
                         <div class="src-slider-container">
                             <input type="range" id="src-time-slider" min="1" max="4" value="1" step="1" class="src-slider" oninput="srcCalc()">
                         </div>
@@ -304,6 +312,63 @@ function src_shortcode_output_v7() {
                     </div>
                 </div>
             </div>
+            </div>
+
+            <div class="src-group src-complexity-group" id="src-complexity-group">
+                <div class="src-section-head">
+                    <div class="src-section-head__title">Produktion &amp; Aufwand</div>
+                </div>
+                <div class="src-complexity-grid">
+                    <label class="src-complexity-field">
+                        <span>Anzahl Versionen/Varianten</span>
+                        <select id="src-complexity-variants" class="src-select" onchange="srcCalc()">
+                            <option value="1">1</option>
+                            <option value="2-3">2–3</option>
+                            <option value="4+">4+</option>
+                        </select>
+                    </label>
+                    <label class="src-complexity-field">
+                        <span>Korrekturschleifen</span>
+                        <select id="src-complexity-revisions" class="src-select" onchange="srcCalc()">
+                            <option value="1">inkl. 1</option>
+                            <option value="2">2</option>
+                            <option value="3+">3+</option>
+                        </select>
+                    </label>
+                    <label class="src-complexity-field">
+                        <span>Spezialstil/Schwierigkeit</span>
+                        <select id="src-complexity-style" class="src-select" onchange="srcCalc()">
+                            <option value="normal">normal</option>
+                            <option value="technical">technisch</option>
+                            <option value="medical">medizinisch</option>
+                            <option value="emotional">sehr emotional</option>
+                        </select>
+                    </label>
+                    <label class="src-complexity-field">
+                        <span>Timing/Synchro</span>
+                        <select id="src-complexity-timing" class="src-select" onchange="srcCalc()">
+                            <option value="free">frei</option>
+                            <option value="guided">an Bild grob</option>
+                            <option value="lipsync">lipsync</option>
+                        </select>
+                    </label>
+                    <label class="src-complexity-field">
+                        <span>Schnitt/Editing</span>
+                        <select id="src-complexity-editing" class="src-select" onchange="srcCalc()">
+                            <option value="none">keins</option>
+                            <option value="basic">Basic</option>
+                            <option value="advanced">umfangreich</option>
+                        </select>
+                    </label>
+                    <label class="src-complexity-field">
+                        <span>Dateiformate/Deliverables</span>
+                        <select id="src-complexity-deliverables" class="src-select" onchange="srcCalc()">
+                            <option value="single">ein Format</option>
+                            <option value="multiple">mehrere</option>
+                        </select>
+                    </label>
+                </div>
+                <div class="src-complexity-note">Alle Angaben sind optional und erhöhen den Aufwand nur, wenn tatsächlich benötigt.</div>
             </div>
 
             <div id="src-global-settings" class="src-group" style="margin-top:15px; padding-top:15px;">
