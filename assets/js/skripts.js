@@ -16,6 +16,16 @@ let currentRiskChecks = [];
 let compareState = { enabled: false, A: null, B: null, activeTab: 'A' };
 let packagesState = null;
 let exportModalKeyHandler = null;
+let exportModalState = {
+    pdf: true,
+    email: true,
+    breakdown: false,
+    risk: false,
+    lang: 'de',
+    pricing: 'range',
+    client: 'direct',
+    selectedPackage: 'standard'
+};
 
 document.addEventListener('DOMContentLoaded', () => { 
     // DATEN IMPORTIEREN (Vom PHP übergeben)
@@ -88,11 +98,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if(exportModal) {
         exportModal.addEventListener('click', (event) => {
             const target = event.target;
-            if(target && target.hasAttribute('data-modal-close')) {
+            if(target === exportModal || (target && target.hasAttribute('data-modal-close'))) {
                 srcCloseExportModal();
             }
         });
     }
+
+    document.querySelectorAll('.src-opt-tile[data-opt], .src-opt-tile[data-opt-group]').forEach(tile => {
+        tile.addEventListener('click', () => srcHandleExportTileToggle(tile));
+    });
 
     const exportStartBtn = document.getElementById('src-export-start');
     if(exportStartBtn) {
@@ -103,10 +117,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if(applyEstimateBtn) {
         applyEstimateBtn.addEventListener('click', () => srcApplyScriptEstimate());
     }
-
-    document.querySelectorAll('input[name="src-export-pricing"]').forEach(input => {
-        input.addEventListener('change', () => srcUpdateExportPackageVisibility());
-    });
 
     const compareToggle = document.getElementById('src-compare-toggle');
     if(compareToggle) {
@@ -127,7 +137,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     const exportPackageSelect = document.getElementById('src-export-package');
     if(exportPackageSelect) {
-        exportPackageSelect.addEventListener('change', () => srcSyncExportPackageCards());
+        exportPackageSelect.addEventListener('change', () => {
+            exportModalState.selectedPackage = exportPackageSelect.value;
+            srcSyncExportPackageCards();
+        });
     }
     document.querySelectorAll('[data-export-package-card]').forEach(card => {
         card.addEventListener('click', () => {
@@ -135,10 +148,17 @@ document.addEventListener('DOMContentLoaded', () => {
             const select = document.getElementById('src-export-package');
             if(select && pkg) {
                 select.value = pkg;
+                exportModalState.selectedPackage = pkg;
                 srcSyncExportPackageCards();
             }
         });
     });
+
+    srcSyncExportTiles();
+    srcUpdateExportPackageVisibility();
+    updateStickyOffset();
+    window.addEventListener('resize', updateStickyOffset);
+    window.addEventListener('scroll', updateStickyOffset, { passive: true });
 
     // Erster UI Check
     srcUIUpdate();
@@ -633,28 +653,22 @@ const srcUpdateRightsSectionVisibility = function(genre, layoutMode) {
 
 const srcRenderProjectTips = function(genre) {
     const tipsWrap = document.getElementById('src-project-tips');
-    const phoneTipsWrap = document.getElementById('src-project-tips-phone');
-    if(!tipsWrap && !phoneTipsWrap) return;
+    if(!tipsWrap) return;
     if(tipsWrap) tipsWrap.innerHTML = '';
-    if(phoneTipsWrap) phoneTipsWrap.innerHTML = '';
     srcToggleCollapse(tipsWrap, false);
-    srcToggleCollapse(phoneTipsWrap, false);
     if(!genre) {
         return;
     }
     const tips = (srcRatesData.project_tips && srcRatesData.project_tips[genre]) || [];
-    const selectedTips = tips.slice(0, 4);
+    const selectedTips = tips.slice(0, 3);
     if(selectedTips.length === 0) {
         return;
     }
     const markup = selectedTips.map(tip => (
-        `<div class="src-project-tip"><span class="src-project-tip__icon">i</span><div>${tip}</div></div>`
+        `<div class="src-tip-card"><span class="src-tip-card__icon">i</span><div>${tip}</div></div>`
     )).join('');
-    const target = genre === 'phone' ? phoneTipsWrap : tipsWrap;
-    if(target) {
-        target.innerHTML = markup;
-        srcToggleCollapse(target, true);
-    }
+    tipsWrap.innerHTML = markup;
+    srcToggleCollapse(tipsWrap, true);
 }
 
 const srcRenderFieldTips = function(genre) {
@@ -938,8 +952,7 @@ const srcRenderPackages = function() {
 const srcUpdateExportPackageVisibility = function() {
     const wrap = document.getElementById('src-export-package-wrap');
     if(!wrap) return;
-    const mode = document.querySelector('input[name="src-export-pricing"]:checked');
-    wrap.style.display = mode && mode.value === 'package' ? 'block' : 'none';
+    wrap.style.display = exportModalState.pricing === 'package' ? 'block' : 'none';
     srcSyncExportPackageCards();
 }
 
@@ -958,15 +971,16 @@ window.srcOpenExportModal = function(options = {}) {
     modal.classList.add('is-open');
     modal.setAttribute('aria-hidden', 'false');
     if(options.pricingMode) {
-        const input = document.querySelector(`input[name="src-export-pricing"][value="${options.pricingMode}"]`);
-        if(input) input.checked = true;
+        exportModalState.pricing = options.pricingMode;
     }
     if(options.selectedPackage) {
         const select = document.getElementById('src-export-package');
         if(select) select.value = options.selectedPackage;
+        exportModalState.selectedPackage = options.selectedPackage;
     }
     srcUpdateExportPackageVisibility();
     srcSyncExportPackageCards();
+    srcSyncExportTiles();
     if(!exportModalKeyHandler) {
         exportModalKeyHandler = (event) => {
             if(event.key === 'Escape') {
@@ -1089,18 +1103,18 @@ const srcHandleExportStart = async function() {
         srcCloseExportModal();
         return;
     }
-    const lang = document.querySelector('input[name="src-export-lang"]:checked')?.value || 'de';
-    const pricingMode = document.querySelector('input[name="src-export-pricing"]:checked')?.value || 'range';
-    const selectedPackage = document.getElementById('src-export-package')?.value || 'standard';
-    const includePdf = document.getElementById('src-export-pdf')?.checked;
-    const includeEmail = document.getElementById('src-export-email')?.checked;
-    const includeBreakdown = document.getElementById('src-export-breakdown')?.checked;
-    const includeRisk = document.getElementById('src-export-risk')?.checked;
+    const lang = exportModalState.lang || 'de';
+    const pricingMode = exportModalState.pricing || 'range';
+    const selectedPackage = document.getElementById('src-export-package')?.value || exportModalState.selectedPackage || 'standard';
+    const includePdf = exportModalState.pdf;
+    const includeEmail = exportModalState.email;
+    const includeBreakdown = exportModalState.breakdown;
+    const includeRisk = exportModalState.risk;
     const projectName = document.getElementById('src-export-projectname')?.value || '';
     const offerId = document.getElementById('src-export-offer-id')?.value || '';
     const validity = document.getElementById('src-export-validity')?.value || '';
     const scope = Array.from(document.querySelectorAll('.src-export-scope:checked')).map(el => el.value);
-    const customerType = document.querySelector('input[name="src-export-client"]:checked')?.value || 'direct';
+    const customerType = exportModalState.client || 'direct';
     const extraSettings = { projectName, validity, scope, customerType, offerId };
     if(includePdf) {
         srcGeneratePDFv6({ lang, pricingMode, selectedPackage, includeBreakdown, includeRisk, extraSettings });
@@ -1110,6 +1124,57 @@ const srcHandleExportStart = async function() {
         await srcCopyToClipboard(emailText);
     }
     srcCloseExportModal();
+}
+
+const srcHandleExportTileToggle = function(tile) {
+    if(!tile) return;
+    const opt = tile.getAttribute('data-opt');
+    const group = tile.getAttribute('data-opt-group');
+    const value = tile.getAttribute('data-value');
+    if(opt) {
+        exportModalState[opt] = !exportModalState[opt];
+    }
+    if(group && value) {
+        exportModalState[group] = value;
+    }
+    srcSyncExportTiles();
+    srcUpdateExportPackageVisibility();
+}
+
+const srcSyncExportTiles = function() {
+    document.querySelectorAll('.src-opt-tile[data-opt]').forEach(tile => {
+        const key = tile.getAttribute('data-opt');
+        const isOn = Boolean(exportModalState[key]);
+        tile.classList.toggle('is-on', isOn);
+        tile.setAttribute('aria-pressed', isOn ? 'true' : 'false');
+    });
+    document.querySelectorAll('.src-opt-tile[data-opt-group]').forEach(tile => {
+        const group = tile.getAttribute('data-opt-group');
+        const value = tile.getAttribute('data-value');
+        const isOn = exportModalState[group] === value;
+        tile.classList.toggle('is-on', isOn);
+        tile.setAttribute('aria-pressed', isOn ? 'true' : 'false');
+    });
+}
+
+const updateStickyOffset = function() {
+    const selectors = [
+        '.site-header.is-sticky',
+        'header.sticky',
+        '#masthead',
+        '.elementor-sticky',
+        '.site-header',
+        'header'
+    ];
+    let header = null;
+    for(const selector of selectors) {
+        header = document.querySelector(selector);
+        if(header) break;
+    }
+    const baseOffset = 12;
+    const height = header ? header.getBoundingClientRect().height : 78;
+    const offset = Math.max(60, Math.round(height + baseOffset));
+    document.documentElement.style.setProperty('--src-sticky-offset', `${offset}px`);
 }
 
 window.toggleAccordion = function(head) {
