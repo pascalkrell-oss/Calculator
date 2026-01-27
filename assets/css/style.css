@@ -358,6 +358,28 @@
 
 .src-textarea { height: 100px; resize: vertical; display: block; margin-bottom: 5px; font-family: inherit; font-size: 13px; }
 .src-stats { font-size: 12px; font-weight: 600; color: var(--src-primary); display: flex; gap: 10px; align-items:center; }
+.src-script-estimate {
+    display: none;
+    margin-top: 8px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    font-size: 12px;
+    color: #475569;
+    background: #f8fafc;
+    border: 1px dashed var(--src-border-light);
+    padding: 8px 10px;
+    border-radius: 10px;
+}
+.src-script-estimate.is-visible {
+    display: flex;
+}
+.src-script-estimate .src-mini-btn {
+    display: none;
+}
+.src-script-estimate .src-mini-btn.is-visible {
+    display: inline-flex;
+}
 
 .src-project-tips {
     margin-top: 10px;
@@ -371,6 +393,32 @@
     border: 1px dashed var(--src-border-light);
     padding: 8px 10px;
     border-radius: 10px;
+}
+
+.src-complexity-group {
+    margin-top: 20px;
+}
+.src-complexity-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px 16px;
+}
+.src-complexity-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 12px;
+    color: #64748b;
+    font-weight: 600;
+}
+.src-complexity-field .src-select {
+    height: 44px;
+    font-size: 14px;
+}
+.src-complexity-note {
+    margin-top: 10px;
+    font-size: 12px;
+    color: #94a3b8;
 }
 
 /* FIXED TOOLTIP */
