@@ -59,6 +59,7 @@ function src_enqueue_assets_v7() {
 
     wp_localize_script('src-script', 'srcPluginData', array(
         'rates' => json_decode($saved_rates),
+        'vdsExpected' => json_decode(src_get_default_json()),
         'ajaxUrl' => admin_url('admin-ajax.php')
     ));
 }
@@ -171,6 +172,14 @@ function src_shortcode_output_v7() {
 
             <div id="mod-ads" class="src-slide-wrap">
                 <div class="src-light-box-wrapper">
+                    <div id="src-pos-type-wrap" class="src-slide-wrap" style="margin-bottom:15px;">
+                        <div class="src-section-title"><span class="dashicons dashicons-admin-site"></span> POS Typ</div>
+                        <select id="src-pos-type" class="src-select" onchange="srcCalc()">
+                            <option value="pos_spot">POS Spot (mit Bild)</option>
+                            <option value="ladenfunk">Ladenfunk (ohne Bild)</option>
+                        </select>
+                        <span class="src-top-sub">Nur bei POS relevant</span>
+                    </div>
                     <div class="src-group src-rights-panel" style="margin-bottom:20px;">
                         <div class="src-section-title" style="margin-bottom:10px;">
                             <span class="dashicons dashicons-location-alt"></span> Verbreitungsgebiet
@@ -291,108 +300,123 @@ function src_shortcode_output_v7() {
             </div>
 
             <div id="src-global-settings" class="src-group" style="margin-top:15px; border-top:1px dashed #e2e8f0; padding-top:15px;">
-                <div class="src-switch-row src-global-toggle-row">
-                    <span class="src-switch-content">
-                        <span class="dashicons dashicons-edit src-switch-icon"></span>
-                        <div>
-                            <div class="src-switch-text">Nur Layout / Pitch</div>
-                            <div class="src-switch-sub">Keine Veröffentlichung (Intern)</div>
+                <div class="src-opt-card" data-opt="layout">
+                    <div class="src-opt-head">
+                        <div class="src-opt-left">
+                            <span class="dashicons dashicons-edit src-opt-icon"></span>
+                            <div class="src-opt-text">
+                                <div class="src-opt-title">Nur Layout / Pitch</div>
+                                <div class="src-opt-sub">Keine Veröffentlichung (Intern)</div>
+                            </div>
                         </div>
-                    </span>
-                    <div class="src-toggle-wrapper">
-                        <input type="checkbox" id="src-layout-mode">
-                        <label class="src-toggle-slider" for="src-layout-mode"></label>
+                        <div class="src-opt-right">
+                            <div class="src-toggle-wrapper">
+                                <input type="checkbox" id="src-layout-mode" aria-expanded="false">
+                                <label class="src-toggle-slider" for="src-layout-mode"></label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="src-opt-body" data-opt-body>
+                        <div class="src-opt-body-text">Diese Option blendet alle Nutzungsrechte aus und berechnet eine interne Layout-Pauschale.</div>
                     </div>
                 </div>
 
-                <div class="src-option-row" data-option="studio">
-                    <div class="src-option-left">
-                        <span class="dashicons dashicons-microphone src-switch-icon"></span>
-                        <div class="src-option-text">
-                            <div class="src-option-title">Eigenes Studio / Remote</div>
-                            <div class="src-option-sub">Technik-Pauschale addieren</div>
+                <div class="src-opt-card" data-opt="studio">
+                    <div class="src-opt-head">
+                        <div class="src-opt-left">
+                            <span class="dashicons dashicons-microphone src-opt-icon"></span>
+                            <div class="src-opt-text">
+                                <div class="src-opt-title">Eigenes Studio / Remote</div>
+                                <div class="src-opt-sub">Technik-Pauschale addieren</div>
+                            </div>
+                        </div>
+                        <div class="src-opt-right">
+                            <div class="src-toggle-wrapper">
+                                <input type="checkbox" id="src-own-studio" aria-expanded="false">
+                                <label class="src-toggle-slider" for="src-own-studio"></label>
+                            </div>
                         </div>
                     </div>
-                    <div class="src-option-inline">
-                        <div class="src-input-compact-wrap">
+                    <div class="src-opt-body" data-opt-body>
+                        <div class="src-opt-body-row">
                             <input type="number" id="src-studio-fee" value="150" class="src-input-compact" style="padding-right:10px;" oninput="srcCalc()">
-                            <div class="src-option-help">Betrag in €</div>
-                        </div>
-                    </div>
-                    <div class="src-option-right">
-                        <div class="src-toggle-wrapper">
-                            <input type="checkbox" id="src-own-studio">
-                            <label class="src-toggle-slider" for="src-own-studio"></label>
+                            <div class="src-opt-body-help">Betrag in €</div>
                         </div>
                     </div>
                 </div>
 
-                <div class="src-option-row" data-option="express">
-                    <div class="src-option-left">
-                        <span class="dashicons dashicons-clock src-switch-icon"></span>
-                        <div class="src-option-text">
-                            <div class="src-option-title">Express Lieferung</div>
-                            <div class="src-option-sub">Schnellere Abgabe mit Aufpreis</div>
+                <div class="src-opt-card" data-opt="express">
+                    <div class="src-opt-head">
+                        <div class="src-opt-left">
+                            <span class="dashicons dashicons-clock src-opt-icon"></span>
+                            <div class="src-opt-text">
+                                <div class="src-opt-title">Express Lieferung</div>
+                                <div class="src-opt-sub">Schnellere Abgabe mit Aufpreis</div>
+                            </div>
+                        </div>
+                        <div class="src-opt-right">
+                            <div class="src-toggle-wrapper">
+                                <input type="checkbox" id="src-express-toggle" aria-expanded="false">
+                                <label class="src-toggle-slider" for="src-express-toggle"></label>
+                            </div>
                         </div>
                     </div>
-                    <div class="src-option-inline">
-                        <div class="src-input-compact-wrap">
+                    <div class="src-opt-body" data-opt-body>
+                        <div class="src-opt-body-row">
                             <select id="src-express-type" class="src-select src-input-compact" onchange="srcCalc()">
                                 <option value="24h">Innerhalb 24h (+50%)</option>
                                 <option value="4h">Innerhalb 4h (+100%)</option>
                             </select>
                         </div>
                     </div>
-                    <div class="src-option-right">
-                        <div class="src-toggle-wrapper">
-                            <input type="checkbox" id="src-express-toggle">
-                            <label class="src-toggle-slider" for="src-express-toggle"></label>
-                        </div>
-                    </div>
                 </div>
 
-                <div class="src-option-row" data-option="cutdown">
-                    <div class="src-option-left">
-                        <span class="dashicons dashicons-controls-repeat src-switch-icon" aria-hidden="true"></span>
-                        <div class="src-option-text">
-                            <div class="src-option-title">
-                                Cut-down / Reminder
-                                <span class="src-tooltip-icon" data-tip="Aktiviere diese Option, wenn zusätzlich Kurzversionen geplant sind.">?</span>
+                <div class="src-opt-card" data-opt="discount">
+                    <div class="src-opt-head">
+                        <div class="src-opt-left">
+                            <span class="dashicons dashicons-tag src-opt-icon"></span>
+                            <div class="src-opt-text">
+                                <div class="src-opt-title">Rabatt gewähren?</div>
+                                <div class="src-opt-sub">Vom Netto-Betrag abziehen</div>
                             </div>
-                            <div class="src-option-sub">Kurzversionen (Tag-ons, Reminder) kosten 50% der Gage.</div>
+                        </div>
+                        <div class="src-opt-right">
+                            <div class="src-toggle-wrapper">
+                                <input type="checkbox" id="src-discount-toggle" aria-expanded="false">
+                                <label class="src-toggle-slider" for="src-discount-toggle"></label>
+                            </div>
                         </div>
                     </div>
-                    <div class="src-option-inline">
-                        <div class="src-option-inline-note">50% der Gage berechnen</div>
-                    </div>
-                    <div class="src-option-right">
-                        <div class="src-toggle-wrapper">
-                            <input type="checkbox" id="src-cutdown">
-                            <label class="src-toggle-slider" for="src-cutdown"></label>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="src-option-row" data-option="discount">
-                    <div class="src-option-left">
-                        <span class="dashicons dashicons-tag src-switch-icon"></span>
-                        <div class="src-option-text">
-                            <div class="src-option-title">Rabatt gewähren?</div>
-                            <div class="src-option-sub">Vom Netto-Betrag abziehen</div>
-                        </div>
-                    </div>
-                    <div class="src-option-inline">
-                        <div class="src-discount-row src-option-discount-row">
+                    <div class="src-opt-body" data-opt-body>
+                        <div class="src-discount-row src-opt-body-row">
                             <input type="number" id="src-discount-percent" class="src-input-compact src-discount-percent" placeholder="%" min="0" max="100" oninput="srcCalc()">
                             <input type="text" id="src-discount-reason" class="src-input-compact" placeholder="Grund (z.B. Neukunde)" oninput="srcCalc()">
                         </div>
                         <span class="src-hint-text">Der Rabatt wird vom Netto-Gesamtbetrag abgezogen.</span>
                     </div>
-                    <div class="src-option-right">
-                        <div class="src-toggle-wrapper">
-                            <input type="checkbox" id="src-discount-toggle">
-                            <label class="src-toggle-slider" for="src-discount-toggle"></label>
+                </div>
+
+                <div class="src-opt-card" data-opt="cutdown">
+                    <div class="src-opt-head">
+                        <div class="src-opt-left">
+                            <span class="dashicons dashicons-controls-repeat src-opt-icon" aria-hidden="true"></span>
+                            <div class="src-opt-text">
+                                <div class="src-opt-title">
+                                    Cut-down / Reminder
+                                    <span class="src-tooltip-icon" data-tip="Aktiviere diese Option, wenn zusätzlich Kurzversionen geplant sind.">?</span>
+                                </div>
+                                <div class="src-opt-sub">Kurzversionen (Tag-ons, Reminder) kosten 50% der Gage.</div>
+                            </div>
                         </div>
+                        <div class="src-opt-right">
+                            <div class="src-toggle-wrapper">
+                                <input type="checkbox" id="src-cutdown" aria-expanded="false">
+                                <label class="src-toggle-slider" for="src-cutdown"></label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="src-opt-body" data-opt-body>
+                        <div class="src-opt-body-text">50% der Gage berechnen.</div>
                     </div>
                 </div>
             </div>

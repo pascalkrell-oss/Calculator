@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const target = event.target;
             if(!target || target.type !== 'checkbox') return;
 
-            if(target.closest('.src-option-row')) {
+            if(target.closest('.src-opt-card') || target.closest('.src-option-row')) {
                 srcSetOptionRowState(target);
             }
 
@@ -33,6 +33,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 case 'src-own-studio':
                     srcToggleStudio();
+                    return;
+                case 'src-layout-mode':
+                    srcUIUpdate();
+                    srcCalc();
                     return;
                 default:
                     break;
@@ -68,7 +72,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Erster UI Check
-    srcUIUpdate(); 
+    srcUIUpdate();
+    srcAuditRatesAgainstVDS();
 });
 
 /* --- HELPER FUNCTIONS --- */
@@ -82,9 +87,12 @@ window.toggleElement = function(id, show) {
 
 const srcSetOptionRowState = function(toggleEl) {
     if(!toggleEl) return;
-    const row = toggleEl.closest('.src-option-row');
+    const row = toggleEl.closest('.src-opt-card, .src-option-row');
     if(!row) return;
     row.classList.toggle('is-on', toggleEl.checked);
+    if(toggleEl.hasAttribute('aria-expanded')) {
+        toggleEl.setAttribute('aria-expanded', toggleEl.checked ? 'true' : 'false');
+    }
 }
 
 window.srcHandleOptionToggle = function(toggleId) {
@@ -94,7 +102,7 @@ window.srcHandleOptionToggle = function(toggleId) {
 }
 
 window.srcSyncOptionRowStates = function() {
-    document.querySelectorAll('.src-option-row .src-toggle-wrapper input[type="checkbox"]').forEach(toggleEl => {
+    document.querySelectorAll('.src-opt-card .src-toggle-wrapper input[type="checkbox"], .src-option-row .src-toggle-wrapper input[type="checkbox"]').forEach(toggleEl => {
         srcSetOptionRowState(toggleEl);
     });
 }
@@ -145,8 +153,89 @@ const srcUpdateMeanValue = function(wrapper, target, nextText) {
     });
 }
 
+const srcEnsurePriceTriple = function(value, fallback = [0, 0, 0]) {
+    if(Array.isArray(value) && value.length >= 3) {
+        return value.map(v => parseInt(v, 10) || 0);
+    }
+    if(typeof value === 'number') {
+        return [value, value, value];
+    }
+    return fallback;
+}
+
+const srcGetTierForUnits = function(tiers, units) {
+    if(!Array.isArray(tiers) || tiers.length === 0) return null;
+    const sorted = [...tiers].sort((a, b) => (a.limit || 0) - (b.limit || 0));
+    let selected = sorted[sorted.length - 1];
+    for(const tier of sorted) {
+        if(typeof tier.limit === 'number' && units <= tier.limit) {
+            selected = tier;
+            break;
+        }
+    }
+    return selected;
+}
+
+const srcGetExtraChunks = function(data, units, fallbackLimit, fallbackUnit) {
+    if(!data || !data.extra) return { chunks: 0 };
+    const extraAfter = (typeof data.extra_after === 'number') ? data.extra_after : (typeof fallbackLimit === 'number' ? fallbackLimit : data.limit);
+    if(typeof extraAfter !== 'number' || units <= extraAfter) {
+        return { chunks: 0 };
+    }
+    const extraUnit = (typeof data.extra_unit === 'number') ? data.extra_unit : (typeof fallbackUnit === 'number' ? fallbackUnit : 5);
+    const chunks = Math.ceil((units - extraAfter) / extraUnit);
+    return { chunks, extraUnit };
+}
+
+const srcGetLicenseExtraAmount = function(data, key) {
+    if(!data || !key) return null;
+    const value = data[key];
+    if(value === undefined || value === null) return null;
+    return srcEnsurePriceTriple(value, null);
+}
+
+const srcAuditRatesAgainstVDS = function() {
+    const params = new URLSearchParams(window.location.search);
+    if(params.get('src_audit') !== '1') return;
+    const expected = (srcPluginData && srcPluginData.vdsExpected) ? srcPluginData.vdsExpected : {};
+    const found = srcRatesData || {};
+    const ignoreKeys = new Set(['rights_guidance', 'options_by_project']);
+    const fieldsToCheck = ['base', 'tiers', 'extra', 'extra_unit', 'extra_after', 'tier_unit', 'license_extras', 'variants', 'limit', 'per_min', 'min'];
+    const diffs = [];
+
+    Object.keys(expected).forEach((projectKey) => {
+        if(ignoreKeys.has(projectKey)) return;
+        const expectedProject = expected[projectKey];
+        const foundProject = found[projectKey];
+        if(!foundProject) {
+            diffs.push({ project: projectKey, field: 'project', expected: 'present', found: 'missing' });
+            return;
+        }
+        fieldsToCheck.forEach((field) => {
+            if(expectedProject[field] === undefined) return;
+            const expectedVal = expectedProject[field];
+            const foundVal = foundProject[field];
+            const expectedStr = JSON.stringify(expectedVal);
+            const foundStr = JSON.stringify(foundVal);
+            if(expectedStr !== foundStr) {
+                diffs.push({ project: projectKey, field, expected: expectedVal, found: foundVal });
+            }
+        });
+    });
+
+    if(diffs.length === 0) {
+        console.info('SRC Audit: Keine Abweichungen zwischen VDS-Referenz und src_rates_json gefunden.');
+        return;
+    }
+    console.group('SRC Audit: Abweichungen zwischen VDS-Referenz und src_rates_json');
+    diffs.forEach((diff) => {
+        console.warn(`[${diff.project}] ${diff.field}: erwartet`, diff.expected, 'gefunden', diff.found);
+    });
+    console.groupEnd();
+}
+
 const srcUpdateCutdownVisibility = function(genre, layoutMode) {
-    const row = document.querySelector('.src-option-row[data-option="cutdown"]');
+    const row = document.querySelector('.src-opt-card[data-opt="cutdown"], .src-option-row[data-option="cutdown"]');
     if(!row) return;
     const optionsByProject = srcRatesData.options_by_project || {};
     const allow = !layoutMode && optionsByProject[genre] && optionsByProject[genre].allow_cutdown === true;
@@ -171,6 +260,8 @@ window.srcReset = function() {
     document.getElementById('src-genre').selectedIndex = 0;
     document.getElementById('src-language').selectedIndex = 0;
     document.getElementById('src-text').value = '';
+    const posType = document.getElementById('src-pos-type');
+    if(posType) posType.selectedIndex = 0;
     
     // Reset Inputs
     document.getElementById('src-manual-time-check').checked = false;
@@ -225,10 +316,12 @@ window.srcUIUpdate = function() {
     
     if(layoutMode) {
         toggleElement('mod-ads', false); toggleElement('mod-image', false); toggleElement('mod-phone', false);
+        toggleElement('src-pos-type-wrap', false);
     } else {
         toggleElement('mod-ads', ['tv','online_paid','radio','cinema','pos'].includes(genre));
         toggleElement('mod-image', ['imagefilm','explainer','app'].includes(genre));
         toggleElement('mod-phone', genre === 'phone');
+        toggleElement('src-pos-type-wrap', genre === 'pos');
         
         toggleElement('src-pkg-online-wrap', genre === 'radio');
         toggleElement('src-pkg-atv-wrap', genre === 'online_paid');
@@ -348,12 +441,29 @@ window.srcCalc = function() {
 
         // ADS
         if(['tv','online_paid','radio','cinema','pos'].includes(genre)) {
-            base = [...data.base];
+            let adName = data.name;
+            let adBase = data.base;
+            if(genre === 'pos') {
+                const posTypeEl = document.getElementById('src-pos-type');
+                const posType = posTypeEl ? posTypeEl.value : 'pos_spot';
+                const variants = data.variants || {};
+                const variant = variants[posType] || variants.pos_spot || variants.ladenfunk;
+                if(variant) {
+                    adName = variant.name || adName;
+                    adBase = variant.base || adBase;
+                    if(variant.lic) {
+                        licBaseText = variant.lic;
+                    }
+                    licMeta.push(`POS Typ: ${variant.name || posType}`);
+                }
+            }
+            base = srcEnsurePriceTriple(adBase, base);
             base = base.map(v => Math.round(v * langFactor));
             
-            info.push(`Basisgage (${data.name}${langLabel}): <strong>${base[1]} €</strong>`);
+            info.push(`Basisgage (${adName}${langLabel}): <strong>${base[1]} €</strong>`);
 
-            const region = document.querySelector('input[name="region"]:checked').value;
+            const regionInput = document.querySelector('input[name="region"]:checked');
+            const region = regionInput ? regionInput.value : 'national';
             let regionMult = 1.0;
             if(region === 'regional') { regionMult = 0.8; info.push(`Gebiet: Regional (x0.8): <strong style="color:green">-${Math.round(base[1]*0.2)} €</strong>`); }
             if(region === 'national') { info.push("Gebiet: National (Basis)"); }
@@ -404,38 +514,51 @@ window.srcCalc = function() {
             }
         } 
         // PHONE
-        else if(genre === 'phone') {
-            final = data.base.map(v => Math.round(v * langFactor));
-            const modules = parseInt(document.getElementById('src-phone-count').value) || 1;
-            info.push(`Pauschale (bis 3 Module${langLabel}): <strong>${final[1]} €</strong>`);
-            if(modules > 3) {
-                let ex = modules - 3; let cost = ex * data.extra[1];
-                final[0] += ex * data.extra[0]; final[1] += cost; final[2] += ex * data.extra[2];
-                info.push(`+ ${ex} weitere Module: <strong>+${cost} €</strong>`);
+        else if(Array.isArray(data.tiers)) {
+            const tierUnit = data.tier_unit || 'minutes';
+            const units = tierUnit === 'modules'
+                ? (parseInt(document.getElementById('src-phone-count').value, 10) || 1)
+                : Math.max(0.1, calculatedMinutes);
+            const unitLabel = tierUnit === 'modules' ? 'Module' : 'Min';
+            const tier = srcGetTierForUnits(data.tiers, units);
+            const tierPrices = tier && tier.p ? tier.p : data.base;
+            final = srcEnsurePriceTriple(tierPrices, final).map(v => Math.round(v * langFactor));
+            const tierLimit = tier && typeof tier.limit === 'number' ? tier.limit : data.limit;
+            const tierLabel = tierLimit ? `bis ${tierLimit} ${unitLabel}` : 'Basis';
+            info.push(`Basispreis (${tierLabel}${langLabel}): <strong>${final[1]} €</strong>`);
+
+            const extraConfig = srcGetExtraChunks(data, units, tierLimit, tierUnit === 'modules' ? 1 : 5);
+            if(extraConfig.chunks > 0) {
+                const extraRates = srcEnsurePriceTriple(data.extra, [0, 0, 0]);
+                const extraCost = extraConfig.chunks * extraRates[1];
+                final[0] += extraConfig.chunks * extraRates[0];
+                final[1] += extraCost;
+                final[2] += extraConfig.chunks * extraRates[2];
+                const unitSuffix = tierUnit === 'modules' ? 'Modul' : 'Min';
+                const unitCount = extraConfig.extraUnit || (tierUnit === 'modules' ? 1 : 5);
+                info.push(`Überlänge (+ ${extraConfig.chunks}x ${unitCount} ${unitSuffix}): <strong>+${extraCost} €</strong>`);
+            }
+
+            const licenseExtras = data.license_extras || {};
+            const socialExtra = srcGetLicenseExtraAmount(licenseExtras, 'social_organic');
+            const eventExtra = srcGetLicenseExtraAmount(licenseExtras, 'event_pos');
+            if(document.getElementById('src-lic-social').checked) {
+                const extraRates = socialExtra || [150, 150, 150];
+                final = final.map((v, idx) => v + extraRates[idx]);
+                info.push(`Social Media: <strong>+${extraRates[1]} €</strong>`);
+                licParts.push("+ Social Media");
+            }
+            if(document.getElementById('src-lic-event').checked) {
+                const extraRates = eventExtra || [150, 150, 150];
+                final = final.map((v, idx) => v + extraRates[idx]);
+                info.push(`Event: <strong>+${extraRates[1]} €</strong>`);
+                licParts.push("+ Event");
             }
         }
-        // UNPAID
-        else if(['imagefilm','explainer','app'].includes(genre)) {
-            let mins = Math.max(0.1, calculatedMinutes);
-            let tier = data.tiers[0];
-            if(mins > 2 && mins <= 5) tier = data.tiers[1];
-            else if(mins > 5) tier = data.tiers[1];
-
-            final = tier.p.map(v => Math.round(v * langFactor));
-            info.push(`Basispreis (bis ${tier.limit} Min${langLabel}): <strong>${final[1]} €</strong>`);
-
-            if(mins > 5) {
-                const chunks = Math.ceil((mins - 5) / 5);
-                let extraCost = chunks * data.extra[1];
-                final[0] += chunks * data.extra[0]; final[1] += extraCost; final[2] += chunks * data.extra[2];
-                info.push(`Überlänge (+ ${chunks}x 5 Min): <strong>+${extraCost} €</strong>`);
-            }
-            if(document.getElementById('src-lic-social').checked) { final = final.map(v => v + 150); info.push("Social Media: <strong>+150 €</strong>"); licParts.push("+ Social Media"); }
-            if(document.getElementById('src-lic-event').checked) { final = final.map(v => v + 150); info.push("Event: <strong>+150 €</strong>"); licParts.push("+ Event"); }
-        } 
         // CONTENT
         else {
-            final = data.base.map(v => Math.round(v * langFactor));
+            const baseData = data.base || data.min;
+            final = srcEnsurePriceTriple(baseData, final).map(v => Math.round(v * langFactor));
             info.push(`Basis (Standard${langLabel}): <strong>${final[1]} €</strong>`);
         }
     }
@@ -491,7 +614,7 @@ window.srcCalc = function() {
     const defaultGuidance = rightsGuidance.default || {};
     const guidanceEntry = rightsGuidance[layoutMode ? 'default' : genre] || defaultGuidance;
     let guidanceText = guidanceEntry.text || defaultGuidance.text || "";
-    if(licBaseText && (layoutMode || !guidanceEntry.text)) {
+    if(licBaseText && (layoutMode || !guidanceEntry.text || licBaseText !== (data.lic || ""))) {
         guidanceText = licBaseText;
     }
     if(!guidanceText) {
