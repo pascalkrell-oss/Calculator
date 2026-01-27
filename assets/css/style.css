@@ -40,13 +40,25 @@
 .src-col-right { background: #f1f5f9; padding: 30px; display: flex; flex-direction: column; min-height: 100%; gap: 16px; }
 
 .src-section-title { font-size: 12px; font-weight: 800; color: rgb(51, 51, 51); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+.src-section-head {
+    margin: 18px 0 10px;
+}
+.src-section-head__title {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: rgb(15, 23, 42);
+    border-bottom: 1px solid rgba(148, 163, 184, 0.4);
+    padding-bottom: 6px;
+}
 .src-group { margin-bottom: 25px; }
 
 .src-top-grid { display: grid; grid-template-columns: 55% 1fr; gap: 20px; margin-bottom: 35px; }
 .src-top-sub { display: block; font-size: 11px; color: #94a3b8; margin-top: 6px; line-height: 1.3; }
 
 /* INPUTS */
-.src-select, .src-input-text, .src-textarea, .src-discount-row input {
+.src-select, .src-input-text, .src-textarea, .src-discount-grid input {
     width: 100%; padding: 10px 15px;
     border: 2px solid var(--src-border-light); 
     border-radius: var(--src-input-radius);
@@ -84,7 +96,7 @@
 #src-calc-v6 .src-input-text,
 #src-calc-v6 .src-textarea,
 #src-calc-v6 .src-input-compact,
-#src-calc-v6 .src-discount-row input {
+#src-calc-v6 .src-discount-grid input {
     border-radius: 10px !important;
 }
 
@@ -198,7 +210,7 @@
 .src-option-inline .src-input-compact-wrap {
     min-width: 180px;
 }
-.src-option-inline .src-discount-row {
+.src-option-inline .src-discount-grid {
     margin-top: 0;
 }
 
@@ -531,9 +543,9 @@
 .src-btn { background: var(--src-primary); color: #fff; border: none; padding: 16px; border-radius: 50px; width: 100%; font-weight: 700; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.2s; transform: none !important; }
 .src-btn:hover { background: var(--src-primary-hover); transform: none !important; }
 
-.src-discount-row { display: flex; gap: 10px; margin-top: 6px; }
-.src-discount-row input { flex: 1; }
-.src-discount-percent { flex: 0 0 70px; }
+.src-discount-grid { display: grid; grid-template-columns: 110px 1fr; gap: 10px; margin-top: 6px; }
+.src-discount-percent { width: 100%; }
+.src-discount-reason { width: 100%; }
 .src-hint-text { font-size: 11px; color: #94a3b8; margin-top: 2px; display: block; font-style: italic; }
 
 .src-rights-panel {
@@ -588,8 +600,8 @@
         max-height: 220px;
         transform: translateY(0);
     }
-    .src-option-inline .src-discount-row {
-        flex-direction: column;
+    .src-discount-grid {
+        grid-template-columns: 1fr;
     }
 }
 

@@ -170,6 +170,10 @@ function src_shortcode_output_v7() {
                 </div>
             </div>
 
+            <div class="src-section-head">
+                <div class="src-section-head__title">Nutzungsrechte &amp; Lizenzen</div>
+            </div>
+
             <div id="mod-ads" class="src-slide-wrap">
                 <div class="src-light-box-wrapper">
                     <div id="src-pos-type-wrap" class="src-slide-wrap" style="margin-bottom:15px;">
@@ -300,6 +304,9 @@ function src_shortcode_output_v7() {
             </div>
 
             <div id="src-global-settings" class="src-group" style="margin-top:15px; border-top:1px dashed #e2e8f0; padding-top:15px;">
+                <div class="src-section-head">
+                    <div class="src-section-head__title">Optionen</div>
+                </div>
                 <div class="src-opt-card" data-opt="layout">
                     <div class="src-opt-head">
                         <div class="src-opt-left">
@@ -388,9 +395,9 @@ function src_shortcode_output_v7() {
                         </div>
                     </div>
                     <div class="src-opt-body" data-opt-body>
-                        <div class="src-discount-row src-opt-body-row">
-                            <input type="number" id="src-discount-percent" class="src-input-compact src-discount-percent" placeholder="%" min="0" max="100" oninput="srcCalc()">
-                            <input type="text" id="src-discount-reason" class="src-input-compact" placeholder="Grund (z.B. Neukunde)" oninput="srcCalc()">
+                        <div class="src-discount-grid">
+                            <input type="number" id="src-discount-percent" class="src-input-text src-discount-percent" placeholder="%" min="0" max="100" oninput="srcCalc()">
+                            <input type="text" id="src-discount-reason" class="src-input-text src-discount-reason" placeholder="Grund (z.B. Neukunde)" oninput="srcCalc()">
                         </div>
                         <span class="src-hint-text">Der Rabatt wird vom Netto-Gesamtbetrag abgezogen.</span>
                     </div>
