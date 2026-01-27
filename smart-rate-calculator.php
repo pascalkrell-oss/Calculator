@@ -170,7 +170,7 @@ function src_shortcode_output_v7() {
                 </div>
             </div>
 
-            <div class="src-section-head">
+            <div class="src-section-head src-section-head--rights">
                 <div class="src-section-head__title">Nutzungsrechte &amp; Lizenzen</div>
             </div>
 
@@ -303,7 +303,7 @@ function src_shortcode_output_v7() {
                 </div>
             </div>
 
-            <div id="src-global-settings" class="src-group" style="margin-top:15px; border-top:1px dashed #e2e8f0; padding-top:15px;">
+            <div id="src-global-settings" class="src-group" style="margin-top:15px; padding-top:15px;">
                 <div class="src-section-head">
                     <div class="src-section-head__title">Optionen</div>
                 </div>

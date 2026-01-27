@@ -405,7 +405,7 @@ window.srcReset = function() {
 window.srcUIUpdate = function() {
     const genre = document.getElementById('src-genre').value;
     const layoutMode = document.getElementById('src-layout-mode').checked;
-    const hasGenre = genre !== "";
+    const hasGenre = Boolean(genre) && genre !== "0";
     const calcRoot = document.getElementById('src-calc-v6');
 
     if (calcRoot) {
