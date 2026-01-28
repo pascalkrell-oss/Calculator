@@ -88,6 +88,9 @@
     letter-spacing: 0.01em;
     margin-bottom: 12px;
 }
+.src-rights-card .src-left-section__title {
+    margin-bottom: 6px;
+}
 .src-rights-inner {
     display: grid;
     gap: 12px;
@@ -440,6 +443,9 @@
     margin-top: 12px;
     display: grid;
     gap: 8px;
+}
+.src-sidebar .src-project-tips {
+    margin-top: 0;
 }
 .src-tip-card {
     font-size: 12px;
@@ -840,6 +846,13 @@
 .src-modal-overlay {
     position: fixed;
     inset: 0;
+    width: 100vw;
+    height: 100vh;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    max-width: none;
     display: none;
     align-items: center;
     justify-content: center;

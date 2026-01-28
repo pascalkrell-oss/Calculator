@@ -46,7 +46,7 @@ function src_enqueue_assets_v7() {
     wp_enqueue_script(
         'src-script', 
         SRC_PLUGIN_URL . 'assets/js/skripts.js', 
-        array('jquery', 'jspdf'), 
+        array('jquery', 'jspdf', 'jspdf-autotable'), 
         '7.0.0', 
         true
     );
@@ -123,7 +123,6 @@ function src_shortcode_output_v7() {
                         </optgroup>
                     </select>
                     <span class="src-top-sub">Was wird produziert?</span>
-                    <div id="src-project-tips" class="src-project-tips src-collapse"></div>
                 </div>
                 
                 <div>
@@ -313,7 +312,7 @@ function src_shortcode_output_v7() {
                 </div>
             </div>
 
-            <div class="src-group src-complexity-group" id="src-complexity-group">
+            <div class="src-group src-complexity-group src-collapse" id="src-complexity-group">
                 <div class="src-section-head">
                     <div class="src-section-head__title">Produktion &amp; Aufwand</div>
                 </div>
@@ -534,13 +533,18 @@ function src_shortcode_output_v7() {
                         </div>
                     </div>
 
-                    <div class="src-sidebar-section">
+                    <div class="src-sidebar-section src-collapse" id="src-pricedetails-section">
                         <div class="src-sidebar-title src-sidebar-title--pricedetails">Preis-Details</div>
                         <div id="src-calc-breakdown" class="src-breakdown-box src-collapse">
                             <div id="src-breakdown-list">
                                 <div class="src-breakdown-row">Bitte Projekt wählen..</div>
                             </div>
                         </div>
+                    </div>
+
+                    <div class="src-sidebar-section src-collapse src-sidebar-box--tips" id="src-tips-section">
+                        <div class="src-sidebar-title src-sidebar-title--tips">Tipps</div>
+                        <div id="src-project-tips" class="src-project-tips"></div>
                     </div>
 
                     <div class="src-sidebar-section src-collapse src-sidebar-box--hints" id="src-risk-section">

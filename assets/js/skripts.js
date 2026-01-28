@@ -232,11 +232,13 @@ const srcUpdateSidebarCollapse = function() {
     const hintsSection = document.querySelector('.src-sidebar-box--hints');
     const compareSection = document.querySelector('.src-sidebar-box--compare');
     const packagesSection = document.querySelector('.src-sidebar-box--packages');
+    const priceDetailsSection = document.getElementById('src-pricedetails-section');
     const hasPackages = Boolean(packagesState) && Object.keys(packagesState || {}).length > 0;
     calcRoot.classList.toggle('src-has-packages', hasPackages);
     srcToggleCollapse(hintsSection, hasProject);
     srcToggleCollapse(compareSection, hasProject && compareState.enabled);
     srcToggleCollapse(packagesSection, hasProject);
+    srcToggleCollapse(priceDetailsSection, hasProject);
 }
 
 window.toggleElement = function(id, show) {
@@ -652,10 +654,11 @@ const srcUpdateRightsSectionVisibility = function(genre, layoutMode) {
 }
 
 const srcRenderProjectTips = function(genre) {
+    const tipsSection = document.getElementById('src-tips-section');
     const tipsWrap = document.getElementById('src-project-tips');
-    if(!tipsWrap) return;
-    if(tipsWrap) tipsWrap.innerHTML = '';
-    srcToggleCollapse(tipsWrap, false);
+    if(!tipsWrap || !tipsSection) return;
+    tipsWrap.innerHTML = '';
+    srcToggleCollapse(tipsSection, false);
     if(!genre) {
         return;
     }
@@ -668,7 +671,7 @@ const srcRenderProjectTips = function(genre) {
         `<div class="src-tip-card"><span class="src-tip-card__icon">i</span><div>${tip}</div></div>`
     )).join('');
     tipsWrap.innerHTML = markup;
-    srcToggleCollapse(tipsWrap, true);
+    srcToggleCollapse(tipsSection, true);
 }
 
 const srcRenderFieldTips = function(genre) {
@@ -968,6 +971,9 @@ const srcSyncExportPackageCards = function() {
 window.srcOpenExportModal = function(options = {}) {
     const modal = document.getElementById('src-export-modal');
     if(!modal) return;
+    if(modal.parentElement !== document.body) {
+        document.body.appendChild(modal);
+    }
     modal.classList.add('is-open');
     modal.setAttribute('aria-hidden', 'false');
     if(options.pricingMode) {
@@ -1259,6 +1265,7 @@ window.srcUIUpdate = function() {
     const layoutMode = document.getElementById('src-layout-mode').checked;
     const hasGenre = Boolean(genre) && genre !== "0";
     const calcRoot = document.getElementById('src-calc-v6');
+    const complexityGroup = document.getElementById('src-complexity-group');
 
     if (calcRoot) {
         calcRoot.classList.toggle('src-has-project', hasGenre);
@@ -1284,6 +1291,7 @@ window.srcUIUpdate = function() {
     srcSyncOptionRowStates();
     srcAnalyzeText();
     srcUpdateRightsSectionVisibility(genre, layoutMode);
+    srcToggleCollapse(complexityGroup, hasGenre);
     srcRenderProjectTips(genre);
     srcRenderFieldTips(genre);
     srcUpdateSidebarCollapse();
@@ -1717,6 +1725,10 @@ window.srcCalc = function() {
 }
 
 window.srcGeneratePDFv6 = function(options = {}) {
+    if(!window.jspdf || !window.jspdf.jsPDF) {
+        console.error('SRC: jsPDF nicht verfügbar.');
+        return;
+    }
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     const lang = options.lang || 'de';
@@ -1782,7 +1794,11 @@ window.srcGeneratePDFv6 = function(options = {}) {
 
     const rows = (window.srcBreakdown || []).map(t => [t.replace(/<[^>]*>?/gm, '').replace(':', '')]);
     const tableStart = infoYOffset + 7;
-    doc.autoTable({ startY: tableStart, head: [['Details']], body: rows, theme: 'grid', headStyles: { fillColor: [26, 147, 238] } });
+    if(typeof doc.autoTable === 'function') {
+        doc.autoTable({ startY: tableStart, head: [['Details']], body: rows, theme: 'grid', headStyles: { fillColor: [26, 147, 238] } });
+    } else {
+        console.warn('SRC: jsPDF AutoTable nicht verfügbar, Tabelle wird ausgelassen.');
+    }
 
     let currentY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 10 : 75;
     if(includeBreakdown && currentBreakdownData) {
