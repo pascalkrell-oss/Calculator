@@ -229,16 +229,28 @@ const srcUpdateSidebarCollapse = function() {
     const calcRoot = document.getElementById('src-calc-v6');
     if(!calcRoot) return;
     const hasProject = calcRoot.classList.contains('src-has-project');
-    const hintsSection = document.querySelector('.src-sidebar-box--hints');
     const compareSection = document.querySelector('.src-sidebar-box--compare');
     const packagesSection = document.querySelector('.src-sidebar-box--packages');
     const priceDetailsSection = document.getElementById('src-pricedetails-section');
     const hasPackages = Boolean(packagesState) && Object.keys(packagesState || {}).length > 0;
     calcRoot.classList.toggle('src-has-packages', hasPackages);
-    srcToggleCollapse(hintsSection, hasProject);
     srcToggleCollapse(compareSection, hasProject && compareState.enabled);
     srcToggleCollapse(packagesSection, hasProject);
     srcToggleCollapse(priceDetailsSection, hasProject);
+    srcUpdateNotesTipsVisibility(hasProject);
+}
+
+const srcUpdateNotesTipsVisibility = function(hasProject) {
+    const notesSection = document.getElementById('src-notes-tips-section');
+    if(!notesSection) return;
+    const staticNotes = document.getElementById('src-static-notes');
+    const tipsWrap = document.getElementById('src-project-tips');
+    const hasStaticNotes = Boolean(staticNotes && staticNotes.textContent.trim().length);
+    const hasTips = Boolean(hasProject && tipsWrap && tipsWrap.textContent.trim().length);
+    if(tipsWrap) {
+        tipsWrap.style.display = hasTips ? '' : 'none';
+    }
+    srcToggleCollapse(notesSection, hasStaticNotes || hasTips);
 }
 
 window.toggleElement = function(id, show) {
@@ -273,6 +285,21 @@ window.srcSyncOptionRowStates = function() {
 const srcFormatCurrency = function(value) {
     if(!Number.isFinite(value)) return "–";
     return `${Math.round(value)} €`;
+}
+
+const srcFormatSignedCurrency = function(value) {
+    if(!Number.isFinite(value)) return "";
+    const rounded = Math.round(value);
+    if(rounded === 0) return "0 €";
+    const sign = rounded > 0 ? "+" : "−";
+    return `${sign}${Math.abs(rounded)} €`;
+}
+
+const srcStripHTML = function(str) {
+    if(!str) return '';
+    const div = document.createElement('div');
+    div.innerHTML = String(str);
+    return (div.textContent || div.innerText || '').replace(/\s+/g, ' ').trim();
 }
 
 const srcFormatMinutes = function(minutes) {
@@ -654,24 +681,26 @@ const srcUpdateRightsSectionVisibility = function(genre, layoutMode) {
 }
 
 const srcRenderProjectTips = function(genre) {
-    const tipsSection = document.getElementById('src-tips-section');
     const tipsWrap = document.getElementById('src-project-tips');
-    if(!tipsWrap || !tipsSection) return;
+    if(!tipsWrap) return;
     tipsWrap.innerHTML = '';
-    srcToggleCollapse(tipsSection, false);
+    tipsWrap.style.display = 'none';
     if(!genre) {
+        srcUpdateNotesTipsVisibility(false);
         return;
     }
     const tips = (srcRatesData.project_tips && srcRatesData.project_tips[genre]) || [];
     const selectedTips = tips.slice(0, 3);
     if(selectedTips.length === 0) {
+        srcUpdateNotesTipsVisibility(true);
         return;
     }
     const markup = selectedTips.map(tip => (
-        `<div class="src-tip-card"><span class="src-tip-card__icon">i</span><div>${tip}</div></div>`
+        `<div class="src-tip-card"><span class="src-tip-card__icon">i</span><div><span class="src-badge is-info">Tipp</span><span class="src-tip-card__text">${tip}</span></div></div>`
     )).join('');
     tipsWrap.innerHTML = markup;
-    srcToggleCollapse(tipsSection, true);
+    tipsWrap.style.display = '';
+    srcUpdateNotesTipsVisibility(true);
 }
 
 const srcRenderFieldTips = function(genre) {
@@ -711,6 +740,53 @@ const srcRenderBreakdown = function(breakdown) {
     panel.innerHTML = lines.join('');
 }
 
+const srcRenderPriceDetails = function(info, state, result) {
+    const list = document.getElementById('src-breakdown-list');
+    const badgesWrap = document.getElementById('src-breakdown-badges');
+    if(!list) return;
+    const projectName = state.layoutMode
+        ? "Layout / Pitch"
+        : (srcRatesData[state.projectKey] ? srcRatesData[state.projectKey].name : state.projectKey);
+    const badges = [];
+    if(state.projectKey) {
+        badges.push({ label: `Projekt: ${projectName}`, variant: 'is-info' });
+    }
+    if(state.region && ['tv','online_paid','radio','cinema','pos'].includes(state.projectKey)) {
+        const regionLabel = state.region === 'regional' ? 'Regional' : state.region === 'national' ? 'National' : state.region === 'dach' ? 'DACH' : 'Weltweit';
+        badges.push({ label: `Gebiet: ${regionLabel}`, variant: 'is-success' });
+    }
+    if(state.duration && ['tv','online_paid','radio','cinema','pos'].includes(state.projectKey)) {
+        badges.push({ label: `Laufzeit: ${state.duration === 4 ? 'Unlimited' : `${state.duration} ${state.duration === 1 ? 'Jahr' : 'Jahre'}`}`, variant: 'is-success' });
+    }
+    badges.push({ label: 'Netto', variant: 'is-neutral' });
+    if(badgesWrap) {
+        badgesWrap.innerHTML = badges.map(badge => `<span class="src-badge ${badge.variant}">${badge.label}</span>`).join('');
+    }
+    if(!Array.isArray(info) || info.length === 0) {
+        list.innerHTML = `<div class="src-breakdown-row">
+            <div class="src-breakdown-left">
+                <span class="src-breakdown-label">Bitte Projekt wählen..</span>
+                <span class="src-breakdown-value">—</span>
+            </div>
+            <span class="src-breakdown-formula">—</span>
+        </div>`;
+        return;
+    }
+    list.innerHTML = info.map(entry => {
+        const labelText = entry.label || '';
+        const amountText = entry.amount || '—';
+        const formulaText = entry.formula || '—';
+        const toneClass = entry.tone ? `is-${entry.tone}` : '';
+        return `<div class="src-breakdown-row">
+            <div class="src-breakdown-left">
+                <span class="src-breakdown-label">${labelText}</span>
+                <span class="src-breakdown-value ${toneClass}">${amountText}</span>
+            </div>
+            <span class="src-breakdown-formula">${formulaText}</span>
+        </div>`;
+    }).join('');
+}
+
 const srcBuildRiskChecks = function(state) {
     const checks = [];
     if(!state || !state.projectKey) return checks;
@@ -745,13 +821,20 @@ const srcBuildRiskChecks = function(state) {
 }
 
 const srcRenderRiskChecks = function(checks) {
-    const list = document.getElementById('src-risk-list');
+    const list = document.getElementById('src-static-notes');
     if(!list) return;
+    const calcRoot = document.getElementById('src-calc-v6');
+    const hasProject = Boolean(calcRoot && calcRoot.classList.contains('src-has-project'));
     if(!checks || checks.length === 0) {
-        list.innerHTML = '<div class="src-risk-item info">Keine besonderen Hinweise.</div>';
+        list.innerHTML = '<div class="src-risk-item info"><span class="src-badge is-info">Hinweis</span><span class="src-risk-text">Keine besonderen Hinweise.</span></div>';
+        srcUpdateNotesTipsVisibility(hasProject);
         return;
     }
-    list.innerHTML = checks.map(check => `<div class="src-risk-item ${check.severity}">${check.text}</div>`).join('');
+    list.innerHTML = checks.map(check => {
+        const badge = check.severity === 'warning' ? '<span class="src-badge is-warn">Wichtig</span>' : '<span class="src-badge is-info">Hinweis</span>';
+        return `<div class="src-risk-item ${check.severity}">${badge}<span class="src-risk-text">${check.text}</span></div>`;
+    }).join('');
+    srcUpdateNotesTipsVisibility(hasProject);
 }
 
 const srcToggleCompare = function() {
@@ -1246,7 +1329,7 @@ window.srcReset = function() {
     packagesState = null;
     const packagesList = document.getElementById('src-packages-list');
     if(packagesList) packagesList.innerHTML = '';
-    const riskList = document.getElementById('src-risk-list');
+    const riskList = document.getElementById('src-static-notes');
     if(riskList) riskList.innerHTML = '';
     const calcRoot = document.getElementById('src-calc-v6');
     if(calcRoot) {
@@ -1403,6 +1486,9 @@ const srcComputeResult = function(state) {
     let licBaseText = "";
     let breakdownSteps = [];
     let breakdownBase = null;
+    const addInfo = function(label, amount = '', formula = '', tone = '') {
+        info.push({ label, amount, formula, tone });
+    };
     const lang = state.language;
     let langFactor = 1.0;
     let langLabel = "";
@@ -1412,8 +1498,8 @@ const srcComputeResult = function(state) {
     if(state.layoutMode) {
         final = [250, 300, 350];
         breakdownBase = { min: final[0], mid: final[1], max: final[2] };
-        info.push("<strong>Pauschale Layout / Casting</strong>");
-        info.push("Verwendung: Intern / Pitch");
+        addInfo("Pauschale Layout / Casting", srcFormatCurrency(final[1]), "Fixpreis (Layout/Pitch)");
+        addInfo("Verwendung", "—", "Intern / Pitch");
         licBaseText = "Nur interne Nutzung / Pitch (Keine Veröffentlichung).";
     } else {
         licParts.push("Projekt: " + data.name);
@@ -1439,29 +1525,36 @@ const srcComputeResult = function(state) {
             if(langFactor !== 1) {
                 breakdownSteps.push({ label: `Sprache${langLabel}`, amountOrFactor: `x${langFactor}`, effectOnRange: 'multiply' });
             }
-            info.push(`Basisgage (${adName}${langLabel}): <strong>${base[1]} €</strong>`);
+            addInfo(`Grundhonorar (${adName}${langLabel})`, srcFormatCurrency(base[1]), langFactor !== 1 ? `Basis × Sprachfaktor (${langFactor})` : "Basis");
 
             const region = state.region;
             let regionMult = 1.0;
-            if(region === 'regional') { regionMult = 0.8; info.push(`Gebiet: Regional (x0.8): <strong style="color:green">-${Math.round(base[1]*0.2)} €</strong>`); }
-            if(region === 'national') { info.push("Gebiet: National (Basis)"); }
-            if(region === 'dach') { regionMult = 2.5; info.push(`Gebiet: DACH (x2.5): <strong>+${Math.round(base[1]*1.5)} €</strong>`); }
-            if(region === 'world') { regionMult = 4.0; info.push(`Gebiet: Weltweit (x4.0): <strong>+${Math.round(base[1]*3.0)} €</strong>`); }
-            licMeta.push(`Gebiet: ${region === 'regional' ? 'Regional' : region === 'national' ? 'National' : region === 'dach' ? 'DACH' : 'Weltweit'}`);
+            if(region === 'regional') { regionMult = 0.8; }
+            if(region === 'dach') { regionMult = 2.5; }
+            if(region === 'world') { regionMult = 4.0; }
+            const regionLabel = region === 'regional' ? 'Regional' : region === 'national' ? 'National' : region === 'dach' ? 'DACH' : 'Weltweit';
+            const regionDiff = Math.round(base[1] * (regionMult - 1));
+            const regionAmount = regionMult === 1 ? '—' : srcFormatSignedCurrency(regionDiff);
+            const regionFormula = regionMult === 1 ? '—' : `Basis × Faktor Gebiet (${regionMult})`;
+            addInfo(`Gebiet: ${regionLabel}`, regionAmount, regionFormula, regionDiff < 0 ? 'positive' : '');
+            licMeta.push(`Gebiet: ${regionLabel}`);
 
             const years = state.duration;
             let timeMult = 1;
             if(years === 4) {
                 timeMult = 4;
-                let intermediate = base[1] * regionMult;
-                info.push(`Laufzeit: Unlimited (x4.0): <strong>+${Math.round(intermediate*3)} €</strong>`);
+                const intermediate = base[1] * regionMult;
+                const timeDiff = Math.round(intermediate * (timeMult - 1));
+                addInfo("Laufzeit: Unlimited", srcFormatSignedCurrency(timeDiff), `Zwischensumme × Faktor Laufzeit (${timeMult})`);
                 licParts.push("Unlimited");
                 licMeta.push("Laufzeit: Unlimited");
             } else {
                 timeMult = years;
-                let intermediate = base[1] * regionMult;
-                if(years > 1) { info.push(`Laufzeit: ${years} Jahre (x${years}.0): <strong>+${Math.round(intermediate*(years-1))} €</strong>`); }
-                else { info.push("Laufzeit: 1 Jahr"); }
+                const intermediate = base[1] * regionMult;
+                const timeDiff = Math.round(intermediate * (timeMult - 1));
+                const timeAmount = timeMult === 1 ? '—' : srcFormatSignedCurrency(timeDiff);
+                const timeFormula = timeMult === 1 ? '—' : `Zwischensumme × Faktor Laufzeit (${timeMult})`;
+                addInfo(`Laufzeit: ${years} ${years === 1 ? 'Jahr' : 'Jahre'}`, timeAmount, timeFormula);
                 licParts.push(years + " Jahr(e)");
                 licMeta.push(`Laufzeit: ${years} ${years === 1 ? 'Jahr' : 'Jahre'}`);
             }
@@ -1469,15 +1562,19 @@ const srcComputeResult = function(state) {
             breakdownSteps.push({ label: `Laufzeit`, amountOrFactor: `x${timeMult}`, effectOnRange: 'multiply' });
 
             if(genre === 'radio' && state.packageOnline) {
+                const beforePackage = base[1];
                 base = base.map(v => Math.round(v * 1.6));
                 breakdownSteps.push({ label: "Paket: Online Audio", amountOrFactor: "x1.6", effectOnRange: 'multiply' });
-                info.push("Paket: + Online Audio (x1.6)"); licParts.push("inkl. Online Audio");
+                addInfo("Paket: Online Audio", srcFormatSignedCurrency(base[1] - beforePackage), "Basis × Paketfaktor (1.6)");
+                licParts.push("inkl. Online Audio");
                 licMeta.push("Paket: Online Audio");
             }
             if(genre === 'online_paid' && state.packageAtv) {
+                const beforePackage = base[1];
                 base = base.map(v => Math.round(v * 1.6));
                 breakdownSteps.push({ label: "Paket: ATV/CTV", amountOrFactor: "x1.6", effectOnRange: 'multiply' });
-                info.push("Paket: + ATV/CTV (x1.6)"); licParts.push("inkl. ATV/CTV");
+                addInfo("Paket: ATV/CTV", srcFormatSignedCurrency(base[1] - beforePackage), "Basis × Paketfaktor (1.6)");
+                licParts.push("inkl. ATV/CTV");
                 licMeta.push("Paket: ATV/CTV");
             }
 
@@ -1487,7 +1584,7 @@ const srcComputeResult = function(state) {
                 let oldMid = final[1];
                 final = final.map(v => Math.round(v * 0.5));
                 breakdownSteps.push({ label: "Cut-down", amountOrFactor: "x0.5", effectOnRange: 'multiply' });
-                info.push(`Cut-down (50%): <strong style="color:green">-${oldMid - final[1]} €</strong>`);
+                addInfo("Cut-down (50%)", srcFormatSignedCurrency(final[1] - oldMid), "Zwischensumme × 0.5", 'positive');
                 licParts.push("Typ: Cut-down");
                 licMeta.push("Typ: Cut-down");
             }
@@ -1504,7 +1601,7 @@ const srcComputeResult = function(state) {
             breakdownBase = { min: final[0], mid: final[1], max: final[2] };
             const tierLimit = tier && typeof tier.limit === 'number' ? tier.limit : data.limit;
             const tierLabel = tierLimit ? `bis ${tierLimit} ${unitLabel}` : 'Basis';
-            info.push(`Basispreis (${tierLabel}${langLabel}): <strong>${final[1]} €</strong>`);
+            addInfo(`Grundhonorar (${tierLabel}${langLabel})`, srcFormatCurrency(final[1]), langFactor !== 1 ? `Basis × Sprachfaktor (${langFactor})` : "Basis");
             if(langFactor !== 1) {
                 breakdownSteps.push({ label: `Sprache${langLabel}`, amountOrFactor: `x${langFactor}`, effectOnRange: 'multiply' });
             }
@@ -1519,12 +1616,13 @@ const srcComputeResult = function(state) {
                 const unitSuffix = tierUnit === 'modules' ? 'Modul' : 'Min';
                 const unitCount = extraConfig.extraUnit || (tierUnit === 'modules' ? 1 : 5);
                 breakdownSteps.push({ label: `Überlänge ${extraConfig.chunks}x`, amountOrFactor: `+${extraCost} €`, effectOnRange: 'add' });
-                info.push(`Überlänge (+ ${extraConfig.chunks}x ${unitCount} ${unitSuffix}): <strong>+${extraCost} €</strong>`);
+                addInfo(`Überlänge (+${extraConfig.chunks}× ${unitCount} ${unitSuffix})`, srcFormatSignedCurrency(extraCost), `+${extraConfig.chunks} × ${extraRates[1]} €`);
             }
 
             if(tierUnit === 'minutes' && state.hasScript && state.minutes > 0) {
                 final = srcAdjustRangeForScript(final, true);
                 breakdownSteps.push({ label: "Skript vorhanden", amountOrFactor: "Range enger", effectOnRange: 'adjust' });
+                addInfo("Skript vorhanden", "—", "Range enger");
             }
 
             const licenseExtras = data.license_extras || {};
@@ -1534,14 +1632,14 @@ const srcComputeResult = function(state) {
                 const extraRates = socialExtra || [150, 150, 150];
                 final = final.map((v, idx) => v + extraRates[idx]);
                 breakdownSteps.push({ label: "Social Media", amountOrFactor: `+${extraRates[1]} €`, effectOnRange: 'add' });
-                info.push(`Social Media: <strong>+${extraRates[1]} €</strong>`);
+                addInfo("Social Media", srcFormatSignedCurrency(extraRates[1]), "Zusatzlizenz");
                 licParts.push("+ Social Media");
             }
             if(state.licenseEvent) {
                 const extraRates = eventExtra || [150, 150, 150];
                 final = final.map((v, idx) => v + extraRates[idx]);
                 breakdownSteps.push({ label: "Event", amountOrFactor: `+${extraRates[1]} €`, effectOnRange: 'add' });
-                info.push(`Event: <strong>+${extraRates[1]} €</strong>`);
+                addInfo("Event / Messe / POS", srcFormatSignedCurrency(extraRates[1]), "Zusatzlizenz");
                 licParts.push("+ Event");
             }
         }
@@ -1549,7 +1647,7 @@ const srcComputeResult = function(state) {
             const baseData = data.base || data.min;
             final = srcEnsurePriceTriple(baseData, final).map(v => Math.round(v * langFactor));
             breakdownBase = { min: final[0], mid: final[1], max: final[2] };
-            info.push(`Basis (Standard${langLabel}): <strong>${final[1]} €</strong>`);
+            addInfo(`Grundhonorar (Standard${langLabel})`, srcFormatCurrency(final[1]), langFactor !== 1 ? `Basis × Sprachfaktor (${langFactor})` : "Basis");
         }
     }
 
@@ -1567,9 +1665,8 @@ const srcComputeResult = function(state) {
         breakdownSteps.push({ label: "Produktion & Aufwand", amountOrFactor: picksText, effectOnRange: 'note' });
         breakdownSteps.push({ label: "Komplexitätsfaktor", amountOrFactor: `x${factorLabel}`, effectOnRange: 'multiply' });
         const diff = adjustedMid - baseMid;
-        const diffText = diff >= 0 ? `+${diff}` : `${diff}`;
-        const diffColor = diff >= 0 ? '' : ' style="color:green"';
-        info.push(`Produktion & Aufwand (x${factorLabel}): <strong${diffColor}>${diffText} €</strong>`);
+        const tone = diff < 0 ? 'positive' : '';
+        addInfo("Produktion & Aufwand", srcFormatSignedCurrency(diff), `x${factorLabel} (${picksText})`, tone);
     }
 
     if(state.licenseSocial) { licMeta.push("Zusatzlizenz: Social Media (organisch)"); }
@@ -1578,7 +1675,7 @@ const srcComputeResult = function(state) {
     if(state.studioFee > 0) {
         final = final.map(v => v + state.studioFee);
         breakdownSteps.push({ label: "Studiokosten", amountOrFactor: `+${state.studioFee} €`, effectOnRange: 'add' });
-        info.push(`Studiokosten: <strong>+${state.studioFee} €</strong>`);
+        addInfo("Studiokosten", srcFormatSignedCurrency(state.studioFee), "Fixbetrag");
     }
     if(state.expressToggle) {
         const expressType = state.expressType;
@@ -1587,13 +1684,13 @@ const srcComputeResult = function(state) {
         final = final.map(v => Math.round(v * (1 + expressFactor)));
         let eLabel = (expressType === '4h') ? "4h (+100%)" : "24h (+50%)";
         breakdownSteps.push({ label: `Express ${eLabel}`, amountOrFactor: `+${expressAmount} €`, effectOnRange: 'multiply' });
-        info.push(`Express (${eLabel}): <strong>+${expressAmount} €</strong>`);
+        addInfo(`Express ${eLabel}`, srcFormatSignedCurrency(expressAmount), `Zwischensumme × ${expressFactor + 1}`);
     }
     if(state.discountToggle && state.discountPct > 0) {
         let disc = Math.round(final[1] * (state.discountPct/100));
         final = final.map(v => Math.round(v * (1 - state.discountPct/100)));
         breakdownSteps.push({ label: `Rabatt ${state.discountPct}%`, amountOrFactor: `-${disc} €`, effectOnRange: 'add' });
-        info.push(`Rabatt (${state.discountPct}%): <strong style="color:green">-${disc} €</strong>`);
+        addInfo(`Rabatt (${state.discountPct}%)`, srcFormatSignedCurrency(-disc), `Zwischensumme × ${state.discountPct}%`, 'positive');
     }
 
     if(!breakdownBase) {
@@ -1623,9 +1720,22 @@ const srcComputeResult = function(state) {
     if(state.licenseEvent && extras.event_pos) {
         extrasText.push(extras.event_pos);
     }
-    const extraBlock = extrasText.length ? `<br><span class="src-license-extras">${extrasText.join(' ')}</span>` : "";
-    const licMetaText = licMeta.length ? `<br><span class="src-license-meta">${licMeta.join(' · ')}</span>` : "";
-    const licenseText = `${guidanceText || ""}${extraBlock}${licMetaText}`;
+    const licenseBadges = [];
+    if(state.region && ['tv','online_paid','radio','cinema','pos'].includes(state.projectKey)) {
+        const regionLabel = state.region === 'regional' ? 'Regional' : state.region === 'national' ? 'National' : state.region === 'dach' ? 'DACH' : 'Weltweit';
+        licenseBadges.push(`<span class="src-badge is-info">Gebiet: ${regionLabel}</span>`);
+    }
+    if(state.duration && ['tv','online_paid','radio','cinema','pos'].includes(state.projectKey)) {
+        const durationLabel = state.duration === 4 ? 'Unlimited' : `${state.duration} ${state.duration === 1 ? 'Jahr' : 'Jahre'}`;
+        licenseBadges.push(`<span class="src-badge is-success">Laufzeit: ${durationLabel}</span>`);
+    }
+    if(state.licenseSocial || state.licenseEvent) {
+        licenseBadges.push('<span class="src-badge is-warn">Zusatzlizenz</span>');
+    }
+    const badgeRow = licenseBadges.length ? `<div class="src-badge-row">${licenseBadges.join(' ')}</div>` : "";
+    const extraBlock = extrasText.length ? `<div class="src-license-extras">${extrasText.join(' ')}</div>` : "";
+    const licMetaText = licMeta.length ? `<div class="src-license-meta">${licMeta.join(' · ')}</div>` : "";
+    const licenseText = `${badgeRow}${guidanceText || ""}${extraBlock}${licMetaText}`;
     return {
         final,
         info,
@@ -1643,6 +1753,8 @@ window.srcCalc = function() {
     if(!genre) {
         const breakdownBox = document.getElementById('src-calc-breakdown');
         srcToggleCollapse(breakdownBox, false);
+        const badgesWrap = document.getElementById('src-breakdown-badges');
+        if(badgesWrap) badgesWrap.innerHTML = '';
         updateMainAmountAnimated("0 €");
         srcUpdateMeanValue(
             document.getElementById('src-mean-fade'),
@@ -1690,19 +1802,7 @@ window.srcCalc = function() {
         `Ø Mittelwert: ${final[1]} €`
     );
     
-    // Add Cutdown Icon in Breakdown List if applicable
-    const bd = document.getElementById('src-breakdown-list');
-    const iconMatches = [
-        { match: "Cut-down", icon: "dashicons-editor-cut" }
-    ];
-    bd.innerHTML = info.map(line => {
-        const found = iconMatches.find(entry => line.includes(entry.match));
-        const match = line.match(/^(.*)<strong[^>]*>(.*)<\/strong>$/);
-        const labelText = match ? match[1].replace(/:\s*$/, '').trim() : line.replace(/<[^>]*>?/gm, '').trim();
-        const valueText = match ? match[2].replace(/<\/?strong[^>]*>/g, '').trim() : '';
-        const iconMarkup = found ? `<span class="dashicons ${found.icon}"></span>` : '';
-        return `<div class="src-breakdown-row"><span class="src-breakdown-label">${iconMarkup}${labelText}</span>${valueText ? `<span class="src-breakdown-value">${valueText}</span>` : ''}</div>`;
-    }).join('');
+    srcRenderPriceDetails(info, state, result);
     
     dynamicLicenseText = licText;
     const licBox = document.getElementById('src-license-text');
@@ -1739,23 +1839,25 @@ window.srcGeneratePDFv6 = function(options = {}) {
     const includeRisk = Boolean(options.includeRisk);
     const extraSettings = options.extraSettings || {};
 
-    doc.setFillColor(26, 147, 238);
-    doc.rect(0, 0, 210, 25, 'F');
-    doc.setFontSize(20);
-    doc.setTextColor(255, 255, 255);
-    doc.text(lang === 'en' ? 'Offer Overview' : 'Angebotsübersicht', 15, 17);
-    doc.setFontSize(10);
-    doc.setTextColor(50);
-    doc.text(`${i18n.dateLabel}: ${new Date().toLocaleDateString(lang === 'en' ? 'en-US' : 'de-DE')}`, 160, 17);
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 15;
+    const columnGap = 10;
+    const columnWidth = (pageWidth - (margin * 2) - columnGap) / 2;
+    const leftX = margin;
+    const rightX = margin + columnWidth + columnGap;
+    let currentY = 18;
 
     const state = srcGetStateFromUI();
     const result = srcComputeResult(state);
     const projectName = state.layoutMode ? "Layout / Pitch (Intern)" : (srcRatesData[state.projectKey] ? srcRatesData[state.projectKey].name : state.projectKey);
+
     let priceLabel = i18n.pricingRange;
-    let priceText = `${result.final[0]} € - ${result.final[2]} €`;
+    let priceValue = result.final[1];
+    let rangeText = `${result.final[0]}–${result.final[2]} €`;
+    let packageLabel = '';
     if(pricingMode === 'mean') {
         priceLabel = i18n.pricingMean;
-        priceText = `${result.final[1]} €`;
     }
     if(pricingMode === 'package') {
         if(!packagesState) {
@@ -1763,79 +1865,179 @@ window.srcGeneratePDFv6 = function(options = {}) {
         }
         const pkg = packagesState[selectedPackage] || packagesState.standard;
         priceLabel = i18n.pricingPackage;
-        priceText = `${pkg.price} € (${pkg.label})`;
+        priceValue = parseFloat(pkg.price) || 0;
+        packageLabel = pkg.label;
     }
 
-    doc.setTextColor(0);
-    doc.setFontSize(14);
-    doc.text(`${i18n.project}: ${extraSettings.projectName ? `${extraSettings.projectName} - ` : ''}${projectName}`, 15, 40);
-    doc.setFontSize(12);
-    doc.setTextColor(26, 147, 238);
-    doc.text(`${priceLabel}: ${priceText}`, 15, 50);
+    doc.setFontSize(18);
+    doc.setTextColor(15, 23, 42);
+    doc.text(lang === 'en' ? 'Offer' : 'Angebot', margin, currentY);
     doc.setFontSize(10);
-    doc.setTextColor(50);
-    let infoYOffset = 58;
-    if(extraSettings.customerType) {
-        const typeLabel = extraSettings.customerType === 'agency' ? i18n.customerTypeAgency : i18n.customerTypeDirect;
-        doc.text(`${i18n.customerTypeLabel}: ${typeLabel}`, 15, infoYOffset);
-        infoYOffset += 6;
-    }
-    if(extraSettings.offerId) {
-        doc.text(`${i18n.offerNumberLabel}: ${extraSettings.offerId}`, 15, infoYOffset);
-        infoYOffset += 6;
-    }
-    if(extraSettings.validity) {
-        doc.text(`${i18n.validity}: ${extraSettings.validity}`, 15, infoYOffset);
-        infoYOffset += 6;
-    }
-    if(extraSettings.scope && extraSettings.scope.length) {
-        doc.text(`${i18n.scope}: ${extraSettings.scope.join(', ')}`, 15, infoYOffset);
-    }
+    doc.setTextColor(71, 85, 105);
+    doc.text(`${i18n.dateLabel}: ${new Date().toLocaleDateString(lang === 'en' ? 'en-US' : 'de-DE')}`, pageWidth - margin, currentY, { align: 'right' });
+    currentY += 10;
 
-    const rows = (window.srcBreakdown || []).map(t => [t.replace(/<[^>]*>?/gm, '').replace(':', '')]);
-    const tableStart = infoYOffset + 7;
-    if(typeof doc.autoTable === 'function') {
-        doc.autoTable({ startY: tableStart, head: [['Details']], body: rows, theme: 'grid', headStyles: { fillColor: [26, 147, 238] } });
-    } else {
-        console.warn('SRC: jsPDF AutoTable nicht verfügbar, Tabelle wird ausgelassen.');
-    }
+    const providerLines = [
+        'Sprecherleistung / Voice-Over',
+        'Kontakt: auf Anfrage',
+        'Adresse / USt-ID: optional'
+    ];
+    const customerType = extraSettings.customerType
+        ? (extraSettings.customerType === 'agency' ? i18n.customerTypeAgency : i18n.customerTypeDirect)
+        : '';
+    const customerLines = [
+        extraSettings.projectName ? `Projekt: ${extraSettings.projectName}` : `Projekt: ${projectName}`,
+        customerType ? `${i18n.customerTypeLabel}: ${customerType}` : '',
+        extraSettings.offerId ? `${i18n.offerNumberLabel}: ${extraSettings.offerId}` : '',
+        extraSettings.validity ? `${i18n.validity}: ${extraSettings.validity}` : ''
+    ].filter(Boolean);
 
-    let currentY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 10 : 75;
-    if(includeBreakdown && currentBreakdownData) {
+    const drawInfoBlock = (title, lines, x, y) => {
         doc.setFontSize(11);
-        doc.setTextColor(26, 147, 238);
-        doc.text(i18n.breakdown, 15, currentY);
-        currentY += 6;
+        doc.setTextColor(15, 23, 42);
+        doc.text(title, x, y);
         doc.setFontSize(9);
-        doc.setTextColor(50);
+        doc.setTextColor(71, 85, 105);
+        const text = doc.splitTextToSize(lines.join('\n'), columnWidth);
+        doc.text(text, x, y + 5);
+        return y + 5 + (text.length * 4);
+    };
+
+    const leftEndY = drawInfoBlock(lang === 'en' ? 'Provider' : 'Anbieter', providerLines, leftX, currentY);
+    const rightEndY = drawInfoBlock(lang === 'en' ? 'Client' : 'Kunde', customerLines, rightX, currentY);
+    currentY = Math.max(leftEndY, rightEndY) + 8;
+
+    doc.setFontSize(12);
+    doc.setTextColor(15, 23, 42);
+    doc.text(`${i18n.subjectLabel}: ${i18n.subject}`, margin, currentY);
+    currentY += 6;
+    doc.setFontSize(9);
+    doc.setTextColor(71, 85, 105);
+    const introLines = doc.splitTextToSize(i18n.intro, pageWidth - (margin * 2));
+    doc.text(introLines, margin, currentY);
+    currentY += introLines.length * 4 + 4;
+
+    const scopeText = extraSettings.scope && extraSettings.scope.length ? `Lieferumfang: ${extraSettings.scope.join(', ')}` : '';
+    const descriptionLines = [
+        `${projectName}`,
+        packageLabel ? `Paket: ${packageLabel}` : '',
+        scopeText
+    ].filter(Boolean).join('\n');
+    const positionRows = [
+        [
+            '1',
+            pricingMode === 'range' ? `${descriptionLines}\nPreisrahmen: ${rangeText}` : descriptionLines,
+            '1',
+            `${priceValue} €`,
+            pricingMode === 'range' ? rangeText : `${priceValue} €`
+        ]
+    ];
+
+    if(typeof doc.autoTable === 'function') {
+        doc.autoTable({
+            startY: currentY,
+            head: [['Pos.', 'Beschreibung', 'Menge', 'Einzel', 'Gesamt']],
+            body: positionRows,
+            theme: 'grid',
+            headStyles: { fillColor: [26, 147, 238], textColor: 255 },
+            styles: { fontSize: 9, cellPadding: 3 },
+            columnStyles: {
+                0: { cellWidth: 12 },
+                1: { cellWidth: 90 },
+                2: { cellWidth: 18, halign: 'center' },
+                3: { cellWidth: 25, halign: 'right' },
+                4: { cellWidth: 25, halign: 'right' }
+            }
+        });
+    }
+
+    currentY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 8 : currentY + 24;
+
+    doc.setFontSize(11);
+    doc.setTextColor(15, 23, 42);
+    doc.text(lang === 'en' ? 'Rights & Licenses' : 'Nutzungsrechte & Lizenzen', margin, currentY);
+    currentY += 5;
+    doc.setFontSize(9);
+    doc.setTextColor(71, 85, 105);
+
+    const rightsLines = [];
+    if(['tv','online_paid','radio','cinema','pos'].includes(state.projectKey)) {
+        const regionLabel = state.region === 'regional' ? 'Regional' : state.region === 'national' ? 'National' : state.region === 'dach' ? 'DACH' : 'Weltweit';
+        rightsLines.push(`Gebiet: ${regionLabel}`);
+        rightsLines.push(`Laufzeit: ${state.duration === 4 ? 'Unlimited' : `${state.duration} ${state.duration === 1 ? 'Jahr' : 'Jahre'}`}`);
+    }
+    const addons = [];
+    if(state.packageOnline) addons.push('Online Audio');
+    if(state.packageAtv) addons.push('ATV/CTV');
+    if(state.licenseSocial) addons.push('Social Media');
+    if(state.licenseEvent) addons.push('Event / Messe / POS');
+    if(addons.length) rightsLines.push(`Zusatz: ${addons.join(', ')}`);
+    const cleanLicenseText = srcStripHTML(dynamicLicenseText);
+    if(cleanLicenseText) rightsLines.push(cleanLicenseText);
+    doc.text(doc.splitTextToSize(rightsLines.join('\n'), pageWidth - (margin * 2)), margin, currentY);
+    currentY += rightsLines.length * 4 + 10;
+
+    const summaryX = pageWidth - margin - 70;
+    let summaryY = currentY;
+    const subtotal = pricingMode === 'package' ? priceValue : result.final[1];
+    const discountPct = state.discountToggle ? state.discountPct : 0;
+    const discountedFrom = discountPct > 0 ? Math.round(subtotal / (1 - (discountPct / 100))) : subtotal;
+    const discountAmount = discountPct > 0 ? discountedFrom - subtotal : 0;
+    const totalLabel = pricingMode === 'range' ? rangeText : `${subtotal} €`;
+
+    doc.setFontSize(10);
+    doc.setTextColor(15, 23, 42);
+    doc.text(lang === 'en' ? 'Summary' : 'Summen', summaryX, summaryY);
+    summaryY += 5;
+    doc.setFontSize(9);
+    doc.setTextColor(71, 85, 105);
+    doc.text('Zwischensumme', summaryX, summaryY);
+    doc.text(pricingMode === 'range' ? rangeText : `${discountedFrom} €`, pageWidth - margin, summaryY, { align: 'right' });
+    summaryY += 4.5;
+    if(discountPct > 0) {
+        doc.text(`Rabatt (${discountPct}%)`, summaryX, summaryY);
+        doc.text(`-${discountAmount} €`, pageWidth - margin, summaryY, { align: 'right' });
+        summaryY += 4.5;
+    }
+    doc.setFontSize(10);
+    doc.setTextColor(15, 23, 42);
+    doc.text(lang === 'en' ? 'Total (net)' : 'Gesamt (Netto)', summaryX, summaryY);
+    doc.text(totalLabel, pageWidth - margin, summaryY, { align: 'right' });
+    summaryY += 6;
+    doc.setFontSize(8);
+    doc.setTextColor(100);
+    doc.text(i18n.assumptions, summaryX, summaryY);
+
+    currentY = Math.max(currentY, summaryY + 8);
+
+    if(includeBreakdown && currentBreakdownData) {
+        doc.setFontSize(10);
+        doc.setTextColor(15, 23, 42);
+        doc.text(i18n.breakdown, margin, currentY);
+        currentY += 5;
+        doc.setFontSize(9);
+        doc.setTextColor(71, 85, 105);
         const breakdownLines = [
             `Basis: ${currentBreakdownData.base.mid} € (${currentBreakdownData.base.min}–${currentBreakdownData.base.max} €)`
-        ].concat(currentBreakdownData.steps.map(step => `${step.label}: ${step.amountOrFactor}`));
-        doc.text(doc.splitTextToSize(breakdownLines.join('\n'), 180), 15, currentY);
+        ].concat(currentBreakdownData.steps.map(step => `${srcStripHTML(step.label)}: ${srcStripHTML(step.amountOrFactor)}`));
+        doc.text(doc.splitTextToSize(breakdownLines.join('\n'), pageWidth - (margin * 2)), margin, currentY);
         currentY += breakdownLines.length * 4 + 6;
     }
+
     if(includeRisk && currentRiskChecks.length) {
-        doc.setFontSize(11);
-        doc.setTextColor(26, 147, 238);
-        doc.text(i18n.risks, 15, currentY);
-        currentY += 6;
+        doc.setFontSize(10);
+        doc.setTextColor(15, 23, 42);
+        doc.text(i18n.risks, margin, currentY);
+        currentY += 5;
         doc.setFontSize(9);
-        doc.setTextColor(50);
-        doc.text(doc.splitTextToSize(currentRiskChecks.map(check => `- ${check.text}`).join('\n'), 180), 15, currentY);
+        doc.setTextColor(71, 85, 105);
+        doc.text(doc.splitTextToSize(currentRiskChecks.map(check => `- ${srcStripHTML(check.text)}`).join('\n'), pageWidth - (margin * 2)), margin, currentY);
         currentY += currentRiskChecks.length * 4 + 6;
     }
 
-    const cleanLicText = dynamicLicenseText.replace(/<br>/g, "\n").replace(/<strong>|<\/strong>/g, "");
-    if(cleanLicText) {
-        doc.setFontSize(9);
-        doc.setTextColor(0);
-        doc.text(doc.splitTextToSize(cleanLicText, 180), 15, currentY);
-    }
-    if(i18n.assumptions) {
-        const noteY = currentY + 12;
-        doc.setFontSize(9);
-        doc.setTextColor(80);
-        doc.text(doc.splitTextToSize(i18n.assumptions, 180), 15, noteY);
-    }
+    doc.setFontSize(9);
+    doc.setTextColor(71, 85, 105);
+    doc.text(lang === 'en' ? 'Payment: 14 days net · Thank you for your trust.' : 'Zahlungsziel: 14 Tage netto · Vielen Dank für Ihr Vertrauen.', margin, pageHeight - 12);
+
     doc.save('Gagen_Angebot.pdf');
 }

@@ -533,23 +533,33 @@ function src_shortcode_output_v7() {
                         </div>
                     </div>
 
+                    <div id="src-license-section" class="src-sidebar-section src-license-section src-collapse">
+                        <div class="src-sidebar-title src-sidebar-title--rights">Nutzungsrechte &amp; Lizenzen</div>
+                        <div id="src-license-text" class="src-license-box"></div>
+                    </div>
+
                     <div class="src-sidebar-section src-collapse" id="src-pricedetails-section">
                         <div class="src-sidebar-title src-sidebar-title--pricedetails">Preis-Details</div>
                         <div id="src-calc-breakdown" class="src-breakdown-box src-collapse">
+                            <div id="src-breakdown-badges" class="src-breakdown-badges"></div>
                             <div id="src-breakdown-list">
-                                <div class="src-breakdown-row">Bitte Projekt wählen..</div>
+                                <div class="src-breakdown-row">
+                                    <div class="src-breakdown-left">
+                                        <span class="src-breakdown-label">Bitte Projekt wählen..</span>
+                                        <span class="src-breakdown-value">—</span>
+                                    </div>
+                                    <span class="src-breakdown-formula">—</span>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="src-sidebar-section src-collapse src-sidebar-box--tips" id="src-tips-section">
-                        <div class="src-sidebar-title src-sidebar-title--tips">Tipps</div>
-                        <div id="src-project-tips" class="src-project-tips"></div>
-                    </div>
-
-                    <div class="src-sidebar-section src-collapse src-sidebar-box--hints" id="src-risk-section">
-                        <div class="src-sidebar-title src-sidebar-title--risk">Hinweise</div>
-                        <div class="src-risk-box" id="src-risk-list"></div>
+                    <div class="src-sidebar-section src-collapse src-sidebar-box--notes" id="src-notes-tips-section">
+                        <div class="src-sidebar-title src-sidebar-title--notes">Hinweise &amp; Tipps</div>
+                        <div class="src-notes-tips-box">
+                            <div id="src-static-notes" class="src-risk-box"></div>
+                            <div id="src-project-tips" class="src-project-tips"></div>
+                        </div>
                     </div>
 
                     <div class="src-sidebar-section src-collapse src-sidebar-box--compare" id="src-compare-section">
@@ -563,11 +573,6 @@ function src_shortcode_output_v7() {
                             <button class="src-mini-btn src-mini-btn--wide" id="src-build-packages" type="button">Pakete erzeugen</button>
                             <div id="src-packages-list"></div>
                         </div>
-                    </div>
-
-                    <div id="src-license-section" class="src-sidebar-section src-license-section src-collapse">
-                        <div class="src-sidebar-title src-sidebar-title--rights">Nutzungsrechte &amp; Lizenzen</div>
-                        <div id="src-license-text" class="src-license-box"></div>
                     </div>
 
                     <div class="src-sidebar-section src-info-section">
