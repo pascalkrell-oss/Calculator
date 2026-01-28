@@ -516,6 +516,9 @@
 
 /* RESULT CARD (BLUE) */
 .src-sidebar-section { display: flex; flex-direction: column; gap: 0; }
+.src-sidebar-section:not(:last-child) {
+    margin-bottom: 12px;
+}
 .src-sidebar-title {
     font-size: 12px;
     font-weight: 800;
@@ -523,13 +526,13 @@
     letter-spacing: 0.08em;
     color: #fff;
     background: var(--src-header-bg);
-    padding: 12px 16px;
+    padding: 9px 14px;
     border-radius: 12px 12px 0 0;
     border-bottom: 1px solid #e2e8f0;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    min-height: 48px;
+    min-height: 40px;
     line-height: 1.2;
 }
 .src-sidebar-title .dashicons {
@@ -654,8 +657,21 @@
 @keyframes fadeInField { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
 .src-breakdown-box { background: #fff; border: 1px solid var(--src-border-light); border-radius: 0 0 12px 12px; padding: 16px; margin-bottom: 0; font-size: 13px; color: #475569; }
-.src-breakdown-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed #e2e8f0; gap: 12px; }
+.src-breakdown-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+.src-breakdown-row { display: flex; justify-content: space-between; align-items: flex-start; padding: 8px 0; border-bottom: 1px dashed #e2e8f0; gap: 12px; }
 .src-breakdown-row:last-child { border-bottom: none; }
+.src-breakdown-left {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1 1 auto;
+    min-width: 0;
+}
 .src-breakdown-label {
     display: flex;
     align-items: center;
@@ -665,8 +681,17 @@
 .src-breakdown-value {
     font-weight: 700;
     color: var(--src-dark);
-    text-align: right;
+    text-align: left;
     flex: 0 0 auto;
+}
+.src-breakdown-value.is-positive {
+    color: #16a34a;
+}
+.src-breakdown-formula {
+    font-size: 11px;
+    color: #94a3b8;
+    text-align: right;
+    flex: 0 0 38%;
 }
 .src-breakdown-accordion {
     margin-top: 12px;
@@ -727,6 +752,7 @@
     font-weight: 700;
 }
 
+.src-notes-tips-box,
 .src-risk-box,
 .src-compare-box,
 .src-packages-box {
@@ -734,6 +760,10 @@
     border: 1px solid var(--src-border-light);
     border-radius: 0 0 12px 12px;
     padding: 14px;
+}
+.src-notes-tips-box {
+    display: grid;
+    gap: 12px;
 }
 .src-risk-item {
     font-size: 12px;
@@ -743,6 +773,8 @@
     border: 1px solid #e2e8f0;
     background: #f8fafc;
     margin-bottom: 8px;
+    display: grid;
+    gap: 6px;
 }
 .src-risk-item.warning {
     border-color: rgba(234, 179, 8, 0.5);
@@ -754,6 +786,9 @@
 }
 .src-risk-item:last-child {
     margin-bottom: 0;
+}
+.src-risk-text {
+    display: block;
 }
 
 .src-compare-box {
@@ -840,8 +875,50 @@
 }
 .src-license-box a { text-decoration: underline; }
 .src-license-box.hidden { display: none; opacity: 0; }
-.src-license-meta { display: inline-block; margin-top: 6px; font-size: 12px; font-weight: 600; }
-.src-license-extras { display: inline-block; margin-top: 6px; font-size: 12px; color: #475569; }
+.src-license-meta { display: block; margin-top: 6px; font-size: 12px; font-weight: 600; }
+.src-license-extras { display: block; margin-top: 6px; font-size: 12px; color: #475569; }
+#src-license-section .src-sidebar-title {
+    padding-bottom: 6px;
+}
+
+.src-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    background: rgba(148, 163, 184, 0.18);
+    color: #475569;
+}
+.src-badge.is-info {
+    background: rgba(59, 130, 246, 0.15);
+    color: #1d4ed8;
+}
+.src-badge.is-success {
+    background: rgba(16, 185, 129, 0.18);
+    color: #047857;
+}
+.src-badge.is-warn {
+    background: rgba(245, 158, 11, 0.18);
+    color: #92400e;
+}
+.src-badge.is-neutral {
+    background: rgba(148, 163, 184, 0.24);
+    color: #475569;
+}
+.src-badge-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 10px;
+}
+
+.src-tip-card__text {
+    display: block;
+    margin-top: 6px;
+}
 
 .src-modal-overlay {
     position: fixed;
