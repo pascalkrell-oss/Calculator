@@ -123,6 +123,32 @@ function src_shortcode_output_v7() {
                         </optgroup>
                     </select>
                     <span class="src-top-sub">Was wird produziert?</span>
+                    <div id="src-linked-projects-wrap" class="src-linked-projects src-collapse">
+                        <div class="src-linked-projects__title">Weitere Nutzungen / verknüpfte Projekte</div>
+                        <div class="src-linked-projects__sub">Optional: mehrere Projekt-Kontexte kombinieren (z.B. organisch + Ads).</div>
+                        <div class="src-linked-projects__grid">
+                            <label class="src-linked-project-option">
+                                <input type="checkbox" class="src-linked-project" value="online_paid">
+                                <span>Paid Ads / Kampagne</span>
+                            </label>
+                            <label class="src-linked-project-option">
+                                <input type="checkbox" class="src-linked-project" value="tv">
+                                <span>TV Spot</span>
+                            </label>
+                            <label class="src-linked-project-option">
+                                <input type="checkbox" class="src-linked-project" value="radio">
+                                <span>Funkspot</span>
+                            </label>
+                            <label class="src-linked-project-option">
+                                <input type="checkbox" class="src-linked-project" value="cinema">
+                                <span>Kino Spot</span>
+                            </label>
+                            <label class="src-linked-project-option">
+                                <input type="checkbox" class="src-linked-project" value="pos">
+                                <span>POS / Ladenfunk</span>
+                            </label>
+                        </div>
+                    </div>
                 </div>
                 
                 <div>
@@ -541,7 +567,6 @@ function src_shortcode_output_v7() {
                     <div class="src-sidebar-section src-collapse" id="src-pricedetails-section">
                         <div class="src-sidebar-title src-sidebar-title--pricedetails">Preis-Details</div>
                         <div id="src-calc-breakdown" class="src-breakdown-box src-collapse">
-                            <div id="src-breakdown-badges" class="src-breakdown-badges"></div>
                             <div id="src-breakdown-list">
                                 <div class="src-breakdown-row">
                                     <div class="src-breakdown-left">
