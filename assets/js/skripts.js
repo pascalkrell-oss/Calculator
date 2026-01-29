@@ -13,6 +13,7 @@ let lastValidMainAmountText = "";
 let mainAmountExitListener = null;
 let currentBreakdownData = null;
 let currentRiskChecks = [];
+let currentProjectTips = [];
 let compareState = { enabled: false, A: null, B: null, activeTab: 'A' };
 let packagesState = null;
 let exportModalKeyHandler = null;
@@ -278,15 +279,14 @@ const srcUpdateNotesTipsVisibility = function(hasProject) {
         return;
     }
     notesSection.style.display = '';
-    const hasStaticNotes = Boolean(staticNotes && staticNotes.textContent.trim().length);
-    const hasTips = Boolean(tipsWrap && tipsWrap.textContent.trim().length);
     if(tipsWrap) {
-        tipsWrap.style.display = hasTips ? '' : 'none';
+        tipsWrap.style.display = 'none';
     }
+    const hasStaticNotes = Boolean(staticNotes && staticNotes.textContent.trim().length);
     if(staticNotes) {
         staticNotes.style.display = hasStaticNotes ? '' : 'none';
     }
-    srcToggleCollapse(notesSection, hasStaticNotes || hasTips);
+    srcToggleCollapse(notesSection, hasStaticNotes);
 }
 
 window.toggleElement = function(id, show) {
@@ -765,27 +765,45 @@ const srcUpdateRightsSectionVisibility = function(genre, layoutMode) {
     srcToggleCollapse(rightsCard, showRights);
 }
 
-const srcRenderProjectTips = function(genre) {
+const srcRenderNotesTips = function() {
+    const notesWrap = document.getElementById('src-static-notes');
+    if(!notesWrap) return;
     const tipsWrap = document.getElementById('src-project-tips');
-    if(!tipsWrap) return;
-    tipsWrap.innerHTML = '';
-    tipsWrap.style.display = 'none';
-    if(!genre) {
+    if(tipsWrap) {
+        tipsWrap.innerHTML = '';
+        tipsWrap.style.display = 'none';
+    }
+    const calcRoot = document.getElementById('src-calc-v6');
+    const hasProject = Boolean(calcRoot && calcRoot.classList.contains('src-has-project'));
+    if(!hasProject) {
+        notesWrap.innerHTML = '';
         srcUpdateNotesTipsVisibility(false);
         return;
     }
-    const tips = (srcRatesData.project_tips && srcRatesData.project_tips[genre]) || [];
-    const selectedTips = tips.slice(0, 3);
-    if(selectedTips.length === 0) {
-        srcUpdateNotesTipsVisibility(true);
+    const hints = Array.isArray(currentRiskChecks)
+        ? currentRiskChecks.map(check => check && check.text).filter(Boolean)
+        : [];
+    const tips = Array.isArray(currentProjectTips)
+        ? currentProjectTips.filter(Boolean)
+        : [];
+    const hintItems = hints.length ? hints : ['Keine besonderen Hinweise.'];
+    const hintMarkup = hintItems.map(item => `<li>${item}</li>`).join('');
+    const tipsMarkup = tips.length
+        ? `<div class="src-notes-box is-tips"><div class="src-notes-box__head">Tipps</div><ol class="src-notes-box__list">${tips.map(tip => `<li>${tip}</li>`).join('')}</ol></div>`
+        : '';
+    notesWrap.innerHTML = `<div class="src-notes-grid"><div class="src-notes-box is-hints"><div class="src-notes-box__head">Hinweise</div><ol class="src-notes-box__list">${hintMarkup}</ol></div>${tipsMarkup}</div>`;
+    srcUpdateNotesTipsVisibility(true);
+}
+
+const srcRenderProjectTips = function(genre) {
+    if(!genre) {
+        currentProjectTips = [];
+        srcRenderNotesTips();
         return;
     }
-    const markup = selectedTips.map(tip => (
-        `<div class="src-note-item is-tip"><div class="src-note-head"><span class="src-note-title">Tipp</span></div><div class="src-note-body">${tip}</div></div>`
-    )).join('');
-    tipsWrap.innerHTML = markup;
-    tipsWrap.style.display = '';
-    srcUpdateNotesTipsVisibility(true);
+    const tips = (srcRatesData.project_tips && srcRatesData.project_tips[genre]) || [];
+    currentProjectTips = tips.slice(0, 3);
+    srcRenderNotesTips();
 }
 
 const srcRenderFieldTips = function(genre) {
@@ -887,26 +905,8 @@ const srcBuildRiskChecks = function(state) {
 }
 
 const srcRenderRiskChecks = function(checks) {
-    const list = document.getElementById('src-static-notes');
-    if(!list) return;
-    const calcRoot = document.getElementById('src-calc-v6');
-    const hasProject = Boolean(calcRoot && calcRoot.classList.contains('src-has-project'));
-    if(!hasProject) {
-        list.innerHTML = '';
-        srcUpdateNotesTipsVisibility(false);
-        return;
-    }
-    if(!checks || checks.length === 0) {
-        list.innerHTML = '<div class="src-note-item is-info"><div class="src-note-head"><span class="src-note-title">Hinweis</span></div><div class="src-note-body">Keine besonderen Hinweise.</div></div>';
-        srcUpdateNotesTipsVisibility(hasProject);
-        return;
-    }
-    list.innerHTML = checks.map(check => {
-        const title = check.severity === 'warning' ? 'Wichtig' : 'Hinweis';
-        const toneClass = check.severity === 'warning' ? 'is-warning' : 'is-info';
-        return `<div class="src-note-item ${toneClass}"><div class="src-note-head"><span class="src-note-title">${title}</span></div><div class="src-note-body">${check.text}</div></div>`;
-    }).join('');
-    srcUpdateNotesTipsVisibility(hasProject);
+    currentRiskChecks = Array.isArray(checks) ? checks : [];
+    srcRenderNotesTips();
 }
 
 const srcToggleCompare = function() {
@@ -1409,6 +1409,8 @@ window.srcReset = function() {
     packagesState = null;
     const packagesList = document.getElementById('src-packages-list');
     if(packagesList) packagesList.innerHTML = '';
+    currentProjectTips = [];
+    currentRiskChecks = [];
     const riskList = document.getElementById('src-static-notes');
     if(riskList) riskList.innerHTML = '';
     const calcRoot = document.getElementById('src-calc-v6');
