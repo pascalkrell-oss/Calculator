@@ -75,6 +75,10 @@ document.addEventListener('DOMContentLoaded', () => {
             ].includes(target.id)) {
                 srcCalc();
             }
+
+            if(target.classList.contains('src-linked-project')) {
+                srcCalc();
+            }
         });
     }
     
@@ -245,10 +249,21 @@ const srcUpdateNotesTipsVisibility = function(hasProject) {
     if(!notesSection) return;
     const staticNotes = document.getElementById('src-static-notes');
     const tipsWrap = document.getElementById('src-project-tips');
+    if(!hasProject) {
+        if(tipsWrap) tipsWrap.style.display = 'none';
+        if(staticNotes) staticNotes.style.display = 'none';
+        srcToggleCollapse(notesSection, false);
+        notesSection.style.display = 'none';
+        return;
+    }
+    notesSection.style.display = '';
     const hasStaticNotes = Boolean(staticNotes && staticNotes.textContent.trim().length);
-    const hasTips = Boolean(hasProject && tipsWrap && tipsWrap.textContent.trim().length);
+    const hasTips = Boolean(tipsWrap && tipsWrap.textContent.trim().length);
     if(tipsWrap) {
         tipsWrap.style.display = hasTips ? '' : 'none';
+    }
+    if(staticNotes) {
+        staticNotes.style.display = hasStaticNotes ? '' : 'none';
     }
     srcToggleCollapse(notesSection, hasStaticNotes || hasTips);
 }
@@ -300,6 +315,39 @@ const srcStripHTML = function(str) {
     const div = document.createElement('div');
     div.innerHTML = String(str);
     return (div.textContent || div.innerText || '').replace(/\s+/g, ' ').trim();
+}
+
+const srcGetProjectName = function(projectKey) {
+    if(!projectKey) return '';
+    return srcRatesData[projectKey] ? srcRatesData[projectKey].name : projectKey;
+}
+
+const srcBuildLicenseMetaMarkup = function(metaItems = []) {
+    const items = Array.isArray(metaItems) ? metaItems.filter(Boolean) : [];
+    const metaBadges = [];
+    const metaRest = [];
+    items.forEach(item => {
+        const trimmed = String(item).trim();
+        if(!trimmed) return;
+        if(trimmed.startsWith('Gebiet:')) {
+            metaBadges.push(`<span class="src-badge is-info">${trimmed}</span>`);
+            return;
+        }
+        if(trimmed.startsWith('Laufzeit:')) {
+            metaBadges.push(`<span class="src-badge is-success">${trimmed}</span>`);
+            return;
+        }
+        metaRest.push(trimmed);
+    });
+    if(metaBadges.length === 0 && metaRest.length === 0) return '';
+    const rows = [];
+    if(metaBadges.length) {
+        rows.push(`<div class="src-license-meta__row">${metaBadges.join('')}</div>`);
+    }
+    if(metaRest.length) {
+        rows.push(`<div class="src-license-meta__text">${metaRest.join(' · ')}</div>`);
+    }
+    return `<div class="src-license-meta">${rows.join('')}</div>`;
 }
 
 const srcFormatMinutes = function(minutes) {
@@ -379,8 +427,10 @@ const srcGetStateFromUI = function() {
     const scriptText = document.getElementById('src-text').value || '';
     const manualMinutesActive = document.getElementById('src-manual-time-check').checked;
     const complexitySelections = srcGetComplexitySelections();
+    const linkedProjects = Array.from(document.querySelectorAll('.src-linked-project:checked')).map(el => el.value);
     return {
         projectKey: genre,
+        linkedProjects,
         language: document.getElementById('src-language').value,
         layoutMode: document.getElementById('src-layout-mode').checked,
         posType: document.getElementById('src-pos-type') ? document.getElementById('src-pos-type').value : 'pos_spot',
@@ -696,7 +746,7 @@ const srcRenderProjectTips = function(genre) {
         return;
     }
     const markup = selectedTips.map(tip => (
-        `<div class="src-tip-card"><span class="src-tip-card__icon">i</span><div><span class="src-badge is-info">Tipp</span><span class="src-tip-card__text">${tip}</span></div></div>`
+        `<div class="src-note-item is-tip"><div class="src-note-head"><span class="src-note-title">Tipp</span></div><div class="src-note-body">${tip}</div></div>`
     )).join('');
     tipsWrap.innerHTML = markup;
     tipsWrap.style.display = '';
@@ -742,26 +792,7 @@ const srcRenderBreakdown = function(breakdown) {
 
 const srcRenderPriceDetails = function(info, state, result) {
     const list = document.getElementById('src-breakdown-list');
-    const badgesWrap = document.getElementById('src-breakdown-badges');
     if(!list) return;
-    const projectName = state.layoutMode
-        ? "Layout / Pitch"
-        : (srcRatesData[state.projectKey] ? srcRatesData[state.projectKey].name : state.projectKey);
-    const badges = [];
-    if(state.projectKey) {
-        badges.push({ label: `Projekt: ${projectName}`, variant: 'is-info' });
-    }
-    if(state.region && ['tv','online_paid','radio','cinema','pos'].includes(state.projectKey)) {
-        const regionLabel = state.region === 'regional' ? 'Regional' : state.region === 'national' ? 'National' : state.region === 'dach' ? 'DACH' : 'Weltweit';
-        badges.push({ label: `Gebiet: ${regionLabel}`, variant: 'is-success' });
-    }
-    if(state.duration && ['tv','online_paid','radio','cinema','pos'].includes(state.projectKey)) {
-        badges.push({ label: `Laufzeit: ${state.duration === 4 ? 'Unlimited' : `${state.duration} ${state.duration === 1 ? 'Jahr' : 'Jahre'}`}`, variant: 'is-success' });
-    }
-    badges.push({ label: 'Netto', variant: 'is-neutral' });
-    if(badgesWrap) {
-        badgesWrap.innerHTML = badges.map(badge => `<span class="src-badge ${badge.variant}">${badge.label}</span>`).join('');
-    }
     if(!Array.isArray(info) || info.length === 0) {
         list.innerHTML = `<div class="src-breakdown-row">
             <div class="src-breakdown-left">
@@ -777,7 +808,7 @@ const srcRenderPriceDetails = function(info, state, result) {
         const amountText = entry.amount || '—';
         const formulaText = entry.formula || '—';
         const toneClass = entry.tone ? `is-${entry.tone}` : '';
-        return `<div class="src-breakdown-row">
+        return `<div class="src-breakdown-row ${toneClass}">
             <div class="src-breakdown-left">
                 <span class="src-breakdown-label">${labelText}</span>
                 <span class="src-breakdown-value ${toneClass}">${amountText}</span>
@@ -825,14 +856,20 @@ const srcRenderRiskChecks = function(checks) {
     if(!list) return;
     const calcRoot = document.getElementById('src-calc-v6');
     const hasProject = Boolean(calcRoot && calcRoot.classList.contains('src-has-project'));
+    if(!hasProject) {
+        list.innerHTML = '';
+        srcUpdateNotesTipsVisibility(false);
+        return;
+    }
     if(!checks || checks.length === 0) {
-        list.innerHTML = '<div class="src-risk-item info"><span class="src-badge is-info">Hinweis</span><span class="src-risk-text">Keine besonderen Hinweise.</span></div>';
+        list.innerHTML = '<div class="src-note-item is-info"><div class="src-note-head"><span class="src-note-title">Hinweis</span></div><div class="src-note-body">Keine besonderen Hinweise.</div></div>';
         srcUpdateNotesTipsVisibility(hasProject);
         return;
     }
     list.innerHTML = checks.map(check => {
-        const badge = check.severity === 'warning' ? '<span class="src-badge is-warn">Wichtig</span>' : '<span class="src-badge is-info">Hinweis</span>';
-        return `<div class="src-risk-item ${check.severity}">${badge}<span class="src-risk-text">${check.text}</span></div>`;
+        const title = check.severity === 'warning' ? 'Wichtig' : 'Hinweis';
+        const toneClass = check.severity === 'warning' ? 'is-warning' : 'is-info';
+        return `<div class="src-note-item ${toneClass}"><div class="src-note-head"><span class="src-note-title">${title}</span></div><div class="src-note-body">${check.text}</div></div>`;
     }).join('');
     srcUpdateNotesTipsVisibility(hasProject);
 }
@@ -1108,7 +1145,9 @@ const srcBuildOfferEmailText = function({ lang, pricingMode, selectedPackage, in
     const i18n = SRC_I18N[lang] || SRC_I18N.de;
     const state = srcGetStateFromUI();
     const result = srcComputeResult(state);
-    const projectName = state.layoutMode ? "Layout / Pitch" : (srcRatesData[state.projectKey] ? srcRatesData[state.projectKey].name : state.projectKey);
+    const projectName = state.layoutMode ? "Layout / Pitch" : srcGetProjectName(state.projectKey);
+    const linkedProjectNames = Array.from(new Set((state.linkedProjects || []).map(srcGetProjectName).filter(Boolean)));
+    const projectLabel = linkedProjectNames.length ? `${projectName} (+ ${linkedProjectNames.join(', ')})` : projectName;
     const pricingLabel = pricingMode === 'mean' ? i18n.pricingMean : pricingMode === 'package' ? i18n.pricingPackage : i18n.pricingRange;
     let priceText = `${result.final[0]} € – ${result.final[2]} €`;
     if(pricingMode === 'mean') {
@@ -1132,7 +1171,7 @@ const srcBuildOfferEmailText = function({ lang, pricingMode, selectedPackage, in
     if(extraSettings.offerId) {
         parts.push(`${i18n.offerNumberLabel}: ${extraSettings.offerId}`);
     }
-    parts.push(`${i18n.project}: ${projectName}`);
+    parts.push(`${i18n.project}: ${projectLabel}`);
     if(extraSettings.customerType) {
         const typeLabel = extraSettings.customerType === 'agency' ? i18n.customerTypeAgency : i18n.customerTypeDirect;
         parts.push(`${i18n.customerTypeLabel}: ${typeLabel}`);
@@ -1145,6 +1184,9 @@ const srcBuildOfferEmailText = function({ lang, pricingMode, selectedPackage, in
     if(['tv','online_paid','radio','cinema','pos'].includes(state.projectKey)) {
         parts.push(`${i18n.region}: ${state.region}`);
         parts.push(`${i18n.duration}: ${state.duration === 4 ? 'Unlimited' : `${state.duration} Jahr(e)`}`);
+    }
+    if(linkedProjectNames.length) {
+        parts.push(`Verknüpfte Projekte: ${linkedProjectNames.join(', ')}`);
     }
     const addons = [];
     if(state.packageOnline) addons.push('Online Audio');
@@ -1314,6 +1356,9 @@ window.srcReset = function() {
     
     const toggles = ['src-layout-mode', 'src-own-studio', 'src-express-toggle', 'src-discount-toggle', 'src-cutdown', 'src-lic-social', 'src-lic-event', 'src-pkg-online', 'src-pkg-atv'];
     toggles.forEach(id => { const el = document.getElementById(id); if(el) el.checked = false; });
+    document.querySelectorAll('.src-linked-project').forEach(el => {
+        el.checked = false;
+    });
     
     document.querySelectorAll('.src-acc-item').forEach(el => el.classList.remove('open'));
     toggleElement('src-manual-input-wrap', false);
@@ -1349,6 +1394,8 @@ window.srcUIUpdate = function() {
     const hasGenre = Boolean(genre) && genre !== "0";
     const calcRoot = document.getElementById('src-calc-v6');
     const complexityGroup = document.getElementById('src-complexity-group');
+    const linkedProjectsWrap = document.getElementById('src-linked-projects-wrap');
+    const linkedInputs = document.querySelectorAll('.src-linked-project');
 
     if (calcRoot) {
         calcRoot.classList.toggle('src-has-project', hasGenre);
@@ -1375,6 +1422,24 @@ window.srcUIUpdate = function() {
     srcAnalyzeText();
     srcUpdateRightsSectionVisibility(genre, layoutMode);
     srcToggleCollapse(complexityGroup, hasGenre);
+    if(linkedProjectsWrap) {
+        srcToggleCollapse(linkedProjectsWrap, hasGenre && !layoutMode);
+    }
+    linkedInputs.forEach(input => {
+        const option = input.closest('.src-linked-project-option');
+        const isPrimary = input.value === genre;
+        if(!hasGenre || layoutMode) {
+            input.checked = false;
+        }
+        if(isPrimary) {
+            input.checked = false;
+            input.disabled = true;
+            if(option) option.classList.add('is-disabled');
+        } else {
+            input.disabled = false;
+            if(option) option.classList.remove('is-disabled');
+        }
+    });
     srcRenderProjectTips(genre);
     srcRenderFieldTips(genre);
     srcUpdateSidebarCollapse();
@@ -1469,14 +1534,14 @@ window.srcValidateFinalFee = function() {
     }
 }
 
-const srcComputeResult = function(state) {
-    const genre = state.projectKey;
+const srcComputeSingleProjectResult = function(state, projectKey) {
+    const genre = projectKey;
     if(!genre) {
-        return { final: [0,0,0], info: [], licenseText: "", breakdown: null, licMeta: [] };
+        return { final: [0,0,0], info: [], licenseText: "", breakdown: null, licMeta: [], guidanceText: '', extraBlock: '', projectName: '' };
     }
     const data = srcRatesData[genre];
     if(!data) {
-        return { final: [0,0,0], info: [], licenseText: "", breakdown: null, licMeta: [] };
+        return { final: [0,0,0], info: [], licenseText: "", breakdown: null, licMeta: [], guidanceText: '', extraBlock: '', projectName: '' };
     }
     let base = [0,0,0];
     let final = [0,0,0];
@@ -1492,6 +1557,7 @@ const srcComputeResult = function(state) {
     const lang = state.language;
     let langFactor = 1.0;
     let langLabel = "";
+    const projectName = srcGetProjectName(genre);
     if(lang === 'en') { langFactor = 1.3; langLabel = " (Englisch)"; }
     if(lang === 'other') { langFactor = 1.5; langLabel = " (Fremdsprache)"; }
 
@@ -1502,7 +1568,7 @@ const srcComputeResult = function(state) {
         addInfo("Verwendung", "—", "Intern / Pitch");
         licBaseText = "Nur interne Nutzung / Pitch (Keine Veröffentlichung).";
     } else {
-        licParts.push("Projekt: " + data.name);
+        licParts.push("Projekt: " + projectName);
         licBaseText = data.lic || "";
         if(['tv','online_paid','radio','cinema','pos'].includes(genre)) {
             let adName = data.name;
@@ -1720,28 +1786,61 @@ const srcComputeResult = function(state) {
     if(state.licenseEvent && extras.event_pos) {
         extrasText.push(extras.event_pos);
     }
-    const licenseBadges = [];
-    if(state.region && ['tv','online_paid','radio','cinema','pos'].includes(state.projectKey)) {
-        const regionLabel = state.region === 'regional' ? 'Regional' : state.region === 'national' ? 'National' : state.region === 'dach' ? 'DACH' : 'Weltweit';
-        licenseBadges.push(`<span class="src-badge is-info">Gebiet: ${regionLabel}</span>`);
-    }
-    if(state.duration && ['tv','online_paid','radio','cinema','pos'].includes(state.projectKey)) {
-        const durationLabel = state.duration === 4 ? 'Unlimited' : `${state.duration} ${state.duration === 1 ? 'Jahr' : 'Jahre'}`;
-        licenseBadges.push(`<span class="src-badge is-success">Laufzeit: ${durationLabel}</span>`);
-    }
-    if(state.licenseSocial || state.licenseEvent) {
-        licenseBadges.push('<span class="src-badge is-warn">Zusatzlizenz</span>');
-    }
-    const badgeRow = licenseBadges.length ? `<div class="src-badge-row">${licenseBadges.join(' ')}</div>` : "";
     const extraBlock = extrasText.length ? `<div class="src-license-extras">${extrasText.join(' ')}</div>` : "";
-    const licMetaText = licMeta.length ? `<div class="src-license-meta">${licMeta.join(' · ')}</div>` : "";
-    const licenseText = `${badgeRow}${guidanceText || ""}${extraBlock}${licMetaText}`;
+    const licMetaText = srcBuildLicenseMetaMarkup(licMeta);
+    const licenseText = `${guidanceText || ""}${extraBlock}${licMetaText}`;
     return {
         final,
         info,
         licenseText,
         breakdown,
-        licMeta
+        licMeta,
+        guidanceText,
+        extraBlock,
+        projectName
+    };
+}
+
+const srcComputeResult = function(state) {
+    const primaryKey = state.projectKey;
+    if(!primaryKey) {
+        return { final: [0,0,0], info: [], licenseText: "", breakdown: null, licMeta: [] };
+    }
+    const linkedProjects = Array.isArray(state.linkedProjects) ? state.linkedProjects : [];
+    const uniqueKeys = Array.from(new Set([primaryKey, ...linkedProjects.filter(Boolean)])).filter(Boolean);
+    if(uniqueKeys.length === 0) {
+        return { final: [0,0,0], info: [], licenseText: "", breakdown: null, licMeta: [] };
+    }
+    if(uniqueKeys.length === 1) {
+        const result = srcComputeSingleProjectResult(state, uniqueKeys[0]);
+        const projectLabel = `Projekt: ${result.projectName || srcGetProjectName(uniqueKeys[0])}`;
+        const headerMeta = srcBuildLicenseMetaMarkup([projectLabel]);
+        return {
+            final: result.final,
+            info: result.info,
+            licenseText: `${headerMeta}${result.licenseText}`,
+            breakdown: result.breakdown,
+            licMeta: result.licMeta
+        };
+    }
+    let final = [0,0,0];
+    let info = [];
+    const projectNames = uniqueKeys.map(key => srcGetProjectName(key));
+    const headerMeta = srcBuildLicenseMetaMarkup([`Projekt(e): ${projectNames.join(' + ')}`]);
+    const licenseSections = [];
+    uniqueKeys.forEach((key) => {
+        const result = srcComputeSingleProjectResult(state, key);
+        final = final.map((value, idx) => value + (result.final[idx] || 0));
+        info.push({ label: `Projektblock: ${result.projectName || srcGetProjectName(key)}`, amount: '', formula: '', tone: 'muted' });
+        info = info.concat(result.info || []);
+        licenseSections.push(`<div class="src-license-project">${result.projectName || srcGetProjectName(key)}</div>${result.licenseText}`);
+    });
+    return {
+        final,
+        info,
+        licenseText: `${headerMeta}${licenseSections.join('')}`,
+        breakdown: null,
+        licMeta: []
     };
 }
 
@@ -1753,8 +1852,6 @@ window.srcCalc = function() {
     if(!genre) {
         const breakdownBox = document.getElementById('src-calc-breakdown');
         srcToggleCollapse(breakdownBox, false);
-        const badgesWrap = document.getElementById('src-breakdown-badges');
-        if(badgesWrap) badgesWrap.innerHTML = '';
         updateMainAmountAnimated("0 €");
         srcUpdateMeanValue(
             document.getElementById('src-mean-fade'),
@@ -1850,7 +1947,9 @@ window.srcGeneratePDFv6 = function(options = {}) {
 
     const state = srcGetStateFromUI();
     const result = srcComputeResult(state);
-    const projectName = state.layoutMode ? "Layout / Pitch (Intern)" : (srcRatesData[state.projectKey] ? srcRatesData[state.projectKey].name : state.projectKey);
+    const projectName = state.layoutMode ? "Layout / Pitch (Intern)" : srcGetProjectName(state.projectKey);
+    const linkedProjectNames = Array.from(new Set((state.linkedProjects || []).map(srcGetProjectName).filter(Boolean)));
+    const projectLabel = linkedProjectNames.length ? `${projectName} (+ ${linkedProjectNames.join(', ')})` : projectName;
 
     let priceLabel = i18n.pricingRange;
     let priceValue = result.final[1];
@@ -1886,7 +1985,7 @@ window.srcGeneratePDFv6 = function(options = {}) {
         ? (extraSettings.customerType === 'agency' ? i18n.customerTypeAgency : i18n.customerTypeDirect)
         : '';
     const customerLines = [
-        extraSettings.projectName ? `Projekt: ${extraSettings.projectName}` : `Projekt: ${projectName}`,
+        extraSettings.projectName ? `Projekt: ${extraSettings.projectName}` : `Projekt: ${projectLabel}`,
         customerType ? `${i18n.customerTypeLabel}: ${customerType}` : '',
         extraSettings.offerId ? `${i18n.offerNumberLabel}: ${extraSettings.offerId}` : '',
         extraSettings.validity ? `${i18n.validity}: ${extraSettings.validity}` : ''
@@ -1919,7 +2018,7 @@ window.srcGeneratePDFv6 = function(options = {}) {
 
     const scopeText = extraSettings.scope && extraSettings.scope.length ? `Lieferumfang: ${extraSettings.scope.join(', ')}` : '';
     const descriptionLines = [
-        `${projectName}`,
+        `${projectLabel}`,
         packageLabel ? `Paket: ${packageLabel}` : '',
         scopeText
     ].filter(Boolean).join('\n');
@@ -1965,6 +2064,9 @@ window.srcGeneratePDFv6 = function(options = {}) {
         const regionLabel = state.region === 'regional' ? 'Regional' : state.region === 'national' ? 'National' : state.region === 'dach' ? 'DACH' : 'Weltweit';
         rightsLines.push(`Gebiet: ${regionLabel}`);
         rightsLines.push(`Laufzeit: ${state.duration === 4 ? 'Unlimited' : `${state.duration} ${state.duration === 1 ? 'Jahr' : 'Jahre'}`}`);
+    }
+    if(linkedProjectNames.length) {
+        rightsLines.push(`Verknüpfte Projekte: ${linkedProjectNames.join(', ')}`);
     }
     const addons = [];
     if(state.packageOnline) addons.push('Online Audio');
