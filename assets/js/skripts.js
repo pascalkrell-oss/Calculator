@@ -78,6 +78,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if(target.classList.contains('src-linked-project')) {
                 srcCalc();
+                srcSyncLinkedProjectsAccordion();
             }
         });
     }
@@ -242,6 +243,26 @@ const srcUpdateSidebarCollapse = function() {
     srcToggleCollapse(packagesSection, hasProject);
     srcToggleCollapse(priceDetailsSection, hasProject);
     srcUpdateNotesTipsVisibility(hasProject);
+}
+
+const srcSyncLinkedProjectsAccordion = function(options = {}) {
+    const linkedProjectsWrap = document.getElementById('src-linked-projects-wrap');
+    const linkedAccordion = document.getElementById('src-linked-projects-accordion');
+    const linkedInputs = document.querySelectorAll('.src-linked-project');
+    const genreSelect = document.getElementById('src-genre');
+    const layoutToggle = document.getElementById('src-layout-mode');
+    const genre = typeof options.genre === 'string' ? options.genre : (genreSelect ? genreSelect.value : '');
+    const layoutMode = typeof options.layoutMode === 'boolean' ? options.layoutMode : Boolean(layoutToggle && layoutToggle.checked);
+    const hasGenre = Boolean(genre) && genre !== "0";
+    const shouldShow = hasGenre && !layoutMode;
+    const hasLinkedChecked = Array.from(linkedInputs).some(input => input.checked);
+
+    if(linkedProjectsWrap) {
+        linkedProjectsWrap.style.display = shouldShow ? '' : 'none';
+    }
+    if(linkedAccordion) {
+        linkedAccordion.open = shouldShow && hasLinkedChecked;
+    }
 }
 
 const srcUpdateNotesTipsVisibility = function(hasProject) {
@@ -1408,7 +1429,6 @@ window.srcUIUpdate = function() {
     const hasGenre = Boolean(genre) && genre !== "0";
     const calcRoot = document.getElementById('src-calc-v6');
     const complexityGroup = document.getElementById('src-complexity-group');
-    const linkedProjectsWrap = document.getElementById('src-linked-projects-wrap');
     const linkedInputs = document.querySelectorAll('.src-linked-project');
 
     if (calcRoot) {
@@ -1436,9 +1456,6 @@ window.srcUIUpdate = function() {
     srcAnalyzeText();
     srcUpdateRightsSectionVisibility(genre, layoutMode);
     srcToggleCollapse(complexityGroup, hasGenre);
-    if(linkedProjectsWrap) {
-        srcToggleCollapse(linkedProjectsWrap, hasGenre && !layoutMode);
-    }
     linkedInputs.forEach(input => {
         const option = input.closest('.src-linked-project-option');
         const isPrimary = input.value === genre;
@@ -1454,6 +1471,7 @@ window.srcUIUpdate = function() {
             if(option) option.classList.remove('is-disabled');
         }
     });
+    srcSyncLinkedProjectsAccordion({ genre, layoutMode });
     srcRenderProjectTips(genre);
     srcRenderFieldTips(genre);
     srcUpdateSidebarCollapse();
