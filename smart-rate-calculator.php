@@ -123,10 +123,27 @@ function src_shortcode_output_v7() {
                         </optgroup>
                     </select>
                     <span class="src-top-sub">Was wird produziert?</span>
-                    <div id="src-linked-projects-wrap" class="src-linked-projects src-collapse">
-                        <div class="src-linked-projects__title">Weitere Nutzungen / verknüpfte Projekte</div>
-                        <div class="src-linked-projects__sub">Optional: mehrere Projekt-Kontexte kombinieren (z.B. organisch + Ads).</div>
-                        <div class="src-linked-projects__grid">
+                </div>
+                
+                <div>
+                    <div class="src-section-title"><span class="dashicons dashicons-translation"></span> Sprache</div>
+                    <select id="src-language" class="src-select" onchange="srcAnalyzeText()">
+                        <option value="de">Deutsch (Standard)</option>
+                        <option value="en">Englisch (+30%)</option>
+                        <option value="other">Fremdsprache (+50%)</option>
+                    </select>
+                    <span class="src-top-sub">Aufschlag berechnen</span>
+                </div>
+            </div>
+            <div id="src-linked-projects-wrap" class="src-linked-projects">
+                <details id="src-linked-projects-accordion" class="src-accordion">
+                    <summary class="src-accordion__summary">
+                        <span class="src-accordion__title">Weitere Nutzungen / verknüpfte Projekte</span>
+                        <span class="src-accordion__sub">Optional: mehrere Projekt-Kontexte kombinieren (z.B. organisch + Ads).</span>
+                        <span class="src-accordion__chev" aria-hidden="true"></span>
+                    </summary>
+                    <div class="src-accordion__content">
+                        <div class="src-linked-projects__list">
                             <label class="src-linked-project-option">
                                 <input type="checkbox" class="src-linked-project" value="online_paid">
                                 <span>Paid Ads / Kampagne</span>
@@ -149,17 +166,7 @@ function src_shortcode_output_v7() {
                             </label>
                         </div>
                     </div>
-                </div>
-                
-                <div>
-                    <div class="src-section-title"><span class="dashicons dashicons-translation"></span> Sprache</div>
-                    <select id="src-language" class="src-select" onchange="srcAnalyzeText()">
-                        <option value="de">Deutsch (Standard)</option>
-                        <option value="en">Englisch (+30%)</option>
-                        <option value="other">Fremdsprache (+50%)</option>
-                    </select>
-                    <span class="src-top-sub">Aufschlag berechnen</span>
-                </div>
+                </details>
             </div>
 
             <div class="src-group" id="src-group-text">
