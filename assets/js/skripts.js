@@ -463,8 +463,7 @@ const srcGetStateFromUI = function() {
         exclusivity: document.getElementById('src-adv-exclusivity')?.value || 'none',
         buyoutMode: document.getElementById('src-adv-buyout-mode')?.value || 'standard',
         periods: parseInt(document.getElementById('src-adv-periods')?.value, 10) || 1,
-        versions: parseInt(document.getElementById('src-adv-versions')?.value, 10) || 1,
-        pickups: document.getElementById('src-adv-pickups')?.value || '1'
+        versions: parseInt(document.getElementById('src-adv-versions')?.value, 10) || 1
     };
     return {
         projectKey: genre,
@@ -1391,8 +1390,6 @@ window.srcReset = function() {
     if(periods) periods.value = 1;
     const versions = document.getElementById('src-adv-versions');
     if(versions) versions.value = 1;
-    const pickups = document.getElementById('src-adv-pickups');
-    if(pickups) pickups.value = '1';
     
     // Reset Final Fee & Hide it
     document.getElementById('src-final-fee-user').value = '';
@@ -1982,11 +1979,6 @@ const srcGetAdvancedConfig = function(state) {
         medium: 0.2,
         high: 0.35
     };
-    const pickupMap = {
-        '1': 0,
-        '2': 0.05,
-        '3': 0.10
-    };
     const buyoutMode = advanced.buyoutMode || 'standard';
     const periodsRaw = parseInt(advanced.periods, 10);
     const versionsRaw = parseInt(advanced.versions, 10);
@@ -1998,7 +1990,6 @@ const srcGetAdvancedConfig = function(state) {
         buyoutMode,
         periods,
         versions,
-        pickupsPct: pickupMap[advanced.pickups] ?? 0,
         extraPeriods,
         staffelPct: buyoutMode === 'staffel' ? extraPeriods * 0.12 : 0,
         buyoutPct: buyoutMode === 'buyout' ? 0.25 : 0
@@ -2019,16 +2010,10 @@ const srcBuildAdvancedSummary = function(state) {
         : config.buyoutMode === 'staffel'
             ? `Staffel (${config.periods} Perioden, +12% je Extra-Periode)`
             : 'Standard (wie bisher)';
-    const pickupLabels = {
-        '1': 'Inkl. 1 Runde (0%)',
-        '2': '2 Runden (+5%)',
-        '3': '3+ Runden (+10%)'
-    };
     const projectLines = [
         `Exklusivität: ${exclusivityLabels[advanced.exclusivity] || exclusivityLabels.none}`,
         `Buyout/Staffel: ${buyoutLabel}`,
-        `Sprachversionen: ${config.versions}`,
-        `Pickups: ${pickupLabels[advanced.pickups] || pickupLabels['1']}`
+        `Sprachversionen: ${config.versions}`
     ];
     const rightsLines = [];
     if(config.exclusivityPct > 0) {
@@ -2084,16 +2069,6 @@ const srcApplyAdvancedAdjustments = function(result, state) {
             `Sprecherleistung × ${Math.round(pct * 100)}%`
         );
         appendBreakdown(`Sprachversionen (${config.versions})`, addRange[1]);
-    }
-    if(config.pickupsPct > 0) {
-        const addRange = baseRange.map(value => Math.round(value * config.pickupsPct));
-        speakerAddRange = speakerAddRange.map((value, idx) => value + addRange[idx]);
-        pushInfo(
-            'Pickups',
-            addRange[1],
-            `Sprecherleistung × ${Math.round(config.pickupsPct * 100)}%`
-        );
-        appendBreakdown('Pickups', addRange[1]);
     }
     final = final.map((value, idx) => value + speakerAddRange[idx]);
 
