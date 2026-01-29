@@ -463,6 +463,13 @@ const srcGetStateFromUI = function() {
     const manualMinutesActive = document.getElementById('src-manual-time-check').checked;
     const complexitySelections = srcGetComplexitySelections();
     const linkedProjects = Array.from(document.querySelectorAll('.src-linked-project:checked')).map(el => el.value);
+    const advanced = {
+        exclusivity: document.getElementById('src-adv-exclusivity')?.value || 'none',
+        buyoutMode: document.getElementById('src-adv-buyout-mode')?.value || 'standard',
+        periods: parseInt(document.getElementById('src-adv-periods')?.value, 10) || 1,
+        versions: parseInt(document.getElementById('src-adv-versions')?.value, 10) || 1,
+        pickups: document.getElementById('src-adv-pickups')?.value || '1'
+    };
     return {
         projectKey: genre,
         linkedProjects,
@@ -489,7 +496,8 @@ const srcGetStateFromUI = function() {
         discountPct: parseFloat(document.getElementById('src-discount-percent').value) || 0,
         discountReason: document.getElementById('src-discount-reason').value || '',
         finalFeeInput: parseFloat(document.getElementById('src-final-fee-user').value),
-        complexitySelections
+        complexitySelections,
+        advanced
     };
 }
 
@@ -1378,6 +1386,16 @@ window.srcReset = function() {
     document.getElementById('src-studio-fee').value = 150;
     document.getElementById('src-discount-percent').value = '';
     document.getElementById('src-discount-reason').value = '';
+    const exclusivity = document.getElementById('src-adv-exclusivity');
+    if(exclusivity) exclusivity.value = 'none';
+    const buyoutMode = document.getElementById('src-adv-buyout-mode');
+    if(buyoutMode) buyoutMode.value = 'standard';
+    const periods = document.getElementById('src-adv-periods');
+    if(periods) periods.value = 1;
+    const versions = document.getElementById('src-adv-versions');
+    if(versions) versions.value = 1;
+    const pickups = document.getElementById('src-adv-pickups');
+    if(pickups) pickups.value = '1';
     
     // Reset Final Fee & Hide it
     document.getElementById('src-final-fee-user').value = '';
@@ -1456,6 +1474,12 @@ window.srcUIUpdate = function() {
     srcUpdateCutdownVisibility(genre, layoutMode);
     srcSyncOptionRowStates();
     srcAnalyzeText();
+    const buyoutMode = document.getElementById('src-adv-buyout-mode')?.value || 'standard';
+    toggleElement('src-adv-periods-wrap', buyoutMode === 'staffel');
+    if(buyoutMode !== 'staffel') {
+        const periods = document.getElementById('src-adv-periods');
+        if(periods) periods.value = 1;
+    }
     srcUpdateRightsSectionVisibility(genre, layoutMode);
     srcToggleCollapse(complexityGroup, hasGenre);
     linkedInputs.forEach(input => {
@@ -1928,6 +1952,158 @@ const srcBuildGlobalAddonMarkup = function(addons) {
     return `${linesMarkup}${addons.extraBlock || ''}`;
 }
 
+const srcGetAdvancedConfig = function(state) {
+    const advanced = state && state.advanced ? state.advanced : {};
+    const exclusivityMap = {
+        none: 0,
+        low: 0.1,
+        medium: 0.2,
+        high: 0.35
+    };
+    const pickupMap = {
+        '1': 0,
+        '2': 0.05,
+        '3': 0.10
+    };
+    const buyoutMode = advanced.buyoutMode || 'standard';
+    const periodsRaw = parseInt(advanced.periods, 10);
+    const versionsRaw = parseInt(advanced.versions, 10);
+    const periods = Math.min(6, Math.max(1, Number.isFinite(periodsRaw) ? periodsRaw : 1));
+    const versions = Math.min(10, Math.max(1, Number.isFinite(versionsRaw) ? versionsRaw : 1));
+    const extraPeriods = Math.max(0, periods - 1);
+    return {
+        exclusivityPct: exclusivityMap[advanced.exclusivity] ?? 0,
+        buyoutMode,
+        periods,
+        versions,
+        pickupsPct: pickupMap[advanced.pickups] ?? 0,
+        extraPeriods,
+        staffelPct: buyoutMode === 'staffel' ? extraPeriods * 0.12 : 0,
+        buyoutPct: buyoutMode === 'buyout' ? 0.25 : 0
+    };
+}
+
+const srcBuildAdvancedSummary = function(state) {
+    const advanced = state && state.advanced ? state.advanced : {};
+    const config = srcGetAdvancedConfig(state);
+    const exclusivityLabels = {
+        none: 'Keine (0%)',
+        low: 'Low (+10%)',
+        medium: 'Medium (+20%)',
+        high: 'High (+35%)'
+    };
+    const buyoutLabel = config.buyoutMode === 'buyout'
+        ? 'Buyout (einmalig, +25%)'
+        : config.buyoutMode === 'staffel'
+            ? `Staffel (${config.periods} Perioden, +12% je Extra-Periode)`
+            : 'Standard (wie bisher)';
+    const pickupLabels = {
+        '1': 'Inkl. 1 Runde (0%)',
+        '2': '2 Runden (+5%)',
+        '3': '3+ Runden (+10%)'
+    };
+    const projectLines = [
+        `Exklusivität: ${exclusivityLabels[advanced.exclusivity] || exclusivityLabels.none}`,
+        `Buyout/Staffel: ${buyoutLabel}`,
+        `Sprachversionen: ${config.versions}`,
+        `Pickups: ${pickupLabels[advanced.pickups] || pickupLabels['1']}`
+    ];
+    const rightsLines = [];
+    if(config.exclusivityPct > 0) {
+        rightsLines.push(`Exklusivität: ${exclusivityLabels[advanced.exclusivity] || exclusivityLabels.none}`);
+    }
+    if(config.buyoutMode === 'buyout') {
+        rightsLines.push('Buyout: einmalig (+25%)');
+    }
+    if(config.buyoutMode === 'staffel' && config.extraPeriods > 0) {
+        rightsLines.push(`Staffel: ${config.periods} Perioden (+${Math.round(config.staffelPct * 100)}%)`);
+    }
+    return { projectLines, rightsLines };
+}
+
+const srcApplyAdvancedAdjustments = function(result, state) {
+    if(!result || !state || !state.advanced) return result;
+    const config = srcGetAdvancedConfig(state);
+    let final = Array.isArray(result.final) ? result.final.slice() : [0, 0, 0];
+    const baseRange = final.slice();
+    const info = Array.isArray(result.info) ? result.info.slice() : [];
+    const breakdown = result.breakdown
+        ? {
+            base: result.breakdown.base,
+            steps: Array.isArray(result.breakdown.steps) ? result.breakdown.steps.slice() : [],
+            final: Object.assign({}, result.breakdown.final)
+        }
+        : null;
+    const pushInfo = (label, amount, formula) => {
+        info.push({
+            label,
+            amount: srcFormatSignedCurrency(amount),
+            formula
+        });
+    };
+    const appendBreakdown = (label, amount) => {
+        if(!breakdown) return;
+        breakdown.steps.push({
+            label,
+            amountOrFactor: srcFormatSignedCurrency(amount),
+            effectOnRange: 'add'
+        });
+    };
+
+    let speakerAddRange = [0, 0, 0];
+    const extraVersions = Math.max(0, config.versions - 1);
+    if(extraVersions > 0) {
+        const pct = 0.35 * extraVersions;
+        const addRange = baseRange.map(value => Math.round(value * pct));
+        speakerAddRange = speakerAddRange.map((value, idx) => value + addRange[idx]);
+        pushInfo(
+            `Sprachversionen (${config.versions})`,
+            addRange[1],
+            `Sprecherleistung × ${Math.round(pct * 100)}%`
+        );
+        appendBreakdown(`Sprachversionen (${config.versions})`, addRange[1]);
+    }
+    if(config.pickupsPct > 0) {
+        const addRange = baseRange.map(value => Math.round(value * config.pickupsPct));
+        speakerAddRange = speakerAddRange.map((value, idx) => value + addRange[idx]);
+        pushInfo(
+            'Pickups',
+            addRange[1],
+            `Sprecherleistung × ${Math.round(config.pickupsPct * 100)}%`
+        );
+        appendBreakdown('Pickups', addRange[1]);
+    }
+    final = final.map((value, idx) => value + speakerAddRange[idx]);
+
+    if(config.exclusivityPct > 0) {
+        const addRange = final.map(value => Math.round(value * config.exclusivityPct));
+        final = final.map((value, idx) => value + addRange[idx]);
+        pushInfo('Exklusivität', addRange[1], `Zwischensumme × ${Math.round(config.exclusivityPct * 100)}%`);
+        appendBreakdown('Exklusivität', addRange[1]);
+    }
+    if(config.buyoutMode === 'buyout') {
+        const addRange = final.map(value => Math.round(value * config.buyoutPct));
+        final = final.map((value, idx) => value + addRange[idx]);
+        pushInfo('Buyout', addRange[1], `Zwischensumme × ${Math.round(config.buyoutPct * 100)}%`);
+        appendBreakdown('Buyout', addRange[1]);
+    }
+    if(config.buyoutMode === 'staffel' && config.extraPeriods > 0) {
+        const addRange = final.map(value => Math.round(value * config.staffelPct));
+        final = final.map((value, idx) => value + addRange[idx]);
+        pushInfo(
+            'Staffel (Perioden × 12%)',
+            addRange[1],
+            `Zwischensumme × ${Math.round(config.staffelPct * 100)}% (bei ${config.periods} Perioden)`
+        );
+        appendBreakdown('Staffel (Perioden × 12%)', addRange[1]);
+    }
+
+    if(breakdown) {
+        breakdown.final = { min: final[0], mid: final[1], max: final[2] };
+    }
+    return Object.assign({}, result, { final, info, breakdown });
+}
+
 const srcComputeResult = function(state) {
     const primaryKey = state.projectKey;
     if(!primaryKey) {
@@ -1955,13 +2131,14 @@ const srcComputeResult = function(state) {
                 max: (breakdown.final.max || 0) + addons.rangeAdd[2]
             };
         }
-        return {
+        const combined = {
             final,
             info,
             licenseText: `${headerMeta}${result.licenseText}${addonMarkup}`,
             breakdown,
             licMeta: result.licMeta
         };
+        return srcApplyAdvancedAdjustments(combined, state);
     }
     let final = [0,0,0];
     let info = [];
@@ -1979,13 +2156,14 @@ const srcComputeResult = function(state) {
     const addonMarkup = srcBuildGlobalAddonMarkup(addons);
     final = final.map((value, idx) => value + addons.rangeAdd[idx]);
     info = info.concat(addons.info || []);
-    return {
+    const combined = {
         final,
         info,
         licenseText: `${headerMeta}${licenseSections.join('')}${addonMarkup}`,
         breakdown: null,
         licMeta: []
     };
+    return srcApplyAdvancedAdjustments(combined, state);
 }
 
 window.srcCalc = function() {
@@ -2161,10 +2339,15 @@ window.srcGeneratePDFv6 = function(options = {}) {
     currentY += introLines.length * 4 + 4;
 
     const scopeText = extraSettings.scope && extraSettings.scope.length ? `Lieferumfang: ${extraSettings.scope.join(', ')}` : '';
+    const advancedSummary = srcBuildAdvancedSummary(state);
+    const advancedBlock = advancedSummary.projectLines.length
+        ? `Erweitert:\n- ${advancedSummary.projectLines.join('\n- ')}`
+        : '';
     const descriptionLines = [
         `${projectLabel}`,
         packageLabel ? `Paket: ${packageLabel}` : '',
-        scopeText
+        scopeText,
+        advancedBlock
     ].filter(Boolean).join('\n');
     const positionRows = [
         [
@@ -2218,6 +2401,9 @@ window.srcGeneratePDFv6 = function(options = {}) {
     if(state.licenseSocial) addons.push('Social Media');
     if(state.licenseEvent) addons.push('Event / Messe / POS');
     if(addons.length) rightsLines.push(`Zusatz: ${addons.join(', ')}`);
+    if(advancedSummary.rightsLines.length) {
+        rightsLines.push(`Konditionen: ${advancedSummary.rightsLines.join(' · ')}`);
+    }
     const cleanLicenseText = srcStripHTML(dynamicLicenseText);
     if(cleanLicenseText) rightsLines.push(cleanLicenseText);
     doc.text(doc.splitTextToSize(rightsLines.join('\n'), pageWidth - (margin * 2)), margin, currentY);

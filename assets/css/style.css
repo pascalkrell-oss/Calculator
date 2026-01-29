@@ -190,6 +190,34 @@
     cursor: not-allowed;
 }
 
+.src-advanced {
+    margin: 18px 0 28px;
+}
+.src-advanced-grid {
+    display: grid;
+    gap: 16px;
+}
+.src-advanced-item {
+    display: grid;
+    gap: 6px;
+}
+.src-advanced-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #0f172a;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+}
+.src-advanced-sub {
+    font-size: 11px;
+    color: #94a3b8;
+}
+.src-advanced-inline {
+    display: grid;
+    gap: 6px;
+    margin-top: 8px;
+}
+
 /* INPUTS */
 .src-select, .src-input-text, .src-textarea, .src-discount-grid input {
     width: 100%; padding: 10px 15px;

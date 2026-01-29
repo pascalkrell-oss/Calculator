@@ -169,6 +169,67 @@ function src_shortcode_output_v7() {
                 </details>
             </div>
 
+            <div class="src-advanced">
+                <details id="src-advanced-accordion" class="src-accordion">
+                    <summary class="src-accordion__summary">
+                        <span class="src-accordion__title">Erweitert</span>
+                        <span class="src-accordion__sub">Zusätzliche Vertrags- und Performance-Parameter für mehr Präzision.</span>
+                        <span class="src-accordion__chev" aria-hidden="true"></span>
+                    </summary>
+                    <div class="src-accordion__content">
+                        <div class="src-advanced-grid">
+                            <div class="src-advanced-item">
+                                <label class="src-advanced-label" for="src-adv-exclusivity">Exklusivität / Konkurrenzklausel</label>
+                                <select id="src-adv-exclusivity" class="src-select" onchange="srcCalc()">
+                                    <option value="none">Keine (0%)</option>
+                                    <option value="low">Low (+10%)</option>
+                                    <option value="medium">Medium (+20%)</option>
+                                    <option value="high">High (+35%)</option>
+                                </select>
+                            </div>
+                            <div class="src-advanced-item">
+                                <label class="src-advanced-label" for="src-adv-buyout-mode">Buyout vs. Staffel</label>
+                                <select id="src-adv-buyout-mode" class="src-select" onchange="srcUIUpdate(); srcCalc();">
+                                    <option value="standard">Standard (wie bisher)</option>
+                                    <option value="buyout">Buyout (einmalig) (+25%)</option>
+                                    <option value="staffel">Staffel (ab 2. Nutzungsperiode)</option>
+                                </select>
+                                <div id="src-adv-periods-wrap" class="src-slide-wrap">
+                                    <div class="src-advanced-inline">
+                                        <label class="src-advanced-label" for="src-adv-periods">Anzahl Perioden</label>
+                                        <input type="number" id="src-adv-periods" class="src-input-compact" min="1" max="6" value="1" oninput="srcCalc()">
+                                        <span class="src-advanced-sub">Zuschlag je Extra-Periode: +12%</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="src-advanced-item">
+                                <label class="src-advanced-label" for="src-adv-versions">Sprachversionen</label>
+                                <input type="number" id="src-adv-versions" class="src-input-compact" min="1" max="10" value="1" oninput="srcCalc()">
+                                <span class="src-advanced-sub">Jede zusätzliche Version: +35% der Sprecherleistung</span>
+                            </div>
+                            <div class="src-advanced-item">
+                                <label class="src-advanced-label" for="src-adv-pickups">Pickups / Korrekturschleifen</label>
+                                <select id="src-adv-pickups" class="src-select" onchange="srcCalc()">
+                                    <option value="1">Inkl. 1 Runde (0%)</option>
+                                    <option value="2">2 Runden (+5%)</option>
+                                    <option value="3">3+ Runden (+10%)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <!-- TODO (Advanced Roadmap):
+                            - Agentur-/Vermittlungsprovision
+                            - Live-Session/Directed Session Zuschlag
+                            - Studio/Remote Recording Differenz
+                            - Express/Turnaround (24h/48h)
+                            - KI-Training / synthetische Stimme Buyout
+                            - Media-Flighting (Paid Ads mit Spend/Impressions Stufen)
+                            - Territorium: DACH/EU/Worldwide Stufen, Branchen-Exklusivität
+                            - Wiederverwendung/Verlängerungsoptionen mit automatischer Preisfortschreibung
+                        -->
+                    </div>
+                </details>
+            </div>
+
             <div class="src-group" id="src-group-text">
                 <div class="src-section-title">
                     <span class="dashicons dashicons-editor-alignleft"></span> Skript / Länge
