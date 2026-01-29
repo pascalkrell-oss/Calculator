@@ -317,6 +317,20 @@ const srcStripHTML = function(str) {
     return (div.textContent || div.innerText || '').replace(/\s+/g, ' ').trim();
 }
 
+const srcNormalizeAddonLine = function(text) {
+    return String(text || '').toLowerCase().replace(/\s+/g, ' ').trim();
+}
+
+const srcDedupeAddonLines = function(lines = []) {
+    const seen = new Set();
+    return (Array.isArray(lines) ? lines : []).filter(line => {
+        const key = srcNormalizeAddonLine(line);
+        if(!key || seen.has(key)) return false;
+        seen.add(key);
+        return true;
+    });
+}
+
 const srcGetProjectName = function(projectKey) {
     if(!projectKey) return '';
     return srcRatesData[projectKey] ? srcRatesData[projectKey].name : projectKey;
@@ -1534,7 +1548,87 @@ window.srcValidateFinalFee = function() {
     }
 }
 
-const srcComputeSingleProjectResult = function(state, projectKey) {
+const srcComputeGlobalAddons = function(state, projectKeys) {
+    const keys = Array.from(new Set((projectKeys || []).filter(Boolean)));
+    const projectNames = keys.map(srcGetProjectName).filter(Boolean);
+    const addons = [
+        {
+            key: 'social_organic',
+            stateKey: 'licenseSocial',
+            label: 'Zusatzlizenz: Social Media (organisch)'
+        },
+        {
+            key: 'event_pos',
+            stateKey: 'licenseEvent',
+            label: 'Zusatzlizenz: Event / Messe / POS'
+        }
+    ];
+    const result = {
+        rangeAdd: [0,0,0],
+        info: [],
+        breakdownSteps: [],
+        licenseLines: [],
+        extraBlock: ''
+    };
+    if(!state) return result;
+    addons.forEach(addon => {
+        if(!state[addon.stateKey]) return;
+        const eligibleProjects = keys.filter(key => {
+            const data = srcRatesData[key] || {};
+            const hasExtra = data.license_extras && data.license_extras[addon.key] !== undefined;
+            return Array.isArray(data.tiers) || hasExtra;
+        });
+        const eligibleNames = eligibleProjects.map(srcGetProjectName).filter(Boolean);
+        const scopeNames = eligibleNames.length ? eligibleNames : projectNames;
+        const scopeSuffix = scopeNames.length > 1 ? ` (gilt für: ${scopeNames.join(', ')})` : '';
+        result.licenseLines.push(`${addon.label}${scopeSuffix}`);
+        if(eligibleProjects.length) {
+            const rateCandidates = eligibleProjects.map(key => {
+                const data = srcRatesData[key] || {};
+                const licenseExtras = data.license_extras || {};
+                return srcGetLicenseExtraAmount(licenseExtras, addon.key) || [150, 150, 150];
+            });
+            const extraRates = rateCandidates.reduce((acc, rates) => {
+                return acc.map((value, idx) => Math.max(value, rates[idx] || 0));
+            }, [0, 0, 0]);
+            result.rangeAdd = result.rangeAdd.map((value, idx) => value + extraRates[idx]);
+            result.breakdownSteps.push({
+                label: addon.label,
+                amountOrFactor: `+${extraRates[1]} €`,
+                effectOnRange: 'add'
+            });
+            const formulaSuffix = scopeNames.length
+                ? `Zusatzlizenz (gilt für: ${scopeNames.join(', ')})`
+                : 'Zusatzlizenz (global)';
+            result.info.push({
+                label: addon.label,
+                amount: srcFormatSignedCurrency(extraRates[1]),
+                formula: formulaSuffix
+            });
+        }
+    });
+
+    const rightsGuidance = srcRatesData.rights_guidance || {};
+    const defaultGuidance = rightsGuidance.default || {};
+    const extrasText = [];
+    keys.forEach(key => {
+        const guidanceEntry = rightsGuidance[state.layoutMode ? 'default' : key] || defaultGuidance;
+        const extras = Object.assign({}, defaultGuidance.extras || {}, guidanceEntry.extras || {});
+        if(state.licenseSocial && extras.social_organic) {
+            extrasText.push(extras.social_organic);
+        }
+        if(state.licenseEvent && extras.event_pos) {
+            extrasText.push(extras.event_pos);
+        }
+    });
+    const dedupedExtras = srcDedupeAddonLines(extrasText);
+    result.extraBlock = dedupedExtras.length ? `<div class="src-license-extras">${dedupedExtras.join(' ')}</div>` : '';
+    result.licenseLines = srcDedupeAddonLines(result.licenseLines);
+    return result;
+}
+
+const srcComputeSingleProjectResult = function(state, projectKey, options = {}) {
+    const applyAddons = options.applyAddons !== false;
     const genre = projectKey;
     if(!genre) {
         return { final: [0,0,0], info: [], licenseText: "", breakdown: null, licMeta: [], guidanceText: '', extraBlock: '', projectName: '' };
@@ -1694,14 +1788,14 @@ const srcComputeSingleProjectResult = function(state, projectKey) {
             const licenseExtras = data.license_extras || {};
             const socialExtra = srcGetLicenseExtraAmount(licenseExtras, 'social_organic');
             const eventExtra = srcGetLicenseExtraAmount(licenseExtras, 'event_pos');
-            if(state.licenseSocial) {
+            if(state.licenseSocial && applyAddons) {
                 const extraRates = socialExtra || [150, 150, 150];
                 final = final.map((v, idx) => v + extraRates[idx]);
                 breakdownSteps.push({ label: "Social Media", amountOrFactor: `+${extraRates[1]} €`, effectOnRange: 'add' });
                 addInfo("Social Media", srcFormatSignedCurrency(extraRates[1]), "Zusatzlizenz");
                 licParts.push("+ Social Media");
             }
-            if(state.licenseEvent) {
+            if(state.licenseEvent && applyAddons) {
                 const extraRates = eventExtra || [150, 150, 150];
                 final = final.map((v, idx) => v + extraRates[idx]);
                 breakdownSteps.push({ label: "Event", amountOrFactor: `+${extraRates[1]} €`, effectOnRange: 'add' });
@@ -1735,8 +1829,10 @@ const srcComputeSingleProjectResult = function(state, projectKey) {
         addInfo("Produktion & Aufwand", srcFormatSignedCurrency(diff), `x${factorLabel} (${picksText})`, tone);
     }
 
-    if(state.licenseSocial) { licMeta.push("Zusatzlizenz: Social Media (organisch)"); }
-    if(state.licenseEvent) { licMeta.push("Zusatzlizenz: Event / Messe / POS"); }
+    if(applyAddons) {
+        if(state.licenseSocial) { licMeta.push("Zusatzlizenz: Social Media (organisch)"); }
+        if(state.licenseEvent) { licMeta.push("Zusatzlizenz: Event / Messe / POS"); }
+    }
 
     if(state.studioFee > 0) {
         final = final.map(v => v + state.studioFee);
@@ -1780,11 +1876,13 @@ const srcComputeSingleProjectResult = function(state, projectKey) {
     }
     const extras = Object.assign({}, defaultGuidance.extras || {}, guidanceEntry.extras || {});
     const extrasText = [];
-    if(state.licenseSocial && extras.social_organic) {
-        extrasText.push(extras.social_organic);
-    }
-    if(state.licenseEvent && extras.event_pos) {
-        extrasText.push(extras.event_pos);
+    if(applyAddons) {
+        if(state.licenseSocial && extras.social_organic) {
+            extrasText.push(extras.social_organic);
+        }
+        if(state.licenseEvent && extras.event_pos) {
+            extrasText.push(extras.event_pos);
+        }
     }
     const extraBlock = extrasText.length ? `<div class="src-license-extras">${extrasText.join(' ')}</div>` : "";
     const licMetaText = srcBuildLicenseMetaMarkup(licMeta);
@@ -1801,6 +1899,15 @@ const srcComputeSingleProjectResult = function(state, projectKey) {
     };
 }
 
+const srcBuildGlobalAddonMarkup = function(addons) {
+    if(!addons) return '';
+    const lines = srcDedupeAddonLines(addons.licenseLines || []);
+    const linesMarkup = lines.length
+        ? `<div class="src-license-addons"><strong>Zusatzlizenzen:</strong> ${lines.join(' · ')}</div>`
+        : '';
+    return `${linesMarkup}${addons.extraBlock || ''}`;
+}
+
 const srcComputeResult = function(state) {
     const primaryKey = state.projectKey;
     if(!primaryKey) {
@@ -1812,14 +1919,27 @@ const srcComputeResult = function(state) {
         return { final: [0,0,0], info: [], licenseText: "", breakdown: null, licMeta: [] };
     }
     if(uniqueKeys.length === 1) {
-        const result = srcComputeSingleProjectResult(state, uniqueKeys[0]);
+        const result = srcComputeSingleProjectResult(state, uniqueKeys[0], { applyAddons: false });
         const projectLabel = `Projekt: ${result.projectName || srcGetProjectName(uniqueKeys[0])}`;
         const headerMeta = srcBuildLicenseMetaMarkup([projectLabel]);
+        const addons = srcComputeGlobalAddons(state, uniqueKeys);
+        const addonMarkup = srcBuildGlobalAddonMarkup(addons);
+        const final = result.final.map((value, idx) => value + addons.rangeAdd[idx]);
+        const info = result.info.concat(addons.info || []);
+        let breakdown = result.breakdown;
+        if(breakdown) {
+            breakdown.steps = breakdown.steps.concat(addons.breakdownSteps || []);
+            breakdown.final = {
+                min: (breakdown.final.min || 0) + addons.rangeAdd[0],
+                mid: (breakdown.final.mid || 0) + addons.rangeAdd[1],
+                max: (breakdown.final.max || 0) + addons.rangeAdd[2]
+            };
+        }
         return {
-            final: result.final,
-            info: result.info,
-            licenseText: `${headerMeta}${result.licenseText}`,
-            breakdown: result.breakdown,
+            final,
+            info,
+            licenseText: `${headerMeta}${result.licenseText}${addonMarkup}`,
+            breakdown,
             licMeta: result.licMeta
         };
     }
@@ -1829,16 +1949,20 @@ const srcComputeResult = function(state) {
     const headerMeta = srcBuildLicenseMetaMarkup([`Projekt(e): ${projectNames.join(' + ')}`]);
     const licenseSections = [];
     uniqueKeys.forEach((key) => {
-        const result = srcComputeSingleProjectResult(state, key);
+        const result = srcComputeSingleProjectResult(state, key, { applyAddons: false });
         final = final.map((value, idx) => value + (result.final[idx] || 0));
         info.push({ label: `Projektblock: ${result.projectName || srcGetProjectName(key)}`, amount: '', formula: '', tone: 'muted' });
         info = info.concat(result.info || []);
         licenseSections.push(`<div class="src-license-project">${result.projectName || srcGetProjectName(key)}</div>${result.licenseText}`);
     });
+    const addons = srcComputeGlobalAddons(state, uniqueKeys);
+    const addonMarkup = srcBuildGlobalAddonMarkup(addons);
+    final = final.map((value, idx) => value + addons.rangeAdd[idx]);
+    info = info.concat(addons.info || []);
     return {
         final,
         info,
-        licenseText: `${headerMeta}${licenseSections.join('')}`,
+        licenseText: `${headerMeta}${licenseSections.join('')}${addonMarkup}`,
         breakdown: null,
         licMeta: []
     };
