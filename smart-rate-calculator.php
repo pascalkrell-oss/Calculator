@@ -400,6 +400,16 @@ function src_shortcode_output_v7() {
                                         <label class="src-toggle-slider" for="src-lic-event"></label>
                                     </div>
                                 </div>
+                                <div class="src-switch-row boxed">
+                                    <span class="src-switch-content">
+                                        <span class="dashicons dashicons-welcome-learn-more src-switch-icon"></span>
+                                        <div><div class="src-switch-text">Interne Nutzung (Mitarbeiterschulung / Intranet)</div></div>
+                                    </span>
+                                    <div class="src-toggle-wrapper">
+                                        <input type="checkbox" id="src-lic-internal">
+                                        <label class="src-toggle-slider" for="src-lic-internal"></label>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -649,10 +659,7 @@ function src_shortcode_output_v7() {
 
                     <div class="src-sidebar-section src-collapse src-sidebar-box--notes" id="src-notes-tips-section">
                         <div class="src-sidebar-title src-sidebar-title--notes">Hinweise &amp; Tipps</div>
-                        <div class="src-notes-tips-box">
-                            <div id="src-static-notes" class="src-risk-box"></div>
-                            <div id="src-project-tips" class="src-project-tips"></div>
-                        </div>
+                        <div id="src-static-notes" class="src-notes-tips-box"></div>
                     </div>
 
                     <div class="src-sidebar-section src-collapse src-sidebar-box--compare" id="src-compare-section">
