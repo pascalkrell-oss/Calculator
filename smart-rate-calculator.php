@@ -268,7 +268,9 @@ function src_shortcode_output_v7() {
             </div>
 
             <div class="src-left-section src-rights-card src-collapse">
-                <div class="src-left-section__title">Nutzungsrechte &amp; Lizenzen</div>
+                <div class="src-box-header">
+                    <div class="src-box-title">Nutzungsrechte &amp; Lizenzen</div>
+                </div>
                 <div class="src-rights-inner">
                     <div id="mod-ads" class="src-slide-wrap">
                         <div class="src-light-box-wrapper">
@@ -373,7 +375,7 @@ function src_shortcode_output_v7() {
                     </div>
 
                     <div id="mod-image" class="src-slide-wrap">
-                        <div class="src-light-box-wrapper">
+                        <div class="src-subsection">
                             <div class="src-group src-rights-panel" style="margin-bottom:0;">
                                 <div class="src-section-title"><span class="dashicons dashicons-plus-alt"></span> Zusatzlizenzen</div>
                                 <div class="src-switch-row boxed">
@@ -606,7 +608,7 @@ function src_shortcode_output_v7() {
                             <div class="src-price-main-box">
                                 <div class="src-price-main">
                                     <div class="src-amount-anim">
-                                        <span class="src-amount-anim__value" id="src-display-total">0 €</span>
+                                        <span class="src-amount-anim__value src-total" id="src-display-total">0 €</span>
                                     </div>
                                 </div>
                             </div>
@@ -732,7 +734,7 @@ function src_shortcode_output_v7() {
     </div>
     <div id="src-tooltip-fixed"></div>
     <div id="src-export-modal" class="src-modal-overlay" aria-hidden="true">
-        <div class="src-modal" role="dialog" aria-modal="true" aria-labelledby="srcModalTitle">
+        <div class="src-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="srcModalTitle">
             <div class="src-modal__head">
                 <div>
                     <div class="src-modal__title" id="srcModalTitle">Angebot exportieren</div>
@@ -741,114 +743,116 @@ function src_shortcode_output_v7() {
                 <button class="src-modal__close" type="button" aria-label="Schließen" data-modal-close>×</button>
             </div>
 
-            <div class="src-modal__grid">
-                <button type="button" class="src-opt-tile is-on" data-opt="pdf" aria-pressed="true">
-                    <span class="src-opt-tile__check" aria-hidden="true"></span>
-                    <span class="src-opt-tile__text">
-                        <span class="src-opt-tile__title">PDF Angebot</span>
-                        <span class="src-opt-tile__sub">Zusammenfassung &amp; Details</span>
-                    </span>
-                </button>
-                <button type="button" class="src-opt-tile is-on" data-opt="email" aria-pressed="true">
-                    <span class="src-opt-tile__check" aria-hidden="true"></span>
-                    <span class="src-opt-tile__text">
-                        <span class="src-opt-tile__title">Mailtext kopieren</span>
-                        <span class="src-opt-tile__sub">Kurztext für die E-Mail</span>
-                    </span>
-                </button>
-                <button type="button" class="src-opt-tile" data-opt="breakdown" aria-pressed="false">
-                    <span class="src-opt-tile__check" aria-hidden="true"></span>
-                    <span class="src-opt-tile__text">
-                        <span class="src-opt-tile__title">Rechenweg anhängen</span>
-                        <span class="src-opt-tile__sub">Detaillierte Kalkulation</span>
-                    </span>
-                </button>
-                <button type="button" class="src-opt-tile" data-opt="risk" aria-pressed="false">
-                    <span class="src-opt-tile__check" aria-hidden="true"></span>
-                    <span class="src-opt-tile__text">
-                        <span class="src-opt-tile__title">Hinweise anhängen</span>
-                        <span class="src-opt-tile__sub">Rechte- &amp; Risiko-Check</span>
-                    </span>
-                </button>
-                <button type="button" class="src-opt-tile is-on" data-opt-group="lang" data-value="de" aria-pressed="true">
-                    <span class="src-opt-tile__check" aria-hidden="true"></span>
-                    <span class="src-opt-tile__text">
-                        <span class="src-opt-tile__title">Sprache: Deutsch</span>
-                        <span class="src-opt-tile__sub">Standardversion</span>
-                    </span>
-                </button>
-                <button type="button" class="src-opt-tile" data-opt-group="lang" data-value="en" aria-pressed="false">
-                    <span class="src-opt-tile__check" aria-hidden="true"></span>
-                    <span class="src-opt-tile__text">
-                        <span class="src-opt-tile__title">Sprache: Englisch</span>
-                        <span class="src-opt-tile__sub">Internationales Angebot</span>
-                    </span>
-                </button>
-                <button type="button" class="src-opt-tile is-on" data-opt-group="pricing" data-value="range" aria-pressed="true">
-                    <span class="src-opt-tile__check" aria-hidden="true"></span>
-                    <span class="src-opt-tile__text">
-                        <span class="src-opt-tile__title">Preisstrategie: Range</span>
-                        <span class="src-opt-tile__sub">Min–Max Spanne</span>
-                    </span>
-                </button>
-                <button type="button" class="src-opt-tile" data-opt-group="pricing" data-value="mean" aria-pressed="false">
-                    <span class="src-opt-tile__check" aria-hidden="true"></span>
-                    <span class="src-opt-tile__text">
-                        <span class="src-opt-tile__title">Preisstrategie: Mittelwert</span>
-                        <span class="src-opt-tile__sub">Fester Durchschnittspreis</span>
-                    </span>
-                </button>
-                <button type="button" class="src-opt-tile" data-opt-group="pricing" data-value="package" aria-pressed="false">
-                    <span class="src-opt-tile__check" aria-hidden="true"></span>
-                    <span class="src-opt-tile__text">
-                        <span class="src-opt-tile__title">Preisstrategie: Paket</span>
-                        <span class="src-opt-tile__sub">Basic, Standard, Premium</span>
-                    </span>
-                </button>
-                <button type="button" class="src-opt-tile is-on" data-opt-group="client" data-value="direct" aria-pressed="true">
-                    <span class="src-opt-tile__check" aria-hidden="true"></span>
-                    <span class="src-opt-tile__text">
-                        <span class="src-opt-tile__title">Kundentyp: Direktkunde</span>
-                        <span class="src-opt-tile__sub">Endkunde / Unternehmen</span>
-                    </span>
-                </button>
-                <button type="button" class="src-opt-tile" data-opt-group="client" data-value="agency" aria-pressed="false">
-                    <span class="src-opt-tile__check" aria-hidden="true"></span>
-                    <span class="src-opt-tile__text">
-                        <span class="src-opt-tile__title">Kundentyp: Agentur</span>
-                        <span class="src-opt-tile__sub">B2B / Vermittlung</span>
-                    </span>
-                </button>
-                <div class="src-opt-tile src-opt-tile--full src-opt-tile--panel" aria-hidden="true">
-                    <div class="src-opt-tile__panel">
-                        <div class="src-opt-panel-title">Paket auswählen (optional)</div>
-                        <div id="src-export-package-wrap" class="src-opt-panel-group">
-                            <div class="src-modal-package-grid" role="listbox" aria-label="Paketauswahl">
-                                <button class="src-modal-package-card" type="button" data-export-package-card="basic">Basic</button>
-                                <button class="src-modal-package-card" type="button" data-export-package-card="standard">Standard</button>
-                                <button class="src-modal-package-card" type="button" data-export-package-card="premium">Premium</button>
+            <div class="src-modal__body">
+                <div class="src-modal__grid">
+                    <button type="button" class="src-opt-tile is-on" data-opt="pdf" aria-pressed="true">
+                        <span class="src-opt-tile__check" aria-hidden="true"></span>
+                        <span class="src-opt-tile__text">
+                            <span class="src-opt-tile__title">PDF Angebot</span>
+                            <span class="src-opt-tile__sub">Zusammenfassung &amp; Details</span>
+                        </span>
+                    </button>
+                    <button type="button" class="src-opt-tile is-on" data-opt="email" aria-pressed="true">
+                        <span class="src-opt-tile__check" aria-hidden="true"></span>
+                        <span class="src-opt-tile__text">
+                            <span class="src-opt-tile__title">Mailtext kopieren</span>
+                            <span class="src-opt-tile__sub">Kurztext für die E-Mail</span>
+                        </span>
+                    </button>
+                    <button type="button" class="src-opt-tile" data-opt="breakdown" aria-pressed="false">
+                        <span class="src-opt-tile__check" aria-hidden="true"></span>
+                        <span class="src-opt-tile__text">
+                            <span class="src-opt-tile__title">Rechenweg anhängen</span>
+                            <span class="src-opt-tile__sub">Detaillierte Kalkulation</span>
+                        </span>
+                    </button>
+                    <button type="button" class="src-opt-tile" data-opt="risk" aria-pressed="false">
+                        <span class="src-opt-tile__check" aria-hidden="true"></span>
+                        <span class="src-opt-tile__text">
+                            <span class="src-opt-tile__title">Hinweise anhängen</span>
+                            <span class="src-opt-tile__sub">Rechte- &amp; Risiko-Check</span>
+                        </span>
+                    </button>
+                    <button type="button" class="src-opt-tile is-on" data-opt-group="lang" data-value="de" aria-pressed="true">
+                        <span class="src-opt-tile__check" aria-hidden="true"></span>
+                        <span class="src-opt-tile__text">
+                            <span class="src-opt-tile__title">Sprache: Deutsch</span>
+                            <span class="src-opt-tile__sub">Standardversion</span>
+                        </span>
+                    </button>
+                    <button type="button" class="src-opt-tile" data-opt-group="lang" data-value="en" aria-pressed="false">
+                        <span class="src-opt-tile__check" aria-hidden="true"></span>
+                        <span class="src-opt-tile__text">
+                            <span class="src-opt-tile__title">Sprache: Englisch</span>
+                            <span class="src-opt-tile__sub">Internationales Angebot</span>
+                        </span>
+                    </button>
+                    <button type="button" class="src-opt-tile is-on" data-opt-group="pricing" data-value="range" aria-pressed="true">
+                        <span class="src-opt-tile__check" aria-hidden="true"></span>
+                        <span class="src-opt-tile__text">
+                            <span class="src-opt-tile__title">Preisstrategie: Range</span>
+                            <span class="src-opt-tile__sub">Min–Max Spanne</span>
+                        </span>
+                    </button>
+                    <button type="button" class="src-opt-tile" data-opt-group="pricing" data-value="mean" aria-pressed="false">
+                        <span class="src-opt-tile__check" aria-hidden="true"></span>
+                        <span class="src-opt-tile__text">
+                            <span class="src-opt-tile__title">Preisstrategie: Mittelwert</span>
+                            <span class="src-opt-tile__sub">Fester Durchschnittspreis</span>
+                        </span>
+                    </button>
+                    <button type="button" class="src-opt-tile" data-opt-group="pricing" data-value="package" aria-pressed="false">
+                        <span class="src-opt-tile__check" aria-hidden="true"></span>
+                        <span class="src-opt-tile__text">
+                            <span class="src-opt-tile__title">Preisstrategie: Paket</span>
+                            <span class="src-opt-tile__sub">Basic, Standard, Premium</span>
+                        </span>
+                    </button>
+                    <button type="button" class="src-opt-tile is-on" data-opt-group="client" data-value="direct" aria-pressed="true">
+                        <span class="src-opt-tile__check" aria-hidden="true"></span>
+                        <span class="src-opt-tile__text">
+                            <span class="src-opt-tile__title">Kundentyp: Direktkunde</span>
+                            <span class="src-opt-tile__sub">Endkunde / Unternehmen</span>
+                        </span>
+                    </button>
+                    <button type="button" class="src-opt-tile" data-opt-group="client" data-value="agency" aria-pressed="false">
+                        <span class="src-opt-tile__check" aria-hidden="true"></span>
+                        <span class="src-opt-tile__text">
+                            <span class="src-opt-tile__title">Kundentyp: Agentur</span>
+                            <span class="src-opt-tile__sub">B2B / Vermittlung</span>
+                        </span>
+                    </button>
+                    <div class="src-opt-tile src-opt-tile--full src-opt-tile--panel" aria-hidden="true">
+                        <div class="src-opt-tile__panel">
+                            <div class="src-opt-panel-title">Paket auswählen (optional)</div>
+                            <div id="src-export-package-wrap" class="src-opt-panel-group">
+                                <div class="src-modal-package-grid" role="listbox" aria-label="Paketauswahl">
+                                    <button class="src-modal-package-card" type="button" data-export-package-card="basic">Basic</button>
+                                    <button class="src-modal-package-card" type="button" data-export-package-card="standard">Standard</button>
+                                    <button class="src-modal-package-card" type="button" data-export-package-card="premium">Premium</button>
+                                </div>
+                                <select id="src-export-package" class="src-select src-sr-only" aria-hidden="true" tabindex="-1">
+                                    <option value="basic">Basic</option>
+                                    <option value="standard">Standard</option>
+                                    <option value="premium">Premium</option>
+                                </select>
                             </div>
-                            <select id="src-export-package" class="src-select src-sr-only" aria-hidden="true" tabindex="-1">
-                                <option value="basic">Basic</option>
-                                <option value="standard">Standard</option>
-                                <option value="premium">Premium</option>
-                            </select>
                         </div>
                     </div>
-                </div>
-                <div class="src-opt-tile src-opt-tile--full src-opt-tile--panel" aria-hidden="true">
-                    <div class="src-opt-tile__panel">
-                        <div class="src-opt-panel-title">Optionale Felder</div>
-                        <div class="src-modal-grid">
-                            <input type="text" id="src-export-projectname" class="src-input-text" placeholder="Projektname (optional)">
-                            <input type="text" id="src-export-offer-id" class="src-input-text" placeholder="Angebotsnummer (optional)">
-                            <input type="text" id="src-export-validity" class="src-input-text" placeholder="Gültigkeit (z.B. 14 Tage)">
-                        </div>
-                        <div class="src-opt-panel-title src-opt-panel-title--small">Lieferumfang (Text)</div>
-                        <div class="src-opt-panel-group src-modal-scope">
-                            <label class="src-check"><input type="checkbox" class="src-export-scope" value="1 Take"> 1 Take</label>
-                            <label class="src-check"><input type="checkbox" class="src-export-scope" value="2 Korrekturen"> 2 Korrekturen</label>
-                            <label class="src-check"><input type="checkbox" class="src-export-scope" value="WAV/MP3 Lieferung"> WAV/MP3 Lieferung</label>
+                    <div class="src-opt-tile src-opt-tile--full src-opt-tile--panel" aria-hidden="true">
+                        <div class="src-opt-tile__panel">
+                            <div class="src-opt-panel-title">Optionale Felder</div>
+                            <div class="src-modal-grid">
+                                <input type="text" id="src-export-projectname" class="src-input-text" placeholder="Projektname (optional)">
+                                <input type="text" id="src-export-offer-id" class="src-input-text" placeholder="Angebotsnummer (optional)">
+                                <input type="text" id="src-export-validity" class="src-input-text" placeholder="Gültigkeit (z.B. 14 Tage)">
+                            </div>
+                            <div class="src-opt-panel-title src-opt-panel-title--small">Lieferumfang (Text)</div>
+                            <div class="src-opt-panel-group src-modal-scope">
+                                <label class="src-check"><input type="checkbox" class="src-export-scope" value="1 Take"> 1 Take</label>
+                                <label class="src-check"><input type="checkbox" class="src-export-scope" value="2 Korrekturen"> 2 Korrekturen</label>
+                                <label class="src-check"><input type="checkbox" class="src-export-scope" value="WAV/MP3 Lieferung"> WAV/MP3 Lieferung</label>
+                            </div>
                         </div>
                     </div>
                 </div>
