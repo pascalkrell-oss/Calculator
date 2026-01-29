@@ -138,31 +138,33 @@ function src_shortcode_output_v7() {
             <div id="src-linked-projects-wrap" class="src-linked-projects">
                 <details id="src-linked-projects-accordion" class="src-accordion">
                     <summary class="src-accordion__summary">
-                        <span class="src-accordion__title">Weitere Nutzungen / verknüpfte Projekte</span>
-                        <span class="src-accordion__sub">Optional: mehrere Projekt-Kontexte kombinieren (z.B. organisch + Ads).</span>
+                        <span class="src-accordion__text">
+                            <span class="src-accordion__title">Weitere Nutzungen / verknüpfte Projekte</span>
+                            <span class="src-accordion__sub">Optional: mehrere Projekt-Kontexte kombinieren (z.B. organisch + Ads).</span>
+                        </span>
                         <span class="src-accordion__chev" aria-hidden="true"></span>
                     </summary>
                     <div class="src-accordion__content">
-                        <div class="src-linked-projects__list">
+                        <div class="src-linked-grid">
                             <label class="src-linked-project-option">
                                 <input type="checkbox" class="src-linked-project" value="online_paid">
                                 <span>Paid Ads / Kampagne</span>
-                            </label>
-                            <label class="src-linked-project-option">
-                                <input type="checkbox" class="src-linked-project" value="tv">
-                                <span>TV Spot</span>
                             </label>
                             <label class="src-linked-project-option">
                                 <input type="checkbox" class="src-linked-project" value="radio">
                                 <span>Funkspot</span>
                             </label>
                             <label class="src-linked-project-option">
-                                <input type="checkbox" class="src-linked-project" value="cinema">
-                                <span>Kino Spot</span>
-                            </label>
-                            <label class="src-linked-project-option">
                                 <input type="checkbox" class="src-linked-project" value="pos">
                                 <span>POS / Ladenfunk</span>
+                            </label>
+                            <label class="src-linked-project-option">
+                                <input type="checkbox" class="src-linked-project" value="tv">
+                                <span>TV Spot</span>
+                            </label>
+                            <label class="src-linked-project-option">
+                                <input type="checkbox" class="src-linked-project" value="cinema">
+                                <span>Kino Spot</span>
                             </label>
                         </div>
                     </div>
@@ -172,8 +174,10 @@ function src_shortcode_output_v7() {
             <div class="src-advanced">
                 <details id="src-advanced-accordion" class="src-accordion">
                     <summary class="src-accordion__summary">
-                        <span class="src-accordion__title">Erweitert</span>
-                        <span class="src-accordion__sub">Zusätzliche Vertrags- und Performance-Parameter für mehr Präzision.</span>
+                        <span class="src-accordion__text">
+                            <span class="src-accordion__title">Erweitert</span>
+                            <span class="src-accordion__sub">Zusätzliche Vertrags- und Performance-Parameter für mehr Präzision.</span>
+                        </span>
                         <span class="src-accordion__chev" aria-hidden="true"></span>
                     </summary>
                     <div class="src-accordion__content">
@@ -206,14 +210,6 @@ function src_shortcode_output_v7() {
                                 <label class="src-advanced-label" for="src-adv-versions">Sprachversionen</label>
                                 <input type="number" id="src-adv-versions" class="src-input-compact" min="1" max="10" value="1" oninput="srcCalc()">
                                 <span class="src-advanced-sub">Jede zusätzliche Version: +35% der Sprecherleistung</span>
-                            </div>
-                            <div class="src-advanced-item">
-                                <label class="src-advanced-label" for="src-adv-pickups">Pickups / Korrekturschleifen</label>
-                                <select id="src-adv-pickups" class="src-select" onchange="srcCalc()">
-                                    <option value="1">Inkl. 1 Runde (0%)</option>
-                                    <option value="2">2 Runden (+5%)</option>
-                                    <option value="3">3+ Runden (+10%)</option>
-                                </select>
                             </div>
                         </div>
                         <!-- TODO (Advanced Roadmap):
@@ -284,7 +280,7 @@ function src_shortcode_output_v7() {
                                 </select>
                                 <span class="src-top-sub">Nur bei POS relevant</span>
                             </div>
-                            <div class="src-group src-rights-panel" style="margin-bottom:20px;">
+                            <div class="src-group src-rights-panel src-rights-panel--compact" style="margin-bottom:20px;">
                                 <div class="src-section-title" style="margin-bottom:10px;">
                                     <span class="dashicons dashicons-location-alt"></span> Verbreitungsgebiet
                                     <span class="src-tooltip-icon src-field-tip" data-field-tip="region" data-default-tip="Tipp: Größere Gebiete bedeuten höhere Reichweite und höhere Lizenzkosten.">?</span>
@@ -321,7 +317,7 @@ function src_shortcode_output_v7() {
                                 </div>
                             </div>
 
-                            <div class="src-group src-rights-panel" style="margin-bottom:20px;">
+                            <div class="src-group src-rights-panel src-rights-panel--compact" style="margin-bottom:20px;">
                                 <div class="src-slider-header">
                                 <div class="src-section-title" style="margin:0;">
                                     <span class="dashicons dashicons-calendar-alt"></span> Nutzungsdauer
