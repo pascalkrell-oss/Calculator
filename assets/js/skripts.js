@@ -553,10 +553,17 @@ const updateMainAmountAnimated = function(nextText) {
     target.classList.remove('src-amount-enter', 'src-amount-exit');
     target.style.opacity = '1';
     target.style.transform = 'translateY(0)';
+    const applyTotalUpdate = (value) => {
+        target.classList.add('is-updating');
+        target.textContent = value;
+        requestAnimationFrame(() => {
+            target.classList.remove('is-updating');
+        });
+    };
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if(prefersReducedMotion) {
         const safeText = pendingMainAmountUpdate || lastValidMainAmountText || '–';
-        target.textContent = safeText;
+        applyTotalUpdate(safeText);
         lastValidMainAmountText = safeText;
         pendingMainAmountUpdate = null;
         return;
@@ -580,7 +587,7 @@ const updateMainAmountAnimated = function(nextText) {
             if(event.propertyName !== 'transform' && event.propertyName !== 'opacity') return;
             target.removeEventListener('transitionend', onExit);
             mainAmountExitListener = null;
-            target.textContent = safeText;
+            applyTotalUpdate(safeText);
             target.classList.remove('src-amount-exit');
             requestAnimationFrame(() => {
                 target.classList.add('src-amount-enter');
@@ -601,7 +608,7 @@ const updateMainAmountAnimated = function(nextText) {
                 mainAmountExitListener = null;
             }
             if(token !== mainAmountAnimationToken) return;
-            target.textContent = safeText;
+            applyTotalUpdate(safeText);
             finalize();
         }, 350);
     });
@@ -1441,9 +1448,12 @@ window.srcUIUpdate = function() {
     const genre = document.getElementById('src-genre').value;
     const layoutMode = document.getElementById('src-layout-mode').checked;
     const hasGenre = Boolean(genre) && genre !== "0";
+    const hasProject = Boolean(genre);
     const calcRoot = document.getElementById('src-calc-v6');
     const complexityGroup = document.getElementById('src-complexity-group');
     const linkedInputs = document.querySelectorAll('.src-linked-project');
+    const advancedAccordion = document.getElementById('src-advanced-accordion');
+    const advancedWrap = document.querySelector('.src-advanced');
 
     if (calcRoot) {
         calcRoot.classList.toggle('src-has-project', hasGenre);
@@ -1473,6 +1483,26 @@ window.srcUIUpdate = function() {
     if(buyoutMode !== 'staffel') {
         const periods = document.getElementById('src-adv-periods');
         if(periods) periods.value = 1;
+    }
+    const advancedState = {
+        exclusivity: document.getElementById('src-adv-exclusivity')?.value || 'none',
+        buyoutMode,
+        periods: parseInt(document.getElementById('src-adv-periods')?.value, 10) || 1,
+        versions: parseInt(document.getElementById('src-adv-versions')?.value, 10) || 1
+    };
+    const hasAdvancedValues = advancedState.exclusivity !== 'none'
+        || advancedState.buyoutMode !== 'standard'
+        || advancedState.periods > 1
+        || advancedState.versions > 1;
+    if(advancedWrap) {
+        advancedWrap.style.display = hasProject ? '' : 'none';
+    }
+    if(advancedAccordion) {
+        if(!hasProject) {
+            advancedAccordion.open = false;
+        } else {
+            advancedAccordion.open = hasAdvancedValues;
+        }
     }
     srcUpdateRightsSectionVisibility(genre, layoutMode);
     srcToggleCollapse(complexityGroup, hasGenre);
