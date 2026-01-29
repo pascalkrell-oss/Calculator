@@ -115,6 +115,7 @@
     display: grid;
     grid-template-columns: 1fr auto;
     gap: 6px 12px;
+    align-items: start;
     padding: 14px 18px;
     background: #f8fafc;
     cursor: pointer;
@@ -143,10 +144,10 @@
 .src-accordion__chev {
     width: 14px;
     height: 14px;
-    border-right: 2px solid #94a3b8;
-    border-bottom: 2px solid #94a3b8;
+    border-right: 2px solid var(--src-primary);
+    border-bottom: 2px solid var(--src-primary);
     transform: rotate(45deg);
-    transition: transform 0.2s ease, border-color 0.2s ease;
+    transition: transform 0.25s ease, border-color 0.25s ease;
     align-self: center;
     justify-self: end;
     grid-row: 1 / span 2;
@@ -162,6 +163,7 @@
 }
 .src-linked-projects__list {
     display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;
 }
 .src-linked-project-option {
@@ -1411,6 +1413,7 @@
     .src-col-left { border-right: none; border-bottom: 1px solid var(--src-border-light); padding: 20px; }
     .src-tiles-grid { grid-template-columns: repeat(2, 1fr); }
     .src-top-grid { grid-template-columns: 1fr; }
+    .src-linked-projects__list { grid-template-columns: 1fr; }
     .src-option-row,
     .src-opt-head {
         flex-wrap: wrap;

@@ -70,6 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 'src-pkg-atv',
                 'src-lic-social',
                 'src-lic-event',
+                'src-lic-internal',
                 'src-express-toggle',
                 'src-cutdown',
                 'src-discount-toggle'
@@ -270,18 +271,13 @@ const srcUpdateNotesTipsVisibility = function(hasProject) {
     const notesSection = document.getElementById('src-notes-tips-section');
     if(!notesSection) return;
     const staticNotes = document.getElementById('src-static-notes');
-    const tipsWrap = document.getElementById('src-project-tips');
     if(!hasProject) {
-        if(tipsWrap) tipsWrap.style.display = 'none';
         if(staticNotes) staticNotes.style.display = 'none';
         srcToggleCollapse(notesSection, false);
         notesSection.style.display = 'none';
         return;
     }
     notesSection.style.display = '';
-    if(tipsWrap) {
-        tipsWrap.style.display = 'none';
-    }
     const hasStaticNotes = Boolean(staticNotes && staticNotes.textContent.trim().length);
     if(staticNotes) {
         staticNotes.style.display = hasStaticNotes ? '' : 'none';
@@ -482,6 +478,7 @@ const srcGetStateFromUI = function() {
         packageAtv: document.getElementById('src-pkg-atv') ? document.getElementById('src-pkg-atv').checked : false,
         licenseSocial: document.getElementById('src-lic-social') ? document.getElementById('src-lic-social').checked : false,
         licenseEvent: document.getElementById('src-lic-event') ? document.getElementById('src-lic-event').checked : false,
+        licenseInternal: document.getElementById('src-lic-internal') ? document.getElementById('src-lic-internal').checked : false,
         cutdown: document.getElementById('src-cutdown') ? document.getElementById('src-cutdown').checked : false,
         phoneCount: parseInt(document.getElementById('src-phone-count').value, 10) || 1,
         minutes,
@@ -744,6 +741,7 @@ const srcHasRightsControls = function(genre) {
     if(!genre) return false;
     if(['tv','online_paid','radio','cinema','pos'].includes(genre)) return true;
     if(['imagefilm','explainer','app'].includes(genre)) return true;
+    if(['elearning','podcast','audioguide','doku'].includes(genre)) return true;
     return false;
 }
 
@@ -776,11 +774,6 @@ const srcUpdateRightsSectionVisibility = function(genre, layoutMode) {
 const srcRenderNotesTips = function() {
     const notesWrap = document.getElementById('src-static-notes');
     if(!notesWrap) return;
-    const tipsWrap = document.getElementById('src-project-tips');
-    if(tipsWrap) {
-        tipsWrap.innerHTML = '';
-        tipsWrap.style.display = 'none';
-    }
     const calcRoot = document.getElementById('src-calc-v6');
     const hasProject = Boolean(calcRoot && calcRoot.classList.contains('src-has-project'));
     if(!hasProject) {
@@ -799,7 +792,7 @@ const srcRenderNotesTips = function() {
     const tipsMarkup = tips.length
         ? `<div class="src-notes-box is-tips"><div class="src-notes-box__head">Tipps</div><ol class="src-notes-box__list">${tips.map(tip => `<li>${tip}</li>`).join('')}</ol></div>`
         : '';
-    notesWrap.innerHTML = `<div class="src-notes-grid"><div class="src-notes-box is-hints"><div class="src-notes-box__head">Hinweise</div><ol class="src-notes-box__list">${hintMarkup}</ol></div>${tipsMarkup}</div>`;
+    notesWrap.innerHTML = `<div class="src-notes-box is-hints"><div class="src-notes-box__head">Hinweise</div><ol class="src-notes-box__list">${hintMarkup}</ol></div>${tipsMarkup}`;
     srcUpdateNotesTipsVisibility(true);
 }
 
@@ -956,6 +949,7 @@ const srcCompareDiffList = function(aState, bState) {
     if(aState.projectKey !== 'phone' && aState.minutes !== bState.minutes) diffs.push(`Länge: ${aState.minutes.toFixed(2)} → ${bState.minutes.toFixed(2)} Min`);
     if(aState.licenseSocial !== bState.licenseSocial) diffs.push(`Social License: ${aState.licenseSocial ? 'ja' : 'nein'} → ${bState.licenseSocial ? 'ja' : 'nein'}`);
     if(aState.licenseEvent !== bState.licenseEvent) diffs.push(`Event License: ${aState.licenseEvent ? 'ja' : 'nein'} → ${bState.licenseEvent ? 'ja' : 'nein'}`);
+    if(aState.licenseInternal !== bState.licenseInternal) diffs.push(`Interne Nutzung: ${aState.licenseInternal ? 'ja' : 'nein'} → ${bState.licenseInternal ? 'ja' : 'nein'}`);
     if(aState.packageOnline !== bState.packageOnline) diffs.push(`Online Audio: ${aState.packageOnline ? 'ja' : 'nein'} → ${bState.packageOnline ? 'ja' : 'nein'}`);
     if(aState.packageAtv !== bState.packageAtv) diffs.push(`ATV/CTV: ${aState.packageAtv ? 'ja' : 'nein'} → ${bState.packageAtv ? 'ja' : 'nein'}`);
     if(aState.cutdown !== bState.cutdown) diffs.push(`Cut-down: ${aState.cutdown ? 'ja' : 'nein'} → ${bState.cutdown ? 'ja' : 'nein'}`);
@@ -1024,6 +1018,7 @@ const srcBuildPackages = function(currentState) {
     const disableExtras = {
         licenseSocial: false,
         licenseEvent: false,
+        licenseInternal: false,
         packageOnline: false,
         packageAtv: false,
         cutdown: false,
@@ -1042,6 +1037,7 @@ const srcBuildPackages = function(currentState) {
                 ...state,
                 licenseSocial: Boolean(data.license_extras && data.license_extras.social_organic),
                 licenseEvent: Boolean(data.license_extras && data.license_extras.event_pos),
+                licenseInternal: Boolean(data.license_extras && data.license_extras.internal_use),
                 packageAtv: baseState.projectKey === 'online_paid',
                 packageOnline: baseState.projectKey === 'radio'
             };
@@ -1236,6 +1232,7 @@ const srcBuildOfferEmailText = function({ lang, pricingMode, selectedPackage, in
     if(state.packageAtv) addons.push('ATV/CTV');
     if(state.licenseSocial) addons.push('Social Media');
     if(state.licenseEvent) addons.push('Event / Messe / POS');
+    if(state.licenseInternal) addons.push('Interne Nutzung (Intranet)');
     if(state.cutdown) addons.push('Cut-down');
     if(state.expressToggle) addons.push('Express');
     if(state.studioFee > 0) addons.push('Studio');
@@ -1407,7 +1404,7 @@ window.srcReset = function() {
     }
     srcValidateFinalFee(); 
     
-    const toggles = ['src-layout-mode', 'src-own-studio', 'src-express-toggle', 'src-discount-toggle', 'src-cutdown', 'src-lic-social', 'src-lic-event', 'src-pkg-online', 'src-pkg-atv'];
+    const toggles = ['src-layout-mode', 'src-own-studio', 'src-express-toggle', 'src-discount-toggle', 'src-cutdown', 'src-lic-social', 'src-lic-event', 'src-lic-internal', 'src-pkg-online', 'src-pkg-atv'];
     toggles.forEach(id => { const el = document.getElementById(id); if(el) el.checked = false; });
     document.querySelectorAll('.src-linked-project').forEach(el => {
         el.checked = false;
@@ -1463,8 +1460,8 @@ window.srcUIUpdate = function() {
         toggleElement('mod-ads', false); toggleElement('mod-image', false); toggleElement('mod-phone', false);
         toggleElement('src-pos-type-wrap', false);
     } else {
-        toggleElement('mod-ads', ['tv','online_paid','radio','cinema','pos'].includes(genre));
-        toggleElement('mod-image', ['imagefilm','explainer','app'].includes(genre));
+        toggleElement('mod-ads', ['tv','online_paid','radio','cinema','pos','elearning','podcast','audioguide','doku'].includes(genre));
+        toggleElement('mod-image', ['imagefilm','explainer','app','elearning','podcast','audioguide','doku'].includes(genre));
         toggleElement('mod-phone', genre === 'phone');
         toggleElement('src-pos-type-wrap', genre === 'pos');
         
@@ -1595,6 +1592,11 @@ window.srcValidateFinalFee = function() {
 const srcComputeGlobalAddons = function(state, projectKeys) {
     const keys = Array.from(new Set((projectKeys || []).filter(Boolean)));
     const projectNames = keys.map(srcGetProjectName).filter(Boolean);
+    const addonDefaults = {
+        social_organic: [150, 150, 150],
+        event_pos: [150, 150, 150],
+        internal_use: [0, 0, 0] // TODO: VDS Wert einsetzen
+    };
     const addons = [
         {
             key: 'social_organic',
@@ -1605,6 +1607,11 @@ const srcComputeGlobalAddons = function(state, projectKeys) {
             key: 'event_pos',
             stateKey: 'licenseEvent',
             label: 'Zusatzlizenz: Event / Messe / POS'
+        },
+        {
+            key: 'internal_use',
+            stateKey: 'licenseInternal',
+            label: 'Zusatzlizenz: Interne Nutzung (Mitarbeiterschulung / Intranet)'
         }
     ];
     const result = {
@@ -1630,7 +1637,7 @@ const srcComputeGlobalAddons = function(state, projectKeys) {
             const rateCandidates = eligibleProjects.map(key => {
                 const data = srcRatesData[key] || {};
                 const licenseExtras = data.license_extras || {};
-                return srcGetLicenseExtraAmount(licenseExtras, addon.key) || [150, 150, 150];
+                return srcGetLicenseExtraAmount(licenseExtras, addon.key) || addonDefaults[addon.key] || [0, 0, 0];
             });
             const extraRates = rateCandidates.reduce((acc, rates) => {
                 return acc.map((value, idx) => Math.max(value, rates[idx] || 0));
@@ -1663,6 +1670,9 @@ const srcComputeGlobalAddons = function(state, projectKeys) {
         }
         if(state.licenseEvent && extras.event_pos) {
             extrasText.push(extras.event_pos);
+        }
+        if(state.licenseInternal && extras.internal_use) {
+            extrasText.push(extras.internal_use);
         }
     });
     const dedupedExtras = srcDedupeAddonLines(extrasText);
@@ -1832,6 +1842,7 @@ const srcComputeSingleProjectResult = function(state, projectKey, options = {}) 
             const licenseExtras = data.license_extras || {};
             const socialExtra = srcGetLicenseExtraAmount(licenseExtras, 'social_organic');
             const eventExtra = srcGetLicenseExtraAmount(licenseExtras, 'event_pos');
+            const internalExtra = srcGetLicenseExtraAmount(licenseExtras, 'internal_use');
             if(state.licenseSocial && applyAddons) {
                 const extraRates = socialExtra || [150, 150, 150];
                 final = final.map((v, idx) => v + extraRates[idx]);
@@ -1845,6 +1856,13 @@ const srcComputeSingleProjectResult = function(state, projectKey, options = {}) 
                 breakdownSteps.push({ label: "Event", amountOrFactor: `+${extraRates[1]} €`, effectOnRange: 'add' });
                 addInfo("Event / Messe / POS", srcFormatSignedCurrency(extraRates[1]), "Zusatzlizenz");
                 licParts.push("+ Event");
+            }
+            if(state.licenseInternal && applyAddons) {
+                const extraRates = internalExtra || [0, 0, 0];
+                final = final.map((v, idx) => v + extraRates[idx]);
+                breakdownSteps.push({ label: "Interne Nutzung", amountOrFactor: `+${extraRates[1]} €`, effectOnRange: 'add' });
+                addInfo("Interne Nutzung (Intranet)", srcFormatSignedCurrency(extraRates[1]), "Zusatzlizenz");
+                licParts.push("+ Intern");
             }
         }
         else {
@@ -1876,6 +1894,7 @@ const srcComputeSingleProjectResult = function(state, projectKey, options = {}) 
     if(applyAddons) {
         if(state.licenseSocial) { licMeta.push("Zusatzlizenz: Social Media (organisch)"); }
         if(state.licenseEvent) { licMeta.push("Zusatzlizenz: Event / Messe / POS"); }
+        if(state.licenseInternal) { licMeta.push("Zusatzlizenz: Interne Nutzung (Mitarbeiterschulung / Intranet)"); }
     }
 
     if(state.studioFee > 0) {
@@ -1926,6 +1945,9 @@ const srcComputeSingleProjectResult = function(state, projectKey, options = {}) 
         }
         if(state.licenseEvent && extras.event_pos) {
             extrasText.push(extras.event_pos);
+        }
+        if(state.licenseInternal && extras.internal_use) {
+            extrasText.push(extras.internal_use);
         }
     }
     const extraBlock = extrasText.length ? `<div class="src-license-extras">${extrasText.join(' ')}</div>` : "";
@@ -2400,6 +2422,7 @@ window.srcGeneratePDFv6 = function(options = {}) {
     if(state.packageAtv) addons.push('ATV/CTV');
     if(state.licenseSocial) addons.push('Social Media');
     if(state.licenseEvent) addons.push('Event / Messe / POS');
+    if(state.licenseInternal) addons.push('Interne Nutzung (Intranet)');
     if(addons.length) rightsLines.push(`Zusatz: ${addons.join(', ')}`);
     if(advancedSummary.rightsLines.length) {
         rightsLines.push(`Konditionen: ${advancedSummary.rightsLines.join(' · ')}`);
