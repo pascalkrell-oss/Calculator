@@ -355,30 +355,14 @@ const srcGetProjectName = function(projectKey) {
 
 const srcBuildLicenseMetaMarkup = function(metaItems = []) {
     const items = Array.isArray(metaItems) ? metaItems.filter(Boolean) : [];
-    const metaBadges = [];
-    const metaRest = [];
+    const lines = [];
     items.forEach(item => {
         const trimmed = String(item).trim();
         if(!trimmed) return;
-        if(trimmed.startsWith('Gebiet:')) {
-            metaBadges.push(`<span class="src-badge is-info">${trimmed}</span>`);
-            return;
-        }
-        if(trimmed.startsWith('Laufzeit:')) {
-            metaBadges.push(`<span class="src-badge is-success">${trimmed}</span>`);
-            return;
-        }
-        metaRest.push(trimmed);
+        lines.push(`<div class="src-license-line">${trimmed}</div>`);
     });
-    if(metaBadges.length === 0 && metaRest.length === 0) return '';
-    const rows = [];
-    if(metaBadges.length) {
-        rows.push(`<div class="src-license-meta__row">${metaBadges.join('')}</div>`);
-    }
-    if(metaRest.length) {
-        rows.push(`<div class="src-license-meta__text">${metaRest.join(' · ')}</div>`);
-    }
-    return `<div class="src-license-meta">${rows.join('')}</div>`;
+    if(lines.length === 0) return '';
+    return `<div class="src-license-summary">${lines.join('')}</div>`;
 }
 
 const srcFormatMinutes = function(minutes) {
@@ -2262,7 +2246,7 @@ window.srcCalc = function() {
         document.getElementById('src-display-range'),
         `Ø Mittelwert: ${final[1]} €`
     );
-    srcPulseTargets(['.src-result-card', '.src-price-main-box', '.src-sidebar-sticky']);
+    srcPulseTargets(['.src-result-card', '.src-price-main-box']);
     
     srcRenderPriceDetails(info, state, result);
     
