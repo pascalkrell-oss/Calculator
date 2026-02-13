@@ -39,6 +39,101 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initial state logic
     srcSyncOptionRowStates();
 
+
+    const container = document.getElementById('smart-rate-calculator-container');
+    if (container) {
+        container.innerHTML = '';
+
+        const hourlyRateLabel = document.createElement('label');
+        hourlyRateLabel.setAttribute('for', 'hourly-rate');
+        hourlyRateLabel.textContent = 'Stundensatz (€)';
+
+        const hourlyRateInput = document.createElement('input');
+        hourlyRateInput.type = 'number';
+        hourlyRateInput.id = 'hourly-rate';
+        hourlyRateInput.min = '0';
+        hourlyRateInput.placeholder = 'z. B. 95';
+
+        const experienceLevelLabel = document.createElement('label');
+        experienceLevelLabel.setAttribute('for', 'experience-level');
+        experienceLevelLabel.textContent = 'Erfahrungslevel';
+
+        const experienceLevelSelect = document.createElement('select');
+        experienceLevelSelect.id = 'experience-level';
+        [
+            { value: '1', label: 'Junior (x1.0)' },
+            { value: '1.2', label: 'Mid-Level (x1.2)' },
+            { value: '1.5', label: 'Senior (x1.5)' }
+        ].forEach(opt => {
+            const option = document.createElement('option');
+            option.value = opt.value;
+            option.textContent = opt.label;
+            experienceLevelSelect.appendChild(option);
+        });
+
+        const weeklyHoursLabel = document.createElement('label');
+        weeklyHoursLabel.setAttribute('for', 'weekly-hours');
+        weeklyHoursLabel.textContent = 'Wochenstunden';
+
+        const weeklyHoursInput = document.createElement('input');
+        weeklyHoursInput.type = 'number';
+        weeklyHoursInput.id = 'weekly-hours';
+        weeklyHoursInput.min = '1';
+        weeklyHoursInput.placeholder = 'z. B. 25';
+
+        const calculateBtn = document.createElement('button');
+        calculateBtn.id = 'calculate-btn';
+        calculateBtn.type = 'button';
+        calculateBtn.textContent = 'Jetzt berechnen';
+
+        const resultDiv = document.createElement('div');
+        resultDiv.id = 'result';
+        resultDiv.classList.add('result-box');
+
+        const rateGroup = document.createElement('div');
+        rateGroup.className = 'form-group';
+        rateGroup.appendChild(hourlyRateLabel);
+        rateGroup.appendChild(hourlyRateInput);
+
+        const experienceGroup = document.createElement('div');
+        experienceGroup.className = 'form-group';
+        experienceGroup.appendChild(experienceLevelLabel);
+        experienceGroup.appendChild(experienceLevelSelect);
+
+        const hoursGroup = document.createElement('div');
+        hoursGroup.className = 'form-group';
+        hoursGroup.appendChild(weeklyHoursLabel);
+        hoursGroup.appendChild(weeklyHoursInput);
+
+        container.appendChild(rateGroup);
+        container.appendChild(experienceGroup);
+        container.appendChild(hoursGroup);
+        container.appendChild(calculateBtn);
+        container.appendChild(resultDiv);
+
+        calculateBtn.onclick = () => {
+            const hourlyRate = parseFloat(hourlyRateInput.value);
+            const experienceFactor = parseFloat(experienceLevelSelect.value);
+            const weeklyHours = parseFloat(weeklyHoursInput.value);
+
+            if (!Number.isFinite(hourlyRate) || !Number.isFinite(weeklyHours) || hourlyRate <= 0 || weeklyHours <= 0) {
+                resultDiv.innerHTML = 'Bitte gib gültige Werte für Stundensatz und Wochenstunden ein.';
+                resultDiv.classList.add('show');
+                return;
+            }
+
+            const monthlyEstimate = hourlyRate * experienceFactor * weeklyHours * 4;
+            const formatted = monthlyEstimate.toLocaleString('de-DE', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+
+            const resultText = `Geschätztes Monatsbudget: <span class="result-highlight">${formatted} €</span>`;
+            resultDiv.innerHTML = resultText;
+            resultDiv.classList.add('show');
+        };
+    }
+
     const calcRoot = document.getElementById('src-calc-v6');
     if(calcRoot) {
         calcRoot.addEventListener('change', (event) => {
