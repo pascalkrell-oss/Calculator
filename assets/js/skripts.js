@@ -614,6 +614,20 @@ const updateMainAmountAnimated = function(nextText) {
     });
 }
 
+
+const srcPulseTargets = function(selectors, duration = 420) {
+    selectors.forEach((selector) => {
+        document.querySelectorAll(selector).forEach((el) => {
+            el.classList.remove('src-pulse');
+            void el.offsetWidth;
+            el.classList.add('src-pulse');
+            window.setTimeout(() => {
+                el.classList.remove('src-pulse');
+            }, duration);
+        });
+    });
+}
+
 const srcUpdateMeanValue = function(wrapper, target, nextText) {
     if(!wrapper || !target) return;
     const current = target.textContent.trim();
@@ -2207,6 +2221,7 @@ window.srcCalc = function() {
             document.getElementById('src-display-range'),
             "Bitte Projekt wählen.."
         );
+        srcPulseTargets(['.src-result-card', '.src-price-main-box']);
         document.getElementById('src-license-text').classList.remove('hidden');
         const licSection = document.getElementById('src-license-section');
         if(licSection) licSection.classList.remove('is-open');
@@ -2247,6 +2262,7 @@ window.srcCalc = function() {
         document.getElementById('src-display-range'),
         `Ø Mittelwert: ${final[1]} €`
     );
+    srcPulseTargets(['.src-result-card', '.src-price-main-box', '.src-sidebar-sticky']);
     
     srcRenderPriceDetails(info, state, result);
     
