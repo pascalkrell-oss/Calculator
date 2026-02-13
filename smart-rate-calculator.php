@@ -602,7 +602,7 @@ function src_shortcode_output_v7() {
             <div class="src-sidebar">
                 <div class="src-sidebar-sticky" id="srcSidebarSticky">
                     <div class="src-sidebar-section">
-                        <div class="src-sidebar-title">Kalkulation</div>
+                        <div class="src-sidebar-title">Kalkulation <span class="src-badge is-info">Live</span></div>
                         <div class="src-result-card">
                             <div class="src-price-label">Kalkulierte Gage (Netto)</div>
                             <div class="src-price-main-box">
@@ -656,7 +656,7 @@ function src_shortcode_output_v7() {
                     </div>
 
                     <div class="src-sidebar-section src-collapse src-sidebar-box--notes" id="src-notes-tips-section">
-                        <div class="src-sidebar-title src-sidebar-title--notes">Hinweise &amp; Tipps</div>
+                        <div class="src-sidebar-title src-sidebar-title--notes">Hinweise &amp; Tipps <span class="src-badge is-success">Pro</span></div>
                         <div id="src-static-notes" class="src-notes-tips-box"></div>
                     </div>
 
