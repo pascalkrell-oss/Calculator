@@ -268,7 +268,7 @@ function src_shortcode_output_v7() {
                 </div>
             </div>
 
-            <div class="src-left-section src-rights-card src-collapse">
+            <div class="src-left-section src-rights-card src-collapse src-settings-block src-license-settings-block">
                 <div class="src-box-header">
                     <div class="src-box-title src-section-title src-license-settings-title">Nutzungsrechte &amp; Lizenzen</div>
                 </div>

@@ -1887,9 +1887,23 @@
     box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
 }
 
-.src-settings-col .src-license-settings-title,
-.src-col-left .src-license-settings-title {
-    margin-bottom: calc(var(--src-section-title-mb, 35px) - 25px);
+/* linker Settingsbereich – Nutzungsrechte */
+.src-settings-col .src-license-settings-block .src-license-settings-title,
+.src-col-left .src-license-settings-block .src-license-settings-title{
+  margin-bottom: 12px; /* moderater Abstand */
+  padding-bottom: 0;   /* falls padding-bottom genutzt wurde: neutralisieren */
+}
+
+/* erste Box direkt nach dem Titel: kein zusätzlicher Abstand nach oben */
+.src-settings-col .src-license-settings-block .src-license-settings-title + *,
+.src-col-left .src-license-settings-block .src-license-settings-title + *{
+  margin-top: 0 !important;
+}
+
+/* Falls der direkte Nachfolger ein Wrapper ist, dessen erstes Kind Abstand hat: ebenfalls neutralisieren */
+.src-settings-col .src-license-settings-block .src-license-settings-title + * > :first-child,
+.src-col-left .src-license-settings-block .src-license-settings-title + * > :first-child{
+  margin-top: 0 !important;
 }
 
 .src-marker{
