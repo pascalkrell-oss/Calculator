@@ -612,12 +612,14 @@ function src_shortcode_output_v7() {
                                     </div>
                                 </div>
                             </div>
-                            <div class="src-price-sub">
-                                <div class="src-mean-fade" id="src-mean-fade">
-                                    <span id="src-display-range">Ø Mittelwert: 0 €</span>
+                            <div class="src-price-meta-row">
+                                <div class="src-price-sub">
+                                    <div class="src-mean-fade" id="src-mean-fade">
+                                        <span id="src-display-range">Ø Mittelwert: 0 €</span>
+                                    </div>
                                 </div>
+                                <div class="src-price-note">Alle Preise zzgl. MwSt.</div>
                             </div>
-                            <div class="src-price-note">Alle Preise zzgl. MwSt.</div>
                             <div class="src-compare-controls">
                                 <button class="src-mini-btn" id="src-compare-toggle" type="button">Vergleich</button>
                                 <button class="src-mini-btn" id="src-compare-save-a" type="button">Als A speichern</button>
