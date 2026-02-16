@@ -1631,61 +1631,68 @@ window.srcReset = function() {
 }
 
 window.srcStartTutorial = function() {
-    if(!window.driver || !window.driver.js || typeof window.driver.js.driver !== 'function') {
-        console.warn('SRC Tutorial: Driver.js ist nicht verfügbar.');
-        return;
+    // 1. UI vorbereiten: Projekt auswählen und alles aufklappen, damit das Tutorial alle Bereiche findet
+    const genreSelect = document.getElementById('src-genre');
+    if(genreSelect) {
+        genreSelect.value = 'tv';
+        srcUIUpdate();
+        srcCalc();
     }
+    
+    // Akkordeons aufklappen für volle Sichtbarkeit
+    const advancedAccordion = document.getElementById('src-advanced-accordion');
+    if(advancedAccordion) advancedAccordion.open = true;
+    const linkedAccordion = document.getElementById('src-linked-projects-accordion');
+    if(linkedAccordion) linkedAccordion.open = true;
 
+    // 2. Driver.js initialisieren
     const driver = window.driver.js.driver;
-    const rightsElement = document.querySelector('#mod-ads') || document.querySelector('.src-license-settings-block');
-
-    const tutorial = driver({
+    const driverObj = driver({
+        showProgress: true,
         animate: true,
         opacity: 0.65,
-        nextBtnText: 'Weiter',
-        prevBtnText: 'Zurück',
+        nextBtnText: 'Weiter &rarr;',
+        prevBtnText: '&larr; Zurück',
         doneBtnText: 'Beenden',
+        popoverClass: 'src-modern-theme', // Custom CSS Klasse für unser Design
         steps: [
             {
                 element: '#src-genre',
-                popover: {
-                    title: 'Schritt 1: Projektart',
-                    description: 'Wähle hier aus, wofür Deine Sprachaufnahme genutzt wird.'
-                }
+                popover: { title: '1. Projektart', description: 'Wähle hier aus, wofür Deine Sprachaufnahme genutzt wird. Das System passt sich dynamisch an Deine Auswahl an.', side: 'bottom' }
             },
             {
                 element: '#src-language',
-                popover: {
-                    title: 'Schritt 2: Sprache',
-                    description: 'Fremdsprachen oder Englisch haben oft einen branchenüblichen Aufschlag.'
-                }
+                popover: { title: '2. Sprache', description: 'Bestimme die Sprache. Fremdsprachen oder Englisch beinhalten automatisch branchenübliche Aufschläge.', side: 'bottom' }
+            },
+            {
+                element: '.src-advanced',
+                popover: { title: '3. Erweiterte Parameter', description: 'Präzisiere Deinen Vertrag: Lege Exklusivitäten, Buyout-Modelle oder zusätzliche Sprachversionen fest.' }
             },
             {
                 element: '#src-group-text',
-                popover: {
-                    title: 'Schritt 3: Skript',
-                    description: 'Füge Deinen Text ein, um die Länge in Minuten automatisch schätzen zu lassen.'
-                }
+                popover: { title: '4. Skript & Länge', description: 'Füge Dein Skript ein, um die Länge in Minuten automatisch schätzen zu lassen, oder trage die Zeit bequem manuell ein.' }
             },
             {
-                element: rightsElement,
-                popover: {
-                    title: 'Schritt 4: Nutzungsrechte',
-                    description: 'Lege hier fest, wo (Gebiet) und wie lange (Dauer) die Aufnahme genutzt werden darf.'
-                }
+                element: '.src-rights-card',
+                popover: { title: '5. Nutzungsrechte & Lizenzen', description: 'Das Herzstück: Definiere genau, wo (Gebiet) und wie lange (Dauer) die Aufnahme genutzt werden darf. Zusatzlizenzen lassen sich flexibel zubuchen.' }
+            },
+            {
+                element: '#src-complexity-group',
+                popover: { title: '6. Produktion & Aufwand', description: 'Besondere Anforderungen wie Lipsync, spezielle Stile oder mehrere Korrekturschleifen fließen hier in die Berechnung ein.' }
+            },
+            {
+                element: '#src-global-settings',
+                popover: { title: '7. Optionen', description: 'Der Feinschliff: Füge Studiokosten, Express-Lieferungen oder individuelle Rabatte zu Deinem Angebot hinzu.' }
             },
             {
                 element: '.src-sidebar-sticky',
-                popover: {
-                    title: 'Schritt 5: Ergebnis',
-                    description: 'Hier siehst Du live die berechnete Spanne und den Mittelwert. Du kannst von hier aus direkt ein PDF generieren!'
-                }
+                popover: { title: '8. Ergebnis & Export', description: 'Hier siehst Du live Deine kalkulierte Gage. Über den Button "Angebot speichern" oder die Pakete kannst Du direkt ein professionelles PDF generieren. Viel Erfolg!' }
             }
         ]
     });
 
-    tutorial.drive();
-}
+    driverObj.drive();
+};
 
 window.srcUIUpdate = function() {
     const genre = document.getElementById('src-genre').value;
