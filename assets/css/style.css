@@ -34,6 +34,8 @@
 .src-reset-header { max-width: 1100px; margin: 0 auto 10px; text-align: right; font-family: "Rubik", system-ui, sans-serif; }
 .src-reset-btn { background: transparent; border: none; color: #999; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; transition: color 0.2s; }
 .src-reset-btn:hover { color: #d63638; }
+.src-tutorial-btn { background: transparent; border: none; color: #1a93ee; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; transition: color 0.2s; margin-right: 12px; }
+.src-tutorial-btn:hover { color: #137ecf; }
 
 #src-calc-v6 {
     font-family: "Rubik", system-ui, sans-serif;
