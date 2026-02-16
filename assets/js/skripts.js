@@ -1649,7 +1649,8 @@ window.srcStartTutorial = function() {
         const driverObj = driver({
             showProgress: true,
             progressText: '{{current}} von {{total}}',
-            animate: false, // WICHTIG: Deaktiviert die fehlerhafte Animations-Berechnung! Popups springen nicht mehr.
+            animate: true, // Animation wieder aktivieren für weiche Übergänge
+            smoothScroll: true, // Sanftes Scrollen zum jeweiligen Element
             opacity: 0.65,
             popoverOffset: 15,
             nextBtnText: 'Weiter &rarr;',
@@ -1657,7 +1658,6 @@ window.srcStartTutorial = function() {
             doneBtnText: 'Beenden',
             popoverClass: 'src-modern-theme',
             onDestroyed: () => { srcReset(); },
-            // Strikte Ausrichtung auf 'bottom' / 'center'
             steps: [
                 { element: '#src-genre', popover: { title: '1. Projektart', description: 'Wähle hier aus, wofür Deine Sprachaufnahme genutzt wird.', side: 'bottom', align: 'center' } },
                 { element: '#src-language', popover: { title: '2. Sprache', description: 'Fremdsprachen oder Englisch haben oft Aufschläge.', side: 'bottom', align: 'center' } },
