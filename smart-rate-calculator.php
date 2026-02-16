@@ -626,12 +626,6 @@ function src_shortcode_output_v7() {
                                 </div>
                                 <div class="src-price-note">Alle Preise zzgl. MwSt.</div>
                             </div>
-                            <div class="src-compare-controls">
-                                <button class="src-mini-btn" id="src-compare-toggle" type="button">Vergleich</button>
-                                <button class="src-mini-btn" id="src-compare-save-a" type="button">Als A speichern</button>
-                                <button class="src-mini-btn" id="src-compare-save-b" type="button">Als B speichern</button>
-                            </div>
-                            
                             <div id="src-final-fee-wrapper" class="src-final-fee-wrap src-hidden-initially">
                                 <label class="src-final-fee-label">
                                     Dein Angebotspreis (Netto)
@@ -643,10 +637,20 @@ function src_shortcode_output_v7() {
                         </div>
                     </div>
 
-                    <div id="src-license-section" class="src-sidebar-section src-license-section src-collapse">
-                        <div class="src-sidebar-title src-sidebar-title--rights"><span class="src-title-main"><span class="src-title-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 5-3.4 8.4-7 9-3.6-.6-7-4-7-9V6l7-3z"></path></svg></span><span class="src-title-text">Nutzungsrechte &amp; Lizenzen</span></span><span id="src-license-meta-text" class="src-license-meta__text">Gebiet: National · Laufzeit: 1 Jahr</span></div>
-                        <div id="src-license-text" class="src-license-box"></div>
-                    </div>
+                    <section id="src-license-section" class="src-sidebar-section src-license-section src-license-sidebar src-collapse">
+                        <div class="src-sidebar-head src-license-sidebar__head">
+                            <div class="src-sidebar-head__left">
+                                <span class="src-sidebar-icon src-title-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 5-3.4 8.4-7 9-3.6-.6-7-4-7-9V6l7-3z"></path></svg></span>
+                                <h3 class="src-sidebar-title">Nutzungsrechte &amp; Lizenzen</h3>
+                            </div>
+                            <div class="src-license-sidebar__meta">
+                                <span id="src-license-meta-text" class="src-license-meta__text">Gebiet: National · Laufzeit: 1 Jahr</span>
+                            </div>
+                        </div>
+                        <div class="src-license-sidebar__body">
+                            <div id="src-license-text" class="src-license-box src-license-sidebar__text"></div>
+                        </div>
+                    </section>
 
                     <div class="src-sidebar-section src-collapse" id="src-pricedetails-section">
                         <div class="src-sidebar-title src-sidebar-title--pricedetails"><span class="src-title-main"><span class="src-title-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16"></path><path d="M4 12h16"></path><path d="M4 18h10"></path></svg></span><span class="src-title-text">Preis-Details</span></span></div>
@@ -666,11 +670,6 @@ function src_shortcode_output_v7() {
                     <div class="src-sidebar-section src-collapse src-sidebar-box--notes" id="src-notes-tips-section">
                         <div class="src-sidebar-title src-sidebar-title--notes"><span class="src-title-main"><span class="src-title-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 8h.01"></path><path d="M11 12h1v4h1"></path></svg></span><span class="src-title-text">Hinweise &amp; Tipps</span></span></div>
                         <div id="src-static-notes" class="src-notes-tips-box"></div>
-                    </div>
-
-                    <div class="src-sidebar-section src-collapse src-sidebar-box--compare" id="src-compare-section">
-                        <div class="src-sidebar-title src-sidebar-title--compare"><span class="src-title-main"><span class="src-title-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h6v14H4z"></path><path d="M14 9h6v10h-6z"></path></svg></span><span class="src-title-text">Vergleich</span></span></div>
-                        <div class="src-compare-box" id="src-compare-view"></div>
                     </div>
 
                     <div class="src-sidebar-section src-collapse src-sidebar-box--packages" id="src-packages-section">
