@@ -29,6 +29,10 @@ let exportModalState = {
 };
 
 document.addEventListener('DOMContentLoaded', () => { 
+    const iconUrl = (window.srcPluginData && srcPluginData.checkIconUrl) ? String(srcPluginData.checkIconUrl).trim() : '';
+    if(iconUrl){
+        document.documentElement.style.setProperty('--src-check-icon', `url("${iconUrl}")`);
+    }
     // DATEN IMPORTIEREN (Vom PHP übergeben)
     if(typeof srcPluginData !== 'undefined' && srcPluginData.rates) {
         srcRatesData = srcPluginData.rates;
