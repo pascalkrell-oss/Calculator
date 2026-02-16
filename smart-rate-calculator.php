@@ -154,9 +154,7 @@ function src_shortcode_output_v7() {
                     <span class="src-top-sub">Aufschlag berechnen</span>
                 </div>
                 </div>
-            </div>
 
-            <div class="src-layout-block">
                 <div id="src-linked-projects-wrap" class="src-linked-projects">
                 <details id="src-linked-projects-accordion" class="src-accordion">
                     <summary class="src-accordion__summary">
@@ -191,9 +189,9 @@ function src_shortcode_output_v7() {
                         </div>
                     </div>
                 </details>
-            </div>
+                </div>
 
-            <div class="src-advanced">
+                <div class="src-advanced">
                 <details id="src-advanced-accordion" class="src-accordion">
                     <summary class="src-accordion__summary">
                         <span class="src-accordion__text">
@@ -247,9 +245,7 @@ function src_shortcode_output_v7() {
                     </div>
                 </details>
                 </div>
-            </div>
 
-            <div class="src-layout-block">
                 <div class="src-group" id="src-group-text">
                 <div class="src-section-title">
                     <span class="dashicons dashicons-editor-alignleft"></span> Skript / Länge
