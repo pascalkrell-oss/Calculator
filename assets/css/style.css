@@ -2526,22 +2526,6 @@
     font-size: 14px;
 }
 
-/* --- 2. Neue Trennstrich-Logik für die linke Spalte --- */
-.src-layout-block {
-    padding-bottom: 30px !important;
-    margin-bottom: 30px !important;
-    border-bottom: 1px solid rgba(226, 232, 240, 0.9);
-}
-.src-layout-block:last-child {
-    padding-bottom: 0 !important;
-    margin-bottom: 0 !important;
-    border-bottom: none !important;
-}
-.src-layout-block > .src-group:last-child,
-.src-layout-block > .src-advanced:last-child {
-    margin-bottom: 0 !important;
-}
-
 /* --- 4. Driver.js Popover Fixes (Kein Überschneiden mit X) --- */
 .driver-popover.src-modern-theme .driver-popover-title {
     padding-right: 35px !important;
@@ -2561,4 +2545,60 @@
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+/* --- 1. Verstecken leerer Blöcke (Trennlinien Fix im Default-Zustand) --- */
+
+/* Wenn kein Projekt gewählt ist, blende die Blöcke 2, 4, 5 und 6 komplett aus */
+#src-calc-v6:not(.src-has-project) .src-layout-block:has(#src-linked-projects-wrap),
+#src-calc-v6:not(.src-has-project) .src-layout-block:has(.src-rights-card),
+#src-calc-v6:not(.src-has-project) .src-layout-block:has(.src-complexity-group),
+#src-calc-v6:not(.src-has-project) .src-layout-block:has(#src-global-settings) {
+    display: none !important;
+}
+
+/* Wenn die Nutzungsrechte nicht relevant sind (z.B. bei "Nur Layout" oder E-Learning), Block 4 ausblenden */
+#src-calc-v6:not(.src-show-rights-section) .src-layout-block:has(.src-rights-card) {
+    display: none !important;
+}
+
+/* Da im Startzustand "Skript/Länge" der letzte sichtbare Block ist, darf dort kein Strich sein */
+#src-calc-v6:not(.src-has-project) .src-layout-block:has(#src-group-text) {
+    border-bottom: none !important;
+    padding-bottom: 0 !important;
+    margin-bottom: 0 !important;
+}
+
+
+/* --- 2. Exakte 30px Abstände erzwingen --- */
+
+/* Der Layout-Block definiert den exakten Raum über (padding) und unter (margin) dem Strich */
+.src-layout-block {
+    padding-top: 0 !important;
+    padding-bottom: 30px !important;
+    margin-bottom: 30px !important;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.9) !important;
+}
+
+/* Der letzte sichtbare Block im Kalkulator bekommt generell keinen Strich und keinen Margin */
+.src-layout-block:last-child {
+    padding-bottom: 0 !important;
+    margin-bottom: 0 !important;
+    border-bottom: none !important;
+}
+
+/* Hard-Reset: Um zu verhindern, dass innere Elemente den Abstand künstlich aufblähen (> 30px),
+   werden deren Margins an den Rändern des Blocks gnadenlos auf 0 gezwungen. */
+.src-layout-block > *:first-child {
+    margin-top: 0 !important;
+}
+.src-layout-block > *:last-child,
+.src-layout-block > div:last-child > .src-group:last-child {
+    margin-bottom: 0 !important;
+}
+
+/* Spezifische Korrektur für "Nutzungsrechte & Lizenzen" (Titel-Abstand resetten) */
+#src-calc-v6 .src-rights-card .src-box-header {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
 }
