@@ -1887,23 +1887,53 @@
     box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
 }
 
-/* linker Settingsbereich – Nutzungsrechte */
-.src-settings-col .src-license-settings-block .src-license-settings-title,
-.src-col-left .src-license-settings-block .src-license-settings-title{
-  margin-bottom: 12px; /* moderater Abstand */
-  padding-bottom: 0;   /* falls padding-bottom genutzt wurde: neutralisieren */
+/* Hard Alignment für Sektions-Header in der linken Spalte */
+.src-col-left .src-box-header,
+.src-col-left .src-section-head {
+    display: block !important;
+    min-height: auto !important;
+    padding: 0 !important;
+    margin: 25px 0 12px 0 !important; /* 25px Abstand nach oben, 12px zum Content */
+}
+
+.src-col-left .src-section-title,
+.src-col-left .src-box-title,
+.src-col-left .src-section-head__title,
+.src-col-left .src-license-settings-title {
+    margin: 0 !important;
+    padding: 0 !important;
+    line-height: 1.2 !important;
+}
+
+.src-col-left .src-box-header::before,
+.src-col-left .src-box-header::after,
+.src-col-left .src-section-head::before,
+.src-col-left .src-section-head::after,
+.src-col-left .src-license-settings-title::before,
+.src-col-left .src-license-settings-title::after,
+.src-col-left .src-section-head__title::before,
+.src-col-left .src-section-head__title::after {
+    content: none !important;
+}
+
+/* Entferne spezifische Abstände der Rights-Card, die von der Default-Struktur abweichen */
+.src-left-card.src-rights-card,
+.src-col-left .src-rights-card {
+    margin-top: 0 !important;
+}
+
+.src-col-left .src-rights-card .src-left-section__title {
+    margin-bottom: 12px !important;
 }
 
 /* erste Box direkt nach dem Titel: kein zusätzlicher Abstand nach oben */
-.src-settings-col .src-license-settings-block .src-license-settings-title + *,
-.src-col-left .src-license-settings-block .src-license-settings-title + *{
-  margin-top: 0 !important;
+.src-col-left .src-license-settings-block .src-license-settings-title + * {
+    margin-top: 0 !important;
 }
 
 /* Falls der direkte Nachfolger ein Wrapper ist, dessen erstes Kind Abstand hat: ebenfalls neutralisieren */
-.src-settings-col .src-license-settings-block .src-license-settings-title + * > :first-child,
-.src-col-left .src-license-settings-block .src-license-settings-title + * > :first-child{
-  margin-top: 0 !important;
+.src-col-left .src-license-settings-block .src-license-settings-title + * > :first-child {
+    margin-top: 0 !important;
 }
 
 .src-marker{
