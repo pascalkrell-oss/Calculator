@@ -1119,6 +1119,8 @@
 .src-breakdown-box .src-price-row__value { flex: 0 0 auto; text-align: right; color: #0f172a; font-weight: 800; }
 .src-breakdown-box .src-price-row.is-total .src-price-row__label,
 .src-breakdown-box .src-price-row.is-total .src-price-row__value { color: #0f172a; font-weight: 800; }
+.src-breakdown-box .src-price-row.is-last-normal { border-bottom: none; }
+.src-breakdown-box .src-price-row.is-total { border-top: 2px solid rgba(15,23,42,.14); }
 .src-breakdown-accordion {
     margin-top: 12px;
     border-top: 1px dashed #e2e8f0;
@@ -1467,6 +1469,21 @@
     min-width: 0;
 }
 
+.src-sidebar .src-sidebar-head,
+.src-sidebar .src-card-header {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+}
+
+.src-sidebar .src-sidebar-head .src-sidebar-title,
+.src-sidebar .src-card-header .src-sidebar-title {
+    margin: 0;
+    line-height: 1.15;
+    display: flex;
+    align-items: center;
+}
+
 .src-sidebar .src-license-sidebar__head .src-sidebar-title {
     margin: 0;
     padding: 0;
@@ -1496,6 +1513,23 @@
 .src-sidebar .src-license-sidebar__text {
     font-size: 13px;
     line-height: 1.45;
+    color: #0f172a;
+}
+
+.src-license-list{
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 13px;
+    line-height: 1.4;
+    color: #0f172a;
+}
+
+.src-license-list li strong{
+    font-weight: 800;
     color: #0f172a;
 }
 
@@ -1833,8 +1867,39 @@
     box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
 }
 
+.src-settings-col .src-license-settings-title,
 .src-col-left .src-license-settings-title {
-    margin-bottom: 10px;
+    margin-bottom: calc(var(--src-section-title-mb, 35px) - 25px);
+}
+
+.src-marker{
+    position: relative;
+    display: inline-block;
+    font-weight: 800;
+    z-index: 1;
+}
+
+.src-marker::before{
+    content: "";
+    position: absolute;
+    left: -4px;
+    right: -4px;
+    bottom: 2px;
+    height: 0.9em;
+    background: rgba(26,147,238,.18);
+    border-radius: 6px;
+    transform: skewX(-8deg);
+    z-index: -1;
+}
+
+.src-vds-link{
+    color: rgba(26,147,238,.95);
+    text-decoration: none;
+    border-bottom: 1px dashed rgba(26,147,238,.45);
+}
+
+.src-vds-link:hover{
+    border-bottom-color: rgba(26,147,238,.85);
 }
 
 .src-opt-card,

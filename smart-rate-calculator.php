@@ -269,7 +269,7 @@ function src_shortcode_output_v7() {
 
             <div class="src-left-section src-rights-card src-collapse">
                 <div class="src-box-header">
-                    <div class="src-box-title src-license-settings-title">Nutzungsrechte &amp; Lizenzen</div>
+                    <div class="src-box-title src-section-title src-license-settings-title">Nutzungsrechte &amp; Lizenzen</div>
                 </div>
                 <div class="src-rights-inner">
                     <div id="mod-ads" class="src-slide-wrap">
@@ -621,7 +621,7 @@ function src_shortcode_output_v7() {
                             <div class="src-price-meta-row">
                                 <div class="src-price-sub">
                                     <div class="src-mean-fade" id="src-mean-fade">
-                                        <span id="src-display-range">Ø Mittelwert: 0 €</span>
+                                        <span id="src-display-range">Ø Mittelwert: <span class="src-marker" id="src-mean-value">0 €</span></span>
                                     </div>
                                 </div>
                                 <div class="src-price-note">Alle Preise zzgl. MwSt.</div>
@@ -729,7 +729,7 @@ function src_shortcode_output_v7() {
                             <span class="dashicons dashicons-pdf"></span> Angebot speichern
                         </button>
                         <div class="src-note-text">
-                            Auf Basis VDS Gagenkompass 2025. Alle Preise zzgl. MwSt.
+                            <a class="src-vds-link" href="https://www.sprecherverband.de/wp-content/uploads/2025/02/VDS_Gagenkompass_2025.pdf" target="_blank" rel="noopener">Auf Basis VDS Gagenkompass 2025</a>. Alle Preise zzgl. MwSt.
                         </div>
                     </div>
                 </div>
