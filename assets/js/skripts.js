@@ -481,6 +481,25 @@ const srcGetStateFromUI = function() {
     };
 }
 
+const srcGetRegionLabel = function(region) {
+    if(region === 'regional') return 'Regional';
+    if(region === 'dach') return 'DACH';
+    if(region === 'world') return 'Weltweit';
+    return 'National';
+}
+
+const srcGetDurationLabel = function(duration) {
+    const safeDuration = parseInt(duration, 10) || 1;
+    return safeDuration === 4 ? 'Unlimited' : `${safeDuration} ${safeDuration === 1 ? 'Jahr' : 'Jahre'}`;
+}
+
+const updateLicenseMetaText = function(state = null) {
+    const target = document.getElementById('src-license-meta-text');
+    if(!target) return;
+    const sourceState = state || srcGetStateFromUI();
+    target.textContent = `Gebiet: ${srcGetRegionLabel(sourceState.region)} · Laufzeit: ${srcGetDurationLabel(sourceState.duration)}`;
+}
+
 const srcUpdateAnimatedValue = function(target, nextText) {
     if(!target) return;
     const current = target.textContent.trim();
@@ -1437,6 +1456,8 @@ window.srcReset = function() {
     }
     const breakdownBox = document.getElementById('src-calc-breakdown');
     if(breakdownBox) breakdownBox.classList.remove('is-open');
+
+    updateLicenseMetaText({ region: 'national', duration: 1 });
     
     srcUIUpdate();
     srcCalc();
@@ -2216,6 +2237,7 @@ window.srcCalc = function() {
         srcRenderRiskChecks([]);
         renderCompareView();
         srcUpdateSidebarCollapse();
+        updateLicenseMetaText(state);
         return;
     }
     
@@ -2237,8 +2259,9 @@ window.srcCalc = function() {
 
     const sliderLabel = document.getElementById('src-slider-val');
     if(sliderLabel) {
-        sliderLabel.innerText = state.duration === 4 ? "Unlimited" : `${state.duration} ${state.duration === 1 ? "Jahr" : "Jahre"}`;
+        sliderLabel.innerText = srcGetDurationLabel(state.duration);
     }
+    updateLicenseMetaText(state);
 
     updateMainAmountAnimated(`${final[0]} - ${final[2]} €`);
     srcUpdateMeanValue(

@@ -51,7 +51,7 @@
     font-family: inherit;
 }
 
-.src-col-left { padding: 50px 30px 30px 30px; border-right: 1px solid var(--src-border); background: linear-gradient(160deg, var(--src-surface-3) 0%, var(--src-surface-2) 140%); }
+.src-col-left { padding: 50px 30px 30px 30px; border-right: 1px solid var(--src-border); background: #ffffff; }
 .src-col-right { background: linear-gradient(180deg, var(--src-surface-2), #eef6ff 55%, #f8fafc); padding: 30px; display: flex; flex-direction: column; min-height: 100%; gap: 0; position: relative; }
 .src-col-right::after {
     content: "";
@@ -824,8 +824,7 @@
 
 .src-info-section {
     background: #ffffff;
-    border: none;
-    border-left: 4px solid rgba(26,147,238,.35);
+    border: 1px solid rgba(15, 23, 42, 0.10);
     border-radius: 12px;
     box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
     overflow: hidden;
@@ -1280,7 +1279,17 @@
     margin-top: 6px;
 }
 #src-license-section .src-sidebar-title {
+    margin-bottom: -25px;
     padding-bottom: 6px;
+}
+#src-license-section .src-license-meta__text {
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+    font-size: 11px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.86);
+    margin-top: 0;
 }
 
 .src-badge {
@@ -1602,14 +1611,27 @@
 
 .src-rights-panel {
     background: #ffffff;
-    border: 1px solid rgba(203, 213, 225, 0.7);
+    border: 1px solid rgba(15, 23, 42, 0.10);
     border-radius: 14px;
     padding: 16px;
-    box-shadow: 0 1px 6px rgba(15, 23, 42, 0.06);
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
 }
 .src-rights-panel--compact {
     padding-top: 12px;
     padding-bottom: 12px;
+}
+
+#mod-ads .src-light-box-wrapper,
+#src-global-settings .src-opt-card {
+    background: #ffffff;
+    border: 1px solid rgba(15, 23, 42, 0.10);
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+}
+
+#src-global-settings .src-opt-card:hover,
+#src-global-settings .src-opt-card.is-on {
+    border-color: rgba(15, 23, 42, 0.16);
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
 }
 
 .src-sidebar {
