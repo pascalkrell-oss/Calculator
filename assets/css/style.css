@@ -2189,3 +2189,44 @@
     box-shadow: none;
     padding: 0;
 }
+
+/* Hard-Reset: Perfekte vertikale Zentrierung für Formularelemente und Buttons */
+#src-calc-v6 .src-select,
+#src-calc-v6 .src-input-text,
+#src-calc-v6 .src-input-compact,
+#src-calc-v6 .src-btn,
+#src-calc-v6 .src-mini-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    line-height: 1 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    height: 48px !important;
+    box-sizing: border-box !important;
+}
+
+/* Text in Buttons exakt mittig */
+#src-calc-v6 .src-btn,
+#src-calc-v6 .src-mini-btn {
+    justify-content: center !important;
+}
+
+/* Hintergrund-Icon (Pfeil) in Selects zentrieren */
+#src-calc-v6 .src-select {
+    background-position: right 15px center !important;
+}
+
+/* Textmarker-Anpassung speziell für die Sidebar (Preis-Details & Pakete) */
+.src-breakdown-value .src-marker,
+.src-package-price .src-marker {
+    padding: 0 4px;
+    position: relative;
+    z-index: 1;
+}
+
+/* Den Balken etwas anheben, damit er nicht zu tief unter der Zahl hängt */
+.src-breakdown-value .src-marker::before,
+.src-package-price .src-marker::before {
+    bottom: 2px !important;
+    height: 0.7em !important;
+}
