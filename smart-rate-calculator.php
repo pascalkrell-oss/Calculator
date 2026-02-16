@@ -269,7 +269,7 @@ function src_shortcode_output_v7() {
 
             <div class="src-left-section src-rights-card src-collapse">
                 <div class="src-box-header">
-                    <div class="src-box-title">Nutzungsrechte &amp; Lizenzen</div>
+                    <div class="src-box-title src-license-settings-title">Nutzungsrechte &amp; Lizenzen</div>
                 </div>
                 <div class="src-rights-inner">
                     <div id="mod-ads" class="src-slide-wrap">

@@ -161,6 +161,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    const durationSlider = document.getElementById('src-time-slider');
+    if(durationSlider) {
+        durationSlider.addEventListener('input', srcUpdateDurationSliderFill);
+        durationSlider.addEventListener('change', srcUpdateDurationSliderFill);
+    }
+    srcUpdateDurationSliderFill();
+
     srcSyncExportTiles();
     srcUpdateExportPackageVisibility();
     updateStickyOffset();
@@ -1116,9 +1123,14 @@ const srcRenderPackages = function() {
         const pkg = packagesState[key];
         return `
             <div class="src-package-card">
-                <h4>${pkg.label}</h4>
-                <div class="src-package-price">${srcFormatCurrency(pkg.price)}</div>
-                <div class="src-package-meta">${pkg.meta.join(' · ')}</div>
+                <div class="src-package-left">
+                    <div class="src-package-name">${pkg.label}</div>
+                    <div class="src-package-price">${srcFormatCurrency(pkg.price)}</div>
+                </div>
+                <div class="src-package-sep" aria-hidden="true"></div>
+                <div class="src-package-right">
+                    <div class="src-package-meta">${pkg.meta.join(' · ')}</div>
+                </div>
                 <div class="src-package-actions">
                     <button class="src-mini-btn" type="button" data-export-package="${key}">Als Angebot exportieren</button>
                 </div>
@@ -1132,6 +1144,19 @@ const srcRenderPackages = function() {
         });
     });
     srcUpdateSidebarCollapse();
+}
+
+const srcUpdateDurationSliderFill = function() {
+    const slider = document.getElementById('src-time-slider');
+    if(!slider) return;
+    const wrap = slider.closest('.src-slider-container');
+    if(!wrap) return;
+    const min = parseFloat(slider.min || '0');
+    const max = parseFloat(slider.max || '100');
+    const value = parseFloat(slider.value || '0');
+    const range = max - min;
+    const pct = range > 0 ? ((value - min) / range) * 100 : 0;
+    wrap.style.setProperty('--src-range-fill', `${pct}%`);
 }
 
 const srcUpdateExportPackageVisibility = function() {
@@ -2261,6 +2286,7 @@ window.srcCalc = function() {
     if(sliderLabel) {
         sliderLabel.innerText = srcGetDurationLabel(state.duration);
     }
+    srcUpdateDurationSliderFill();
     updateLicenseMetaText(state);
 
     updateMainAmountAnimated(`${final[0]} - ${final[2]} €`);
