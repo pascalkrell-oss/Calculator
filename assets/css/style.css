@@ -2547,7 +2547,7 @@
     justify-content: center;
 }
 
-/* --- 1. Exakte 30px Trennstriche --- */
+/* --- 1. Exakte 30px Trennstriche (Mathematisch präziser Reset) --- */
 .src-layout-block {
     padding-top: 0 !important;
     padding-bottom: 30px !important;
@@ -2560,12 +2560,24 @@
     border-bottom: none !important;
 }
 
-/* Entferne alle überflüssigen Margins, die den 30px Abstand verfälschen */
-.src-layout-block > *:last-child,
-#src-group-text,
-#mod-phone {
+/* * HARD RESET: Diese Elemente grenzen direkt an die Trennlinien.
+ * Ihre inneren Margins müssen auf 0 gezwungen werden, sonst werden aus den 30px schnell 50px!
+ */
+
+/* Entfernt den 20px Abstand unter der Nutzungsrechte-Box */
+#mod-ads .src-light-box-wrapper,
+#mod-image .src-rights-panel,
+.src-layout-block > *:last-child {
     margin-bottom: 0 !important;
 }
+
+/* Entfernt den 20px Abstand über der Produktion-Box */
+.src-complexity-group {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+}
+
+/* Entfernt den 15px Inline-Style Abstand über der Optionen-Box */
 #src-global-settings {
     margin-top: 0 !important;
     padding-top: 0 !important;

@@ -1633,7 +1633,7 @@ window.srcReset = function() {
 }
 
 window.srcStartTutorial = function() {
-    // 1. UI komplett aufklappen
+    // 1. UI komplett entfalten
     const genreSelect = document.getElementById('src-genre');
     if(genreSelect) { genreSelect.value = 'tv'; srcUIUpdate(); srcCalc(); }
     
@@ -1642,7 +1642,11 @@ window.srcStartTutorial = function() {
     const linkedAccordion = document.getElementById('src-linked-projects-accordion');
     if(linkedAccordion) linkedAccordion.open = true;
 
-    // 2. Kurz warten, bis CSS-Animationen fertig sind, sonst misst Driver.js falsch!
+    // 2. Nach ganz oben scrollen, um Driver.js eine saubere Null-Koordinate zu geben
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    // 3. GARANTIE-FIX: 450ms warten! CSS max-height Animationen dauern ca. 260-300ms.
+    // Driver.js darf erst messen, wenn sich auf dem Bildschirm absolut nichts mehr bewegt!
     setTimeout(() => {
         const driver = window.driver.js.driver;
         const driverObj = driver({
@@ -1656,20 +1660,20 @@ window.srcStartTutorial = function() {
             doneBtnText: 'Beenden',
             popoverClass: 'src-modern-theme',
             onDestroyed: () => { srcReset(); },
-            // Strikte vertikale Ausrichtung ('bottom'/'top') und zentriert, um seitliches Quetschen/Springen zu verhindern
+            // Strikte Ausrichtung auf 'bottom' und 'start' verhindert, dass Popups bei Platzmangel in die Box springen
             steps: [
-                { element: '.src-top-grid', popover: { title: '1. Projektart', description: 'Wähle hier aus, wofür Deine Sprachaufnahme genutzt wird. Das System passt sich dynamisch an.', side: 'bottom', align: 'center' } },
-                { element: '#src-language', popover: { title: '2. Sprache', description: 'Fremdsprachen oder Englisch beinhalten automatisch branchenübliche Aufschläge.', side: 'bottom', align: 'center' } },
-                { element: '.src-advanced', popover: { title: '3. Erweiterte Parameter', description: 'Präzisiere Deinen Vertrag: Lege Exklusivitäten, Buyout-Modelle oder zusätzliche Sprachversionen fest.', side: 'bottom', align: 'center' } },
-                { element: '#src-group-text', popover: { title: '4. Skript & Länge', description: 'Füge Dein Skript ein, um die Länge in Minuten automatisch schätzen zu lassen, oder trage die Zeit manuell ein.', side: 'top', align: 'center' } },
-                { element: '.src-rights-card', popover: { title: '5. Nutzungsrechte & Lizenzen', description: 'Definiere genau, wo (Gebiet) und wie lange (Dauer) die Aufnahme genutzt werden darf.', side: 'top', align: 'center' } },
-                { element: '#src-complexity-group', popover: { title: '6. Produktion & Aufwand', description: 'Anforderungen wie Lipsync, spezielle Stile oder Korrekturschleifen fließen hier in die Berechnung ein.', side: 'top', align: 'center' } },
-                { element: '#src-global-settings', popover: { title: '7. Optionen', description: 'Füge Studiokosten, Express-Lieferungen oder individuelle Rabatte zu Deinem Angebot hinzu.', side: 'top', align: 'center' } },
-                { element: '.src-result-card', popover: { title: '8. Ergebnis & Kalkulation', description: 'Hier siehst Du live Deine kalkulierte Gage. Generiere von hier aus direkt ein professionelles PDF.', side: 'bottom', align: 'center' } }
+                { element: '#src-genre', popover: { title: '1. Projektart', description: 'Wähle hier aus, wofür Deine Sprachaufnahme genutzt wird. Das System passt sich dynamisch an.', side: 'bottom', align: 'start' } },
+                { element: '#src-language', popover: { title: '2. Sprache', description: 'Fremdsprachen oder Englisch beinhalten automatisch branchenübliche Aufschläge.', side: 'bottom', align: 'start' } },
+                { element: '.src-advanced', popover: { title: '3. Erweiterte Parameter', description: 'Präzisiere Deinen Vertrag: Lege Exklusivitäten, Buyout-Modelle oder zusätzliche Sprachversionen fest.', side: 'bottom', align: 'start' } },
+                { element: '#src-group-text', popover: { title: '4. Skript & Länge', description: 'Füge Dein Skript ein, um die Länge in Minuten automatisch schätzen zu lassen, oder trage die Zeit manuell ein.', side: 'bottom', align: 'start' } },
+                { element: '.src-rights-card', popover: { title: '5. Nutzungsrechte & Lizenzen', description: 'Definiere genau, wo (Gebiet) und wie lange (Dauer) die Aufnahme genutzt werden darf.', side: 'bottom', align: 'start' } },
+                { element: '#src-complexity-group', popover: { title: '6. Produktion & Aufwand', description: 'Anforderungen wie Lipsync, spezielle Stile oder Korrekturschleifen fließen hier in die Berechnung ein.', side: 'bottom', align: 'start' } },
+                { element: '#src-global-settings', popover: { title: '7. Optionen', description: 'Füge Studiokosten, Express-Lieferungen oder individuelle Rabatte zu Deinem Angebot hinzu.', side: 'bottom', align: 'start' } },
+                { element: '.src-result-card', popover: { title: '8. Ergebnis & Kalkulation', description: 'Hier siehst Du live Deine kalkulierte Gage. Generiere von hier aus direkt ein professionelles PDF.', side: 'bottom', align: 'start' } }
             ]
         });
         driverObj.drive();
-    }, 200); // 200ms Delay ist der magische Fix gegen das Springen!
+    }, 450);
 };
 
 window.srcOpenGuide = function() {
