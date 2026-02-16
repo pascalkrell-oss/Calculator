@@ -327,8 +327,14 @@ function src_shortcode_output_v7() {
                                 </div>
                                 <div id="src-slider-val" class="src-slider-val">1 Jahr</div>
                             </div>
-                                <div class="src-slider-container">
+                                <div class="src-slider-container src-range-wrap">
                                     <input type="range" id="src-time-slider" min="1" max="4" value="1" step="1" class="src-slider" oninput="srcCalc()">
+                                    <div class="src-range-dots" aria-hidden="true">
+                                        <span class="src-range-dot" data-step="0"></span>
+                                        <span class="src-range-dot" data-step="1"></span>
+                                        <span class="src-range-dot" data-step="2"></span>
+                                        <span class="src-range-dot" data-step="3"></span>
+                                    </div>
                                 </div>
                                 <div class="src-slider-steps">
                                     <span>1 Jahr</span>
