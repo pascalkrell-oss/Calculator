@@ -643,9 +643,6 @@ function src_shortcode_output_v7() {
                                 <span class="src-sidebar-icon src-title-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 5-3.4 8.4-7 9-3.6-.6-7-4-7-9V6l7-3z"></path></svg></span>
                                 <h3 class="src-sidebar-title">Nutzungsrechte &amp; Lizenzen</h3>
                             </div>
-                            <div class="src-license-sidebar__meta">
-                                <span id="src-license-meta-text" class="src-license-meta__text">Gebiet: National · Laufzeit: 1 Jahr</span>
-                            </div>
                         </div>
                         <div class="src-license-sidebar__body">
                             <div id="src-license-text" class="src-license-box src-license-sidebar__text"></div>
