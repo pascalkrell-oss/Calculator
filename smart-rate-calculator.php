@@ -113,7 +113,8 @@ function src_shortcode_output_v7() {
     <div id="src-calc-v6">
         <div class="src-col-left">
             
-            <div class="src-top-grid">
+            <div class="src-layout-block">
+                <div class="src-top-grid">
                 <div>
                     <div class="src-section-title"><span class="dashicons dashicons-portfolio"></span> Projektart</div>
                     <select id="src-genre" class="src-select" onchange="srcUIUpdate()">
@@ -152,8 +153,11 @@ function src_shortcode_output_v7() {
                     </select>
                     <span class="src-top-sub">Aufschlag berechnen</span>
                 </div>
+                </div>
             </div>
-            <div id="src-linked-projects-wrap" class="src-linked-projects">
+
+            <div class="src-layout-block">
+                <div id="src-linked-projects-wrap" class="src-linked-projects">
                 <details id="src-linked-projects-accordion" class="src-accordion">
                     <summary class="src-accordion__summary">
                         <span class="src-accordion__text">
@@ -242,9 +246,11 @@ function src_shortcode_output_v7() {
                         -->
                     </div>
                 </details>
+                </div>
             </div>
 
-            <div class="src-group" id="src-group-text">
+            <div class="src-layout-block">
+                <div class="src-group" id="src-group-text">
                 <div class="src-section-title">
                     <span class="dashicons dashicons-editor-alignleft"></span> Skript / Länge
                     <span class="src-tooltip-icon src-field-tip" data-field-tip="length" data-default-tip="Tipp: Mit Skript kann die Dauer genauer geschätzt werden.">?</span>
@@ -283,9 +289,11 @@ function src_shortcode_output_v7() {
                     <input type="number" id="src-phone-count" class="src-input-text" value="1" min="1" oninput="srcCalc()">
                     <div style="font-size:11px; color:#64748b; margin-top:5px;">Bis zu 3 Module sind in der Pauschale enthalten. Jedes weitere Modul kostet extra.</div>
                 </div>
+                </div>
             </div>
 
-            <div class="src-left-section src-rights-card src-collapse src-settings-block src-license-settings-block">
+            <div class="src-layout-block">
+                <div class="src-left-section src-rights-card src-collapse src-settings-block src-license-settings-block">
                 <div class="src-box-header">
                     <div class="src-box-title src-section-title src-license-settings-title">Nutzungsrechte &amp; Lizenzen</div>
                 </div>
@@ -436,9 +444,11 @@ function src_shortcode_output_v7() {
                         </div>
                     </div>
                 </div>
+                </div>
             </div>
 
-            <div class="src-group src-complexity-group src-collapse" id="src-complexity-group">
+            <div class="src-layout-block">
+                <div class="src-group src-complexity-group src-collapse" id="src-complexity-group">
                 <div class="src-section-head">
                     <div class="src-section-head__title">Produktion &amp; Aufwand</div>
                 </div>
@@ -493,9 +503,11 @@ function src_shortcode_output_v7() {
                     </label>
                 </div>
                 <div class="src-complexity-note">Alle Angaben sind optional und erhöhen den Aufwand nur, wenn tatsächlich benötigt.</div>
+                </div>
             </div>
 
-            <div id="src-global-settings" class="src-group" style="margin-top:15px; padding-top:15px;">
+            <div class="src-layout-block">
+                <div id="src-global-settings" class="src-group" style="margin-top:15px; padding-top:15px;">
                 <div class="src-section-head">
                     <div class="src-section-head__title">Optionen</div>
                 </div>
@@ -639,6 +651,7 @@ function src_shortcode_output_v7() {
                         <span class="src-hint-text">Der Rabatt wird vom Netto-Gesamtbetrag abgezogen.</span>
                     </div>
                 </div>
+                </div>
             </div>
 
         </div>
@@ -647,7 +660,7 @@ function src_shortcode_output_v7() {
             <div class="src-sidebar">
                 <div class="src-sidebar-sticky" id="srcSidebarSticky">
                     <div class="src-sidebar-section">
-                        <div class="src-sidebar-title"><span class="src-title-main"><span class="src-title-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"></rect><line x1="8" y1="7" x2="16" y2="7"></line><line x1="8" y1="12" x2="10" y2="12"></line><line x1="14" y1="12" x2="16" y2="12"></line><line x1="8" y1="16" x2="10" y2="16"></line><line x1="14" y1="16" x2="16" y2="16"></line></svg></span><span class="src-title-text">Kalkulation</span></span><span class="src-live-badge">Live-Rechnung</span></div>
+                        <div class="src-sidebar-title"><span class="src-title-main"><span class="src-title-icon" aria-hidden="true"><span class="dashicons dashicons-calculator"></span></span><span class="src-title-text">Kalkulation</span></span><span class="src-live-badge">Live-Rechnung</span></div>
                         <div class="src-result-card">
                             <div class="src-price-label">Kalkulierte Gage (Netto)</div>
                             <div class="src-price-main-box">
@@ -679,7 +692,7 @@ function src_shortcode_output_v7() {
                     <section id="src-license-section" class="src-sidebar-section src-license-section src-license-sidebar src-collapse">
                         <div class="src-sidebar-head src-license-sidebar__head">
                             <div class="src-sidebar-head__left">
-                                <span class="src-sidebar-icon src-title-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 5-3.4 8.4-7 9-3.6-.6-7-4-7-9V6l7-3z"></path></svg></span>
+                                <span class="src-sidebar-icon src-title-icon" aria-hidden="true"><span class="dashicons dashicons-media-document"></span></span>
                                 <h3 class="src-sidebar-title">Nutzungsrechte &amp; Lizenzen</h3>
                             </div>
                         </div>
@@ -689,7 +702,7 @@ function src_shortcode_output_v7() {
                     </section>
 
                     <div class="src-sidebar-section src-collapse" id="src-pricedetails-section">
-                        <div class="src-sidebar-title src-sidebar-title--pricedetails"><span class="src-title-main"><span class="src-title-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16"></path><path d="M4 12h16"></path><path d="M4 18h10"></path></svg></span><span class="src-title-text">Preis-Details</span></span></div>
+                        <div class="src-sidebar-title src-sidebar-title--pricedetails"><span class="src-title-main"><span class="src-title-icon" aria-hidden="true"><span class="dashicons dashicons-list-view"></span></span><span class="src-title-text">Preis-Details</span></span></div>
                         <div id="src-calc-breakdown" class="src-breakdown-box src-collapse">
                             <div id="src-breakdown-list">
                                 <div class="src-breakdown-row">
@@ -704,12 +717,12 @@ function src_shortcode_output_v7() {
                     </div>
 
                     <div class="src-sidebar-section src-collapse src-sidebar-box--notes" id="src-notes-tips-section">
-                        <div class="src-sidebar-title src-sidebar-title--notes"><span class="src-title-main"><span class="src-title-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 8h.01"></path><path d="M11 12h1v4h1"></path></svg></span><span class="src-title-text">Hinweise &amp; Tipps</span></span></div>
+                        <div class="src-sidebar-title src-sidebar-title--notes"><span class="src-title-main"><span class="src-title-icon" aria-hidden="true"><span class="dashicons dashicons-lightbulb"></span></span><span class="src-title-text">Hinweise &amp; Tipps</span></span></div>
                         <div id="src-static-notes" class="src-notes-tips-box"></div>
                     </div>
 
                     <div class="src-sidebar-section src-collapse src-sidebar-box--packages" id="src-packages-section">
-                        <div class="src-sidebar-title src-sidebar-title--packages"><span class="src-title-main"><span class="src-title-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 4-8 4-8-4 8-4z"></path><path d="M4 7v10l8 4 8-4V7"></path></svg></span><span class="src-title-text">Pakete</span></span></div>
+                        <div class="src-sidebar-title src-sidebar-title--packages"><span class="src-title-main"><span class="src-title-icon" aria-hidden="true"><span class="dashicons dashicons-grid-view"></span></span><span class="src-title-text">Pakete</span></span></div>
                         <div class="src-packages-box">
                             <button class="src-mini-btn src-mini-btn--wide" id="src-build-packages" type="button">Pakete erzeugen</button>
                             <div id="src-packages-list"></div>
@@ -717,7 +730,7 @@ function src_shortcode_output_v7() {
                     </div>
 
                     <div class="src-sidebar-section src-info-section">
-                        <div class="src-sidebar-title src-sidebar-title--knowledge"><span class="src-title-main"><span class="src-title-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a3 3 0 0 1 3-3h13v18H7a3 3 0 0 0-3 3z"></path><path d="M7 2v18"></path></svg></span><span class="src-title-text">Wissenswertes</span></span></div>
+                        <div class="src-sidebar-title src-sidebar-title--knowledge"><span class="src-title-main"><span class="src-title-icon" aria-hidden="true"><span class="dashicons dashicons-welcome-learn-more"></span></span><span class="src-title-text">Wissenswertes</span></span></div>
                         <div class="src-info-box">
                             <div class="src-acc-item">
                                 <div class="src-acc-head" onclick="toggleAccordion(this)">Berechnungsgrundlage</div>

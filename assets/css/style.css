@@ -2453,9 +2453,12 @@
     font-size: 18px;
     font-weight: 800;
     color: #0f172a;
-    margin: 30px 0 12px 0;
+    margin: 40px 0 16px 0 !important;
     border-bottom: 2px solid #e2e8f0;
     padding-bottom: 8px;
+}
+.src-guide-h3:first-of-type {
+    margin-top: 20px !important;
 }
 .src-guide-body p {
     margin: 0 0 16px 0;
@@ -2494,6 +2497,9 @@
     align-items: center;
     margin-bottom: 20px;
 }
+.src-reset-header.src-header-flex {
+    margin-bottom: 8px !important;
+}
 .src-header-left {
     display: flex;
     align-items: center;
@@ -2520,21 +2526,39 @@
     font-size: 14px;
 }
 
-/* --- 2. Großzügige Spacings & Trennlinien in der linken Spalte --- */
-#src-calc-v6 .src-col-left > div {
-    padding-bottom: 35px !important;
-    margin-bottom: 35px !important;
-    border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+/* --- 2. Neue Trennstrich-Logik für die linke Spalte --- */
+.src-layout-block {
+    padding-bottom: 30px !important;
+    margin-bottom: 30px !important;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.9);
 }
-/* Letztes Element braucht keinen Rahmen/Abstand nach unten */
-#src-calc-v6 .src-col-left > div:last-child {
-    border-bottom: none !important;
+.src-layout-block:last-child {
     padding-bottom: 0 !important;
+    margin-bottom: 0 !important;
+    border-bottom: none !important;
+}
+.src-layout-block > .src-group:last-child,
+.src-layout-block > .src-advanced:last-child {
     margin-bottom: 0 !important;
 }
 
-/* Verhindert doppelte Abstände, falls innere Boxen bereits margins haben */
-#src-calc-v6 .src-col-left > div > .src-group:last-child,
-#src-calc-v6 .src-col-left > div > .src-advanced:last-child {
-    margin-bottom: 0 !important;
+/* --- 4. Driver.js Popover Fixes (Kein Überschneiden mit X) --- */
+.driver-popover.src-modern-theme .driver-popover-title {
+    padding-right: 35px !important;
+    line-height: 1.4 !important;
+    display: block !important;
+}
+.driver-popover.src-modern-theme {
+    max-width: 320px !important;
+}
+
+/* --- 5. Dashicons in Sidebar Titeln --- */
+.src-title-icon .dashicons {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    color: rgba(255, 255, 255, 0.96);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
