@@ -812,21 +812,36 @@
 .src-live-badge {
     display: inline-flex;
     align-items: center;
-    padding: 3px 9px;
+    justify-content: center;
+    line-height: 1;
+    padding: 6px 10px;
     border-radius: 999px;
     font-size: 10px;
     font-weight: 700;
     letter-spacing: 0.03em;
     background: rgba(26, 147, 238, 0.22);
     color: rgba(255, 255, 255, 0.94);
-    border: 1px solid rgba(26, 147, 238, 0.38);
-    animation: srcLivePulse 1.7s ease-in-out infinite;
+    border: 1px solid rgba(26, 147, 238, 0.40);
+    animation: srcLiveGlow 1.6s ease-in-out infinite;
 }
 
-@keyframes srcLivePulse {
-    0% { box-shadow: 0 0 0 0 rgba(26, 147, 238, 0.18); border-color: rgba(26, 147, 238, 0.38); }
-    60% { box-shadow: 0 0 0 8px rgba(26, 147, 238, 0); border-color: rgba(26, 147, 238, 0.55); }
-    100% { box-shadow: 0 0 0 0 rgba(26, 147, 238, 0); border-color: rgba(26, 147, 238, 0.38); }
+@keyframes srcLiveGlow {
+    0% {
+        box-shadow: 0 0 0 0 rgba(26, 147, 238, 0.22), 0 0 0 0 rgba(26, 147, 238, 0.10);
+        border-color: rgba(26, 147, 238, 0.40);
+    }
+    60% {
+        box-shadow: 0 0 0 6px rgba(26, 147, 238, 0), 0 0 18px 0 rgba(26, 147, 238, 0.18);
+        border-color: rgba(26, 147, 238, 0.58);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(26, 147, 238, 0), 0 0 0 0 rgba(26, 147, 238, 0);
+        border-color: rgba(26, 147, 238, 0.40);
+    }
+}
+
+.src-sidebar > .src-sidebar-sticky > .src-sidebar-section:first-child .src-sidebar-title {
+    overflow: visible;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1341,6 +1356,95 @@
     font-weight: 600;
     color: rgba(255, 255, 255, 0.86);
     margin-top: 0;
+}
+
+.src-sidebar .src-license-sidebar {
+    border: 1px solid rgba(15, 23, 42, .10);
+    border-radius: 16px;
+    background: #ffffff;
+    overflow: hidden;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, .08);
+}
+
+.src-sidebar .src-license-sidebar__head {
+    background: #0f141a;
+    color: #fff;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.src-sidebar .src-sidebar-head__left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.src-sidebar .src-license-sidebar__head .src-sidebar-title {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    min-height: 0;
+    background: transparent;
+    color: #fff;
+    font-size: 14px;
+    line-height: 1.15;
+    font-weight: 800;
+    letter-spacing: .2px;
+    text-transform: none;
+    display: block;
+    position: static;
+}
+
+.src-sidebar .src-license-sidebar__head .src-sidebar-title::after {
+    display: none;
+}
+
+.src-sidebar .src-license-sidebar__meta {
+    font-size: 11px;
+    line-height: 1.1;
+    font-weight: 700;
+    color: rgba(255, 255, 255, .82);
+    white-space: nowrap;
+}
+
+.src-sidebar .src-license-sidebar__meta .src-license-meta__text {
+    margin-top: 0;
+    color: inherit;
+}
+
+@media (max-width: 520px) {
+    .src-sidebar .src-license-sidebar__head {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .src-sidebar .src-license-sidebar__meta {
+        white-space: normal;
+    }
+}
+
+.src-sidebar .src-license-sidebar__body {
+    padding: 12px 14px 14px;
+}
+
+.src-sidebar .src-license-sidebar__text {
+    font-size: 13px;
+    line-height: 1.45;
+    color: #0f172a;
+}
+
+.src-sidebar .src-license-sidebar .src-license-box {
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    padding: 0;
+    margin: 0;
 }
 
 .src-badge {
@@ -1885,4 +1989,17 @@
 @media (max-width: 520px) {
     .src-price-meta-row { flex-direction:column; align-items:flex-start; }
     .src-price-meta-row .src-price-note { white-space:normal; }
+}
+
+#src-license-section.src-license-sidebar .src-license-sidebar__head .src-sidebar-title {
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.src-sidebar #src-license-section.src-license-sidebar .src-license-box {
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    padding: 0;
 }
