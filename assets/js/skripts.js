@@ -878,37 +878,27 @@ const srcRenderPriceDetails = function(info, state, result) {
     const list = document.getElementById('src-breakdown-list');
     if(!list) return;
     if(!Array.isArray(info) || info.length === 0) {
-        list.innerHTML = `<div class="src-breakdown-row">
-            <div class="src-breakdown-left">
-                <span class="src-breakdown-label">Bitte Projekt wählen..</span>
-                <span class="src-breakdown-value">—</span>
-            </div>
-            <span class="src-breakdown-formula">—</span>
+        list.innerHTML = `<div class="src-breakdown-row src-price-row">
+            <span class="src-breakdown-label src-price-row__label">Bitte Projekt wählen..</span>
+            <span class="src-breakdown-value src-price-row__value">—</span>
         </div>`;
         return;
     }
     const rows = info.map(entry => {
         const labelText = entry.label || '';
         const amountText = entry.amount || '—';
-        const formulaText = entry.formula || '—';
         const toneClass = entry.tone ? `is-${entry.tone}` : '';
-        return `<div class="src-breakdown-row ${toneClass}">
-            <div class="src-breakdown-left">
-                <span class="src-breakdown-label">${labelText}</span>
-                <span class="src-breakdown-value ${toneClass}">${amountText}</span>
-            </div>
-            <span class="src-breakdown-formula">${formulaText}</span>
+        return `<div class="src-breakdown-row src-price-row ${toneClass}">
+            <span class="src-breakdown-label src-price-row__label">${labelText}</span>
+            <span class="src-breakdown-value src-price-row__value ${toneClass}">${amountText}</span>
         </div>`;
     });
     const totalValue = Array.isArray(result?.final) && Number.isFinite(result.final[1])
         ? srcFormatCurrency(result.final[1])
         : srcFormatCurrency(currentResult.mid);
-    rows.push(`<div class="src-breakdown-row is-total">
-        <div class="src-breakdown-left">
-            <span class="src-breakdown-label">Unterm Strich</span>
-            <span class="src-breakdown-value">${totalValue}</span>
-        </div>
-        <span class="src-breakdown-formula">Summe</span>
+    rows.push(`<div class="src-breakdown-row src-price-row is-total">
+        <span class="src-breakdown-label src-price-row__label">Unterm Strich</span>
+        <span class="src-breakdown-value src-price-row__value">${totalValue}</span>
     </div>`);
     list.innerHTML = rows.join('');
 }
@@ -1133,18 +1123,34 @@ const srcRenderPackages = function() {
     list.innerHTML = Object.keys(packagesState).map(key => {
         const pkg = packagesState[key];
         const metaItems = Array.isArray(pkg.meta) ? pkg.meta : [];
+        const metaReadable = metaItems.length ? metaItems.join(', ') : 'Standardumfang';
+        const regionLabel = ({ regional: 'Regional', national: 'National', dach: 'DACH', world: 'Weltweit' })[pkg.state?.region] || '—';
+        const durationLabel = ({ 1: '1 Jahr', 2: '2 Jahre', 3: '3 Jahre', 4: 'Unlimited' })[pkg.state?.duration] || '—';
+        const explainTier = key === 'basic'
+            ? 'Min-Preis (untere Spanne)'
+            : (key === 'premium' ? 'Max-Preis (obere Spanne)' : 'Mittelwert (Orientierung)');
         return `
-            <div class="src-package-card src-package-card--modern">
-                <div class="src-package-top">
+            <div class="src-package-card src-package-card--modern src-package-card--v2">
+                <div class="src-package-head">
                     <div class="src-package-left">
-                        <div class="src-package-name">${pkg.label}</div>
-                        <div class="src-package-price">${srcFormatCurrency(pkg.price)}</div>
+                        <div class="src-package-name-row">
+                            <div class="src-package-name">${pkg.label}</div>
+                            <button class="src-pkg-info" type="button" aria-label="Paketdetails anzeigen"><span aria-hidden="true">i</span></button>
+                            <div class="src-pkg-tooltip" role="tooltip">
+                                <div class="src-pkg-tooltip__row"><strong>Gebiet:</strong> <span>${regionLabel}</span></div>
+                                <div class="src-pkg-tooltip__row"><strong>Laufzeit:</strong> <span>${durationLabel}</span></div>
+                                <div class="src-pkg-tooltip__row"><strong>Optionen:</strong> <span>${metaReadable}</span></div>
+                                <div class="src-pkg-tooltip__row"><strong>Preislogik:</strong> <span>${explainTier}</span></div>
+                            </div>
+                        </div>
+                        <div class="src-package-subtext">Transparente Paketlogik zur schnellen Orientierung.</div>
                     </div>
-                    <div class="src-package-right">
-                        <ul class="src-package-meta-list">
-                            ${metaItems.map(item => `<li>${item}</li>`).join('')}
-                        </ul>
-                    </div>
+                    <div class="src-package-price">${srcFormatCurrency(pkg.price)}</div>
+                </div>
+                <div class="src-package-meta-wrap">
+                    <ul class="src-package-meta-list">
+                        ${metaItems.map(item => `<li>${item}</li>`).join('')}
+                    </ul>
                 </div>
                 <div class="src-package-action">
                     <button class="src-mini-btn" type="button" data-export-package="${key}">Als Angebot exportieren</button>
@@ -2330,6 +2336,20 @@ window.srcCalc = function() {
     srcRenderPriceDetails(info, state, result);
     
     dynamicLicenseText = licText;
+    const regionLabel = ({regional:'Regional', national:'National', dach:'DACH', world:'Weltweit'})[state.region] || '—';
+    const durationLabel = ({1:'1 Jahr', 2:'2 Jahre', 3:'3 Jahre', 4:'Unlimited'})[state.duration] || '—';
+
+    dynamicLicenseText = dynamicLicenseText
+        .replace(/im gewählten gebiet\.?/gi, `${regionLabel}.`)
+        .replace(/laufzeit wie ausgewählt\.?/gi, `Laufzeit: ${durationLabel}.`);
+
+    dynamicLicenseText = dynamicLicenseText
+        .replace(/(^|\n)\s*Gebiet:\s*.*$/gim, '')
+        .replace(/(^|\n)\s*Laufzeit:\s*.*$/gim, '')
+        .replace(/<br\s*\/?>\s*Gebiet:\s*.*?(?=<br|$)/gi, '')
+        .replace(/<br\s*\/?>\s*Laufzeit:\s*.*?(?=<br|$)/gi, '');
+
+    dynamicLicenseText = dynamicLicenseText.replace(/\n{3,}/g, '\n\n');
     const licBox = document.getElementById('src-license-text');
     const licSection = document.getElementById('src-license-section');
     licBox.innerHTML = dynamicLicenseText;
