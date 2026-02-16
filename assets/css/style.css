@@ -2230,3 +2230,37 @@
     bottom: 2px !important;
     height: 0.7em !important;
 }
+
+/* 1. Verbreitungsgebiet: Mehr Abstand zu den Boxen darunter */
+.src-rights-panel .src-section-title {
+    margin-bottom: 18px !important;
+}
+
+/* 2. Kalkulierte Gage: Box in der Höhe flexibel mitwachsen lassen */
+#src-calc-v6 .src-amount-anim {
+    height: auto !important;
+    min-height: 1.1em;
+    overflow: visible !important; /* Verhindert das Abschneiden beim Umbruch */
+}
+#src-calc-v6 .src-price-main {
+    flex-wrap: wrap;
+    word-break: break-word;
+}
+#src-display-total {
+    white-space: normal;
+    line-height: 1.1;
+}
+
+/* 3. Preis-Details Box: Abschneiden bei vielen Elementen verhindern */
+/* Die Animation basiert auf max-height, das Standard-Limit (800px) ist bei langen Listen zu klein */
+#src-calc-v6 .src-collapse.is-open {
+    max-height: 4000px !important; 
+}
+
+/* 4. Nutzungsrechte & Lizenzen: Abstand nach unten um 30px verringern */
+/* Der vorherige Wert war 12px margin-bottom. 12px - 30px = -18px */
+#src-calc-v6 .src-col-left .src-license-settings-block .src-box-header {
+    margin-bottom: -18px !important;
+    position: relative;
+    z-index: 2; /* Stellt sicher, dass der Titel über nachrückenden Elementen liegt */
+}
