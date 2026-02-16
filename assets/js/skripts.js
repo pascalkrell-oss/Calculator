@@ -887,7 +887,7 @@ const srcRenderPriceDetails = function(info, state, result) {
         </div>`;
         return;
     }
-    list.innerHTML = info.map(entry => {
+    const rows = info.map(entry => {
         const labelText = entry.label || '';
         const amountText = entry.amount || '—';
         const formulaText = entry.formula || '—';
@@ -899,7 +899,18 @@ const srcRenderPriceDetails = function(info, state, result) {
             </div>
             <span class="src-breakdown-formula">${formulaText}</span>
         </div>`;
-    }).join('');
+    });
+    const totalValue = Array.isArray(result?.final) && Number.isFinite(result.final[1])
+        ? srcFormatCurrency(result.final[1])
+        : srcFormatCurrency(currentResult.mid);
+    rows.push(`<div class="src-breakdown-row is-total">
+        <div class="src-breakdown-left">
+            <span class="src-breakdown-label">Unterm Strich</span>
+            <span class="src-breakdown-value">${totalValue}</span>
+        </div>
+        <span class="src-breakdown-formula">Summe</span>
+    </div>`);
+    list.innerHTML = rows.join('');
 }
 
 const srcBuildRiskChecks = function(state) {
@@ -1121,18 +1132,22 @@ const srcRenderPackages = function() {
     packagesState = srcBuildPackages(state);
     list.innerHTML = Object.keys(packagesState).map(key => {
         const pkg = packagesState[key];
+        const metaItems = Array.isArray(pkg.meta) ? pkg.meta : [];
         return `
-            <div class="src-package-card">
-                <div class="src-package-left">
-                    <div class="src-package-name">${pkg.label}</div>
-                    <div class="src-package-price">${srcFormatCurrency(pkg.price)}</div>
-                </div>
-                <div class="src-package-sep" aria-hidden="true"></div>
-                <div class="src-package-mid">
-                    <div class="src-package-meta">${pkg.meta.join(' · ')}</div>
-                    <div class="src-package-action">
-                        <button class="src-mini-btn" type="button" data-export-package="${key}">Als Angebot exportieren</button>
+            <div class="src-package-card src-package-card--modern">
+                <div class="src-package-top">
+                    <div class="src-package-left">
+                        <div class="src-package-name">${pkg.label}</div>
+                        <div class="src-package-price">${srcFormatCurrency(pkg.price)}</div>
                     </div>
+                    <div class="src-package-right">
+                        <ul class="src-package-meta-list">
+                            ${metaItems.map(item => `<li>${item}</li>`).join('')}
+                        </ul>
+                    </div>
+                </div>
+                <div class="src-package-action">
+                    <button class="src-mini-btn" type="button" data-export-package="${key}">Als Angebot exportieren</button>
                 </div>
             </div>
         `;
@@ -2015,6 +2030,14 @@ const srcComputeSingleProjectResult = function(state, projectKey, options = {}) 
     if(!guidanceText) {
         guidanceText = "Nutzungsrechte abhängig von Verbreitungsgebiet, Dauer und Zusatzlizenzen. Bitte Projekt auswählen bzw. Konfiguration prüfen.";
     }
+    const regionLabel = srcGetRegionLabel(state.region);
+    const durationLabel = srcGetDurationLabel(state.duration);
+    guidanceText = guidanceText.replace(/im gewählten Gebiet/gi, regionLabel);
+    guidanceText = guidanceText.replace(/Laufzeit wie ausgewählt\./gi, `Laufzeit: ${durationLabel}.`);
+    guidanceText = guidanceText.replace(/<br\s*\/?>\s*Gebiet:\s*.*?(?=<br|$)/gi, '');
+    guidanceText = guidanceText.replace(/<br\s*\/?>\s*Laufzeit:\s*.*?(?=<br|$)/gi, '');
+    guidanceText = guidanceText.replace(/\n\s*Gebiet:\s*.*$/gim, '');
+    guidanceText = guidanceText.replace(/\n\s*Laufzeit:\s*.*$/gim, '');
     const extras = Object.assign({}, defaultGuidance.extras || {}, guidanceEntry.extras || {});
     const extrasText = [];
     if(applyAddons) {
