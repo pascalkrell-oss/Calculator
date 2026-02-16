@@ -520,6 +520,27 @@ function src_shortcode_output_v7() {
                     </div>
                 </div>
 
+                <div class="src-opt-card" data-opt="localmode">
+                    <div class="src-opt-head">
+                        <div class="src-opt-left">
+                            <span class="dashicons dashicons-location src-opt-icon"></span>
+                            <div class="src-opt-text">
+                                <div class="src-opt-title">Kleinräumiges Segment (Lokal)</div>
+                                <div class="src-opt-sub">Sondertarif für Lokalradio / KMU Online</div>
+                            </div>
+                        </div>
+                        <div class="src-opt-right">
+                            <div class="src-toggle-wrapper">
+                                <input type="checkbox" id="src-local-mode" aria-expanded="false">
+                                <label class="src-toggle-slider" for="src-local-mode"></label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="src-opt-body" data-opt-body>
+                        <div class="src-opt-body-text">Eigenständiger Markt für lokale Auswertungen (nur auf Anfrage). Begrenzt auf Radio (Lokal, bis 1 Jahr) oder Online Paid (KMU, max 5.000€ Media, max 3 Monate).</div>
+                    </div>
+                </div>
+
                 <div class="src-opt-card" data-opt="layout">
                     <div class="src-opt-head">
                         <div class="src-opt-left">

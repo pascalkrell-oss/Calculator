@@ -71,6 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if([
                 'src-layout-mode',
+                'src-local-mode',
                 'src-pkg-online',
                 'src-pkg-atv',
                 'src-lic-social',
@@ -482,6 +483,7 @@ const srcGetStateFromUI = function() {
         linkedProjects,
         language: document.getElementById('src-language').value,
         layoutMode: document.getElementById('src-layout-mode').checked,
+        localMode: document.getElementById('src-local-mode') ? document.getElementById('src-local-mode').checked : false,
         posType: document.getElementById('src-pos-type') ? document.getElementById('src-pos-type').value : 'pos_spot',
         region: regionInput ? regionInput.value : 'national',
         duration: parseInt(document.getElementById('src-time-slider').value, 10) || 1,
@@ -1774,6 +1776,18 @@ window.srcUIUpdate = function() {
     srcSyncLinkedProjectsAccordion({ genre, layoutMode });
     srcRenderProjectTips(genre);
     srcRenderFieldTips(genre);
+    const localModeCard = document.querySelector('.src-opt-card[data-opt="localmode"]');
+    if(localModeCard) {
+        const showLocal = (genre === 'radio' || genre === 'online_paid') && !layoutMode;
+        localModeCard.style.display = showLocal ? '' : 'none';
+        if(!showLocal) {
+            const localToggle = document.getElementById('src-local-mode');
+            if(localToggle && localToggle.checked) {
+                localToggle.checked = false;
+                srcSetOptionRowState(localToggle);
+            }
+        }
+    }
     srcUpdateSidebarCollapse();
 }
 
@@ -1998,21 +2012,30 @@ const srcComputeSingleProjectResult = function(state, projectKey, options = {}) 
         if(['tv','online_paid','radio','cinema','pos'].includes(genre)) {
             let adName = data.name;
             let adBase = data.base;
-            if(genre === 'pos') {
+
+            let isLocalModeActive = state.localMode && (genre === 'radio' || genre === 'online_paid');
+            if(isLocalModeActive) {
+                adBase = genre === 'radio' ? [60, 75, 100] : [150, 225, 300];
+                adName = genre === 'radio' ? "Funk Spot (Lokal)" : "Online Video (Kleinräumig)";
+                licBaseText = genre === 'radio'
+                    ? "Lizenzen: Lineares Radio-Programm (Lokal/Simulcast), bis zu 1 Jahr."
+                    : "Lizenzen: Kleine Online Paid Media (KMU, Media <5000€), max 3 Monate.";
+                licMeta.push("Sonderformat: Kleinräumiges Segment");
+            } else if(genre === 'pos') {
                 const variants = data.variants || {};
                 const variant = variants[state.posType] || variants.pos_spot || variants.ladenfunk;
                 if(variant) {
                     adName = variant.name || adName;
                     adBase = variant.base || adBase;
-                    if(variant.lic) {
-                        licBaseText = variant.lic;
-                    }
+                    if(variant.lic) licBaseText = variant.lic;
                     licMeta.push(`POS Typ: ${variant.name || state.posType}`);
                 }
             }
+
             base = srcEnsurePriceTriple(adBase, base);
             base = base.map(v => Math.round(v * langFactor));
             breakdownBase = { min: base[0], mid: base[1], max: base[2] };
+
             if(langFactor !== 1) {
                 breakdownSteps.push({ label: `Sprache${langLabel}`, amountOrFactor: `x${langFactor}`, effectOnRange: 'multiply' });
             }
@@ -2020,37 +2043,46 @@ const srcComputeSingleProjectResult = function(state, projectKey, options = {}) 
 
             const region = state.region;
             let regionMult = 1.0;
-            if(region === 'regional') { regionMult = 0.8; }
-            if(region === 'dach') { regionMult = 2.5; }
-            if(region === 'world') { regionMult = 4.0; }
-            const regionLabel = region === 'regional' ? 'Regional' : region === 'national' ? 'National' : region === 'dach' ? 'DACH' : 'Weltweit';
-            const regionDiff = Math.round(base[1] * (regionMult - 1));
-            const regionAmount = regionMult === 1 ? '—' : srcFormatSignedCurrency(regionDiff);
-            const regionFormula = regionMult === 1 ? '—' : `Basis × Faktor Gebiet (${regionMult})`;
-            addInfo(`Gebiet: ${regionLabel}`, regionAmount, regionFormula, regionDiff < 0 ? 'positive' : '');
-            licMeta.push(`Gebiet: ${regionLabel}`);
+            if(!isLocalModeActive) {
+                if(region === 'regional') { regionMult = 0.8; }
+                if(region === 'dach') { regionMult = 2.5; }
+                if(region === 'world') { regionMult = 4.0; }
+            }
+
+            if(!isLocalModeActive) {
+                const regionLabel = region === 'regional' ? 'Regional' : region === 'national' ? 'National' : region === 'dach' ? 'DACH' : 'Weltweit';
+                const regionDiff = Math.round(base[1] * (regionMult - 1));
+                const regionAmount = regionMult === 1 ? '—' : srcFormatSignedCurrency(regionDiff);
+                const regionFormula = regionMult === 1 ? '—' : `Basis × Faktor Gebiet (${regionMult})`;
+                addInfo(`Gebiet: ${regionLabel}`, regionAmount, regionFormula, regionDiff < 0 ? 'positive' : '');
+                licMeta.push(`Gebiet: ${regionLabel}`);
+                breakdownSteps.push({ label: `Region`, amountOrFactor: `x${regionMult}`, effectOnRange: 'multiply' });
+            }
 
             const years = state.duration;
             let timeMult = 1;
-            if(years === 4) {
-                timeMult = 4;
-                const intermediate = base[1] * regionMult;
-                const timeDiff = Math.round(intermediate * (timeMult - 1));
-                addInfo("Laufzeit: Unlimited", srcFormatSignedCurrency(timeDiff), `Zwischensumme × Faktor Laufzeit (${timeMult})`);
-                licParts.push("Unlimited");
-                licMeta.push("Laufzeit: Unlimited");
+            if(!isLocalModeActive) {
+                if(years === 4) {
+                    timeMult = 4;
+                    const intermediate = base[1] * regionMult;
+                    const timeDiff = Math.round(intermediate * (timeMult - 1));
+                    addInfo("Laufzeit: Unlimited", srcFormatSignedCurrency(timeDiff), `Zwischensumme × Faktor Laufzeit (${timeMult})`);
+                    licParts.push("Unlimited");
+                    licMeta.push("Laufzeit: Unlimited");
+                } else {
+                    timeMult = years;
+                    const intermediate = base[1] * regionMult;
+                    const timeDiff = Math.round(intermediate * (timeMult - 1));
+                    const timeAmount = timeMult === 1 ? '—' : srcFormatSignedCurrency(timeDiff);
+                    const timeFormula = timeMult === 1 ? '—' : `Zwischensumme × Faktor Laufzeit (${timeMult})`;
+                    addInfo(`Laufzeit: ${years} ${years === 1 ? 'Jahr' : 'Jahre'}`, timeAmount, timeFormula);
+                    licParts.push(years + " Jahr(e)");
+                    licMeta.push(`Laufzeit: ${years} ${years === 1 ? 'Jahr' : 'Jahre'}`);
+                }
+                breakdownSteps.push({ label: `Laufzeit`, amountOrFactor: `x${timeMult}`, effectOnRange: 'multiply' });
             } else {
-                timeMult = years;
-                const intermediate = base[1] * regionMult;
-                const timeDiff = Math.round(intermediate * (timeMult - 1));
-                const timeAmount = timeMult === 1 ? '—' : srcFormatSignedCurrency(timeDiff);
-                const timeFormula = timeMult === 1 ? '—' : `Zwischensumme × Faktor Laufzeit (${timeMult})`;
-                addInfo(`Laufzeit: ${years} ${years === 1 ? 'Jahr' : 'Jahre'}`, timeAmount, timeFormula);
-                licParts.push(years + " Jahr(e)");
-                licMeta.push(`Laufzeit: ${years} ${years === 1 ? 'Jahr' : 'Jahre'}`);
+                addInfo(`Laufzeit: ${genre === 'radio' ? '1 Jahr' : '3 Monate'} (inkl.)`, '—', 'Im Kleintarif enthalten');
             }
-            breakdownSteps.push({ label: `Region`, amountOrFactor: `x${regionMult}`, effectOnRange: 'multiply' });
-            breakdownSteps.push({ label: `Laufzeit`, amountOrFactor: `x${timeMult}`, effectOnRange: 'multiply' });
 
             if(genre === 'radio' && state.packageOnline) {
                 const beforePackage = base[1];

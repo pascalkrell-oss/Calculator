@@ -1607,6 +1607,7 @@
     margin-top: 6px;
 }
 
+/* --- Modern Modal Animations --- */
 .src-modal-overlay {
     position: fixed;
     inset: 0;
@@ -1617,16 +1618,22 @@
     right: 0;
     bottom: 0;
     max-width: none;
-    display: none;
+    display: flex !important; /* Verhindert blockierendes Display-None */
     align-items: center;
     justify-content: center;
     z-index: 99999;
     padding: 20px;
     background: rgba(15, 23, 42, 0.55);
     backdrop-filter: blur(6px);
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.35s ease, visibility 0.35s ease;
 }
 .src-modal-overlay.is-open {
-    display: flex;
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
 }
 .src-modal-dialog {
     background: #ffffff;
@@ -1638,6 +1645,11 @@
     box-shadow: 0 24px 60px rgba(15, 23, 42, 0.25);
     display: flex;
     flex-direction: column;
+    transform: translateY(20px) scale(0.96);
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.src-modal-overlay.is-open .src-modal-dialog {
+    transform: translateY(0) scale(1);
 }
 .src-modal__head {
     display: flex;
