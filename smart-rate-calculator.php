@@ -99,6 +99,9 @@ function src_shortcode_output_v7() {
         <button class="src-tutorial-btn" onclick="srcStartTutorial()">
             <span class="dashicons dashicons-welcome-learn-more"></span> Tutorial starten
         </button>
+        <button class="src-reset-btn" onclick="srcOpenGuide()">
+            <span class="dashicons dashicons-book"></span> Handbuch
+        </button>
         <button class="src-reset-btn" onclick="srcReset()">
             <span class="dashicons dashicons-image-rotate"></span> Gagenrechner zurücksetzen
         </button>
@@ -876,6 +879,58 @@ function src_shortcode_output_v7() {
 
             <div class="src-modal__footer">
                 <button type="button" class="src-btn src-btn--primary src-btn--full" id="src-export-start">Export starten</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="src-guide-modal" class="src-modal-overlay" aria-hidden="true">
+        <div class="src-modal-dialog src-guide-dialog" role="dialog" aria-modal="true">
+            <div class="src-modal__head">
+                <div>
+                    <div class="src-modal__title">Handbuch & Leitfaden</div>
+                    <div class="src-modal__subtitle">So kalkulierst Du Sprechergagen professionell</div>
+                </div>
+                <button class="src-modal__close" type="button" aria-label="Schließen" data-guide-close>×</button>
+            </div>
+            <div class="src-modal__body src-guide-body">
+                <div class="src-guide-intro">
+                    Willkommen im Smart Rate Calculator! Die Kalkulation von Sprechergagen basiert nicht auf Stundenlöhnen, sondern auf dem Prinzip der <strong>Nutzungsrechte</strong>. Hier erklären wir Dir die wichtigsten Konzepte.
+                </div>
+
+                <h3 class="src-guide-h3">1. Verwertungsgesellschaft & Grundprinzip</h3>
+                <p>Du bezahlst für die Reichweite und die Zeit, in der Deine Marke die Stimme nutzt. Ein TV-Spot, der ein Jahr lang national läuft, hat einen deutlich höheren Werbewert als ein internes Schulungsvideo. Daher steigen die Kosten mit dem Medium, der Verbreitung und der Laufzeit.</p>
+
+                <div class="src-guide-tip">
+                    <strong>💡 Experten-Tipp: Layout & Pitch</strong><br>
+                    Benötigst Du die Aufnahme nur, um intern eine Idee zu präsentieren (Pitch), wähle die Option "Nur Layout". Hierfür wird eine stark reduzierte Pauschale berechnet, da keine Veröffentlichung stattfindet.
+                </div>
+
+                <h3 class="src-guide-h3">2. Skriptlänge & Timing</h3>
+                <p>Die Länge Deines Textes ist essenziell für die Berechnung, besonders bei Corporate- oder E-Learning-Projekten. Das System schätzt die Dauer automatisch, wenn Du ein Skript einfügst.</p>
+
+                <div class="src-guide-tip">
+                    <strong>⏱️ Faustregel zur Textlänge</strong><br>
+                    Kalkuliere pro gesprochener Minute mit etwa 900 Zeichen (inklusive Leerzeichen). Schreibe Zahlen und Abkürzungen (z. B. "zwei Millionen" statt "2 Mio.") im Text aus, da diese beim Sprechen mehr Zeit in Anspruch nehmen.
+                </div>
+
+                <h3 class="src-guide-h3">3. Buyouts & Laufzeiten</h3>
+                <p>Die Standard-Lizenz für Werbespots beträgt meist 1 Jahr. Wenn Du den Spot länger nutzen möchtest, kannst Du die Laufzeit verlängern oder einen "Buyout" erwerben.</p>
+
+                <div class="src-guide-tip">
+                    <strong>♾️ Unlimited & Exklusivität</strong><br>
+                    Möchtest Du eine Aufnahme zeitlich unbegrenzt nutzen, vervielfacht sich das Grundhonorar (häufig Faktor 3 bis 4). Bedenke: Durch eine dauerhafte oder sehr prominente Nutzung blockierst Du die Stimme unter Umständen für Konkurrenzprodukte (Konkurrenzschutz), was den Wert der Aufnahme steigert.
+                </div>
+
+                <h3 class="src-guide-h3">4. Zusätzliche Verwertungen (Cut-downs)</h3>
+                <p>Oft wird aus einem 30-sekündigen Hauptspot noch eine 15-sekündige Kurzversion (Reminder) geschnitten.</p>
+
+                <div class="src-guide-tip">
+                    <strong>✂️ Cut-downs & Tag-ons</strong><br>
+                    Kurzversionen oder Reminder eines Hauptspots werden üblicherweise mit 50 % des regulären Honorars berechnet. Wähle dafür im Rechner einfach die Option "Cut-down" aus.
+                </div>
+
+                <h3 class="src-guide-h3">5. Studio & Technik</h3>
+                <p>Die reine Sprechergage entlohnt die kreative Leistung und die Rechte. Wenn der Sprecher die Aufnahme im eigenen Studio produziert, schneidet und säubert, fällt eine Technik-Pauschale (Studiokosten) an, die Du unter "Optionen" zuschalten kannst.</p>
             </div>
         </div>
     </div>

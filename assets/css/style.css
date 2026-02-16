@@ -31,14 +31,14 @@
     --src-check-icon: none;
 }
 
-.src-reset-header { max-width: 1100px; margin: 0 auto 10px; text-align: right; font-family: "Rubik", system-ui, sans-serif; }
+.src-reset-header { max-width: 1100px; margin: 0 auto 10px; text-align: right; font-family: "Rubik", sans-serif; }
 .src-reset-btn { background: transparent; border: none; color: #999; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; transition: color 0.2s; }
 .src-reset-btn:hover { color: #d63638; }
 .src-tutorial-btn { background: transparent; border: none; color: #1a93ee; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; transition: color 0.2s; margin-right: 12px; }
 .src-tutorial-btn:hover { color: #137ecf; }
 
 #src-calc-v6 {
-    font-family: "Rubik", system-ui, sans-serif;
+    font-family: "Rubik", sans-serif;
     max-width: 1100px; margin: 0 auto 40px;
     background: linear-gradient(180deg, var(--src-surface-3), var(--src-surface)); border-radius: var(--src-radius); 
     box-shadow: var(--src-shadow-2);
@@ -2341,7 +2341,7 @@
 
 /* --- Driver.js Custom Modern Theme --- */
 .driver-popover.src-modern-theme {
-    font-family: "Rubik", system-ui, sans-serif !important;
+    font-family: "Rubik", sans-serif !important;
     border-radius: 16px !important;
     border: 1px solid rgba(15, 23, 42, 0.08) !important;
     box-shadow: 0 24px 50px rgba(15, 23, 42, 0.15) !important;
@@ -2374,7 +2374,7 @@
 
 /* Tutorial Buttons modernisieren (Rund & Akzentfarben) */
 .driver-popover.src-modern-theme button {
-    font-family: "Rubik", system-ui, sans-serif !important;
+    font-family: "Rubik", sans-serif !important;
     border-radius: 999px !important;
     padding: 8px 16px !important;
     font-size: 12px !important;
@@ -2410,4 +2410,72 @@
 }
 .driver-popover.src-modern-theme .driver-popover-close-btn:hover {
     color: #0f172a !important;
+}
+
+/* --- 1. Font Fix & Driver.js Popover Positioning --- */
+.driver-popover.src-modern-theme,
+.driver-popover.src-modern-theme * {
+    font-family: "Rubik", sans-serif !important;
+}
+/* Behebt den Fehler, dass das Popover zu weit wegfliegt */
+.driver-popover {
+    margin: 0 !important;
+    transform: scale(1) !important;
+}
+
+/* --- 2. Styling für Handbuch Modal (2026 UI) --- */
+.src-guide-dialog {
+    max-width: 800px !important;
+    background: #f8fafc !important;
+}
+.src-guide-body {
+    padding-top: 10px !important;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #334155;
+}
+.src-guide-intro {
+    font-size: 15px;
+    color: #0f172a;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, rgba(26, 147, 238, 0.1), rgba(0, 102, 179, 0.05));
+    border-left: 4px solid var(--src-primary);
+    border-radius: 8px;
+    margin-bottom: 24px;
+}
+.src-guide-h3 {
+    font-size: 18px;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 30px 0 12px 0;
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 8px;
+}
+.src-guide-body p {
+    margin: 0 0 16px 0;
+}
+.src-guide-tip {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin: 20px 0;
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
+    position: relative;
+    overflow: hidden;
+}
+.src-guide-tip::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: var(--src-primary);
+}
+.src-guide-tip strong {
+    color: var(--src-primary);
+    font-size: 15px;
+    display: inline-block;
+    margin-bottom: 6px;
 }

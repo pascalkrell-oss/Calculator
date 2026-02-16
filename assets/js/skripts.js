@@ -1631,68 +1631,68 @@ window.srcReset = function() {
 }
 
 window.srcStartTutorial = function() {
-    // 1. UI vorbereiten: Projekt auswählen und alles aufklappen, damit das Tutorial alle Bereiche findet
     const genreSelect = document.getElementById('src-genre');
-    if(genreSelect) {
-        genreSelect.value = 'tv';
-        srcUIUpdate();
-        srcCalc();
-    }
+    if(genreSelect) { genreSelect.value = 'tv'; srcUIUpdate(); srcCalc(); }
     
-    // Akkordeons aufklappen für volle Sichtbarkeit
     const advancedAccordion = document.getElementById('src-advanced-accordion');
     if(advancedAccordion) advancedAccordion.open = true;
     const linkedAccordion = document.getElementById('src-linked-projects-accordion');
     if(linkedAccordion) linkedAccordion.open = true;
 
-    // 2. Driver.js initialisieren
     const driver = window.driver.js.driver;
     const driverObj = driver({
         showProgress: true,
+        progressText: '{{current}} von {{total}}',
         animate: true,
         opacity: 0.65,
         nextBtnText: 'Weiter &rarr;',
         prevBtnText: '&larr; Zurück',
         doneBtnText: 'Beenden',
-        popoverClass: 'src-modern-theme', // Custom CSS Klasse für unser Design
+        popoverClass: 'src-modern-theme',
+        onDestroyed: () => {
+            srcReset();
+        },
         steps: [
-            {
-                element: '#src-genre',
-                popover: { title: '1. Projektart', description: 'Wähle hier aus, wofür Deine Sprachaufnahme genutzt wird. Das System passt sich dynamisch an Deine Auswahl an.', side: 'bottom' }
-            },
-            {
-                element: '#src-language',
-                popover: { title: '2. Sprache', description: 'Bestimme die Sprache. Fremdsprachen oder Englisch beinhalten automatisch branchenübliche Aufschläge.', side: 'bottom' }
-            },
-            {
-                element: '.src-advanced',
-                popover: { title: '3. Erweiterte Parameter', description: 'Präzisiere Deinen Vertrag: Lege Exklusivitäten, Buyout-Modelle oder zusätzliche Sprachversionen fest.' }
-            },
-            {
-                element: '#src-group-text',
-                popover: { title: '4. Skript & Länge', description: 'Füge Dein Skript ein, um die Länge in Minuten automatisch schätzen zu lassen, oder trage die Zeit bequem manuell ein.' }
-            },
-            {
-                element: '.src-rights-card',
-                popover: { title: '5. Nutzungsrechte & Lizenzen', description: 'Das Herzstück: Definiere genau, wo (Gebiet) und wie lange (Dauer) die Aufnahme genutzt werden darf. Zusatzlizenzen lassen sich flexibel zubuchen.' }
-            },
-            {
-                element: '#src-complexity-group',
-                popover: { title: '6. Produktion & Aufwand', description: 'Besondere Anforderungen wie Lipsync, spezielle Stile oder mehrere Korrekturschleifen fließen hier in die Berechnung ein.' }
-            },
-            {
-                element: '#src-global-settings',
-                popover: { title: '7. Optionen', description: 'Der Feinschliff: Füge Studiokosten, Express-Lieferungen oder individuelle Rabatte zu Deinem Angebot hinzu.' }
-            },
-            {
-                element: '.src-sidebar-sticky',
-                popover: { title: '8. Ergebnis & Export', description: 'Hier siehst Du live Deine kalkulierte Gage. Über den Button "Angebot speichern" oder die Pakete kannst Du direkt ein professionelles PDF generieren. Viel Erfolg!' }
-            }
+            { element: '#src-genre', popover: { title: '1. Projektart', description: 'Wähle hier aus, wofür Deine Sprachaufnahme genutzt wird. Das System passt sich dynamisch an.', side: 'right', align: 'start' } },
+            { element: '#src-language', popover: { title: '2. Sprache', description: 'Fremdsprachen oder Englisch beinhalten automatisch branchenübliche Aufschläge.', side: 'bottom', align: 'start' } },
+            { element: '.src-advanced', popover: { title: '3. Erweiterte Parameter', description: 'Präzisiere Deinen Vertrag: Lege Exklusivitäten, Buyout-Modelle oder zusätzliche Sprachversionen fest.', side: 'bottom', align: 'start' } },
+            { element: '#src-group-text', popover: { title: '4. Skript & Länge', description: 'Füge Dein Skript ein, um die Länge in Minuten automatisch schätzen zu lassen, oder trage die Zeit manuell ein.', side: 'right', align: 'start' } },
+            { element: '.src-rights-card', popover: { title: '5. Nutzungsrechte & Lizenzen', description: 'Definiere genau, wo (Gebiet) und wie lange (Dauer) die Aufnahme genutzt werden darf. Zusatzlizenzen lassen sich flexibel zubuchen.', side: 'right', align: 'start' } },
+            { element: '#src-complexity-group', popover: { title: '6. Produktion & Aufwand', description: 'Anforderungen wie Lipsync, spezielle Stile oder Korrekturschleifen fließen hier in die Berechnung ein.', side: 'top', align: 'start' } },
+            { element: '#src-global-settings', popover: { title: '7. Optionen', description: 'Füge Studiokosten, Express-Lieferungen oder individuelle Rabatte zu Deinem Angebot hinzu.', side: 'top', align: 'start' } },
+            { element: '.src-sidebar-sticky', popover: { title: '8. Ergebnis & Export', description: 'Hier siehst Du live Deine kalkulierte Gage. Generiere von hier aus direkt ein professionelles PDF. Viel Erfolg!', side: 'left', align: 'start' } }
         ]
     });
 
     driverObj.drive();
 };
+
+window.srcOpenGuide = function() {
+    const modal = document.getElementById('src-guide-modal');
+    if(modal) {
+        modal.classList.add('is-open');
+        modal.setAttribute('aria-hidden', 'false');
+    }
+};
+
+window.srcCloseGuide = function() {
+    const modal = document.getElementById('src-guide-modal');
+    if(modal) {
+        modal.classList.remove('is-open');
+        modal.setAttribute('aria-hidden', 'true');
+    }
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+    const guideModal = document.getElementById('src-guide-modal');
+    if(guideModal) {
+        guideModal.addEventListener('click', (event) => {
+            if(event.target === guideModal || event.target.hasAttribute('data-guide-close')) {
+                srcCloseGuide();
+            }
+        });
+    }
+});
 
 window.srcUIUpdate = function() {
     const genre = document.getElementById('src-genre').value;
