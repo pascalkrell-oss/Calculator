@@ -642,14 +642,22 @@ const srcUpdateMeanValue = function(wrapper, target, nextText) {
     if(!wrapper || !target) return;
     const current = target.textContent.trim();
     if(current === nextText.trim()) return;
+    const applyMeanText = () => {
+        const markerMatch = nextText.match(/^Ø Mittelwert:\s*(.+)$/i);
+        if(markerMatch) {
+            target.innerHTML = `Ø Mittelwert: <span class="src-marker" id="src-mean-value">${markerMatch[1]}</span>`;
+            return;
+        }
+        target.textContent = nextText;
+    };
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if(prefersReducedMotion) {
-        target.textContent = nextText;
+        applyMeanText();
         return;
     }
     wrapper.classList.add('is-updating');
     requestAnimationFrame(() => {
-        target.textContent = nextText;
+        applyMeanText();
         requestAnimationFrame(() => {
             wrapper.classList.remove('is-updating');
         });
@@ -884,11 +892,15 @@ const srcRenderPriceDetails = function(info, state, result) {
         </div>`;
         return;
     }
-    const rows = info.map(entry => {
+    const rows = info.map((entry, idx) => {
         const labelText = entry.label || '';
-        const amountText = entry.amount || '—';
+        const includedByDefault = /gebiet|verbreitungsgebiet|laufzeit|nutzungsdauer/i.test(labelText);
+        const amountRaw = typeof entry.amount === 'number' ? String(entry.amount) : (entry.amount || '').toString().trim();
+        const shouldShowIncluded = includedByDefault && (!amountRaw || ['—', '0 €', '0€', '+0 €', '±0 €'].includes(amountRaw));
+        const amountText = shouldShowIncluded ? 'inkl.' : (amountRaw || '—');
         const toneClass = entry.tone ? `is-${entry.tone}` : '';
-        return `<div class="src-breakdown-row src-price-row ${toneClass}">
+        const lastNormalClass = idx === info.length - 1 ? 'is-last-normal' : '';
+        return `<div class="src-breakdown-row src-price-row ${toneClass} ${lastNormalClass}">
             <span class="src-breakdown-label src-price-row__label">${labelText}</span>
             <span class="src-breakdown-value src-price-row__value ${toneClass}">${amountText}</span>
         </div>`;
@@ -897,7 +909,7 @@ const srcRenderPriceDetails = function(info, state, result) {
         ? srcFormatCurrency(result.final[1])
         : srcFormatCurrency(currentResult.mid);
     rows.push(`<div class="src-breakdown-row src-price-row is-total">
-        <span class="src-breakdown-label src-price-row__label">Unterm Strich</span>
+        <span class="src-breakdown-label src-price-row__label">Summe</span>
         <span class="src-breakdown-value src-price-row__value">${totalValue}</span>
     </div>`);
     list.innerHTML = rows.join('');
@@ -1120,6 +1132,11 @@ const srcRenderPackages = function() {
         return;
     }
     packagesState = srcBuildPackages(state);
+    const packageSubline = {
+        basic: 'Schnell & schlank',
+        standard: 'Empfohlene Orientierung',
+        premium: 'Maximale Lizenz-/Optionsannahme'
+    };
     list.innerHTML = Object.keys(packagesState).map(key => {
         const pkg = packagesState[key];
         const metaItems = Array.isArray(pkg.meta) ? pkg.meta : [];
@@ -1143,7 +1160,7 @@ const srcRenderPackages = function() {
                                 <div class="src-pkg-tooltip__row"><strong>Preislogik:</strong> <span>${explainTier}</span></div>
                             </div>
                         </div>
-                        <div class="src-package-subtext">Transparente Paketlogik zur schnellen Orientierung.</div>
+                        <div class="src-package-subtext">${packageSubline[key] || ''}</div>
                     </div>
                     <div class="src-package-price">${srcFormatCurrency(pkg.price)}</div>
                 </div>
@@ -2338,21 +2355,35 @@ window.srcCalc = function() {
     dynamicLicenseText = licText;
     const regionLabel = ({regional:'Regional', national:'National', dach:'DACH', world:'Weltweit'})[state.region] || '—';
     const durationLabel = ({1:'1 Jahr', 2:'2 Jahre', 3:'3 Jahre', 4:'Unlimited'})[state.duration] || '—';
-
-    dynamicLicenseText = dynamicLicenseText
-        .replace(/im gewählten gebiet\.?/gi, `${regionLabel}.`)
-        .replace(/laufzeit wie ausgewählt\.?/gi, `Laufzeit: ${durationLabel}.`);
-
-    dynamicLicenseText = dynamicLicenseText
-        .replace(/(^|\n)\s*Gebiet:\s*.*$/gim, '')
-        .replace(/(^|\n)\s*Laufzeit:\s*.*$/gim, '')
-        .replace(/<br\s*\/?>\s*Gebiet:\s*.*?(?=<br|$)/gi, '')
-        .replace(/<br\s*\/?>\s*Laufzeit:\s*.*?(?=<br|$)/gi, '');
-
-    dynamicLicenseText = dynamicLicenseText.replace(/\n{3,}/g, '\n\n');
+    const projectName = state.layoutMode ? 'Layout / Pitch' : srcGetProjectName(state.projectKey);
+    const linkedProjectNames = Array.from(new Set((state.linkedProjects || []).map(srcGetProjectName).filter(Boolean)));
+    const projectLabel = linkedProjectNames.length ? `${projectName} (+ ${linkedProjectNames.join(', ')})` : projectName;
+    const guidancePlain = (result.guidanceText || dynamicLicenseText || '')
+        .replace(/<[^>]*>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    const licenseMatch = guidancePlain.match(/Lizenzen?\s*:\s*([^\.\n]+)/i);
+    let licenseLabel = licenseMatch ? licenseMatch[1] : guidancePlain;
+    licenseLabel = licenseLabel
+        .replace(/\bim\s+gewählten\s+Gebiet\b/gi, '')
+        .replace(/\b(Laufzeit|Gebiet)\s*:\s*.*$/gi, '')
+        .replace(/\b(regional|national|dach|weltweit|unlimited|1\s*jahr|2\s*jahre|3\s*jahre)\b/gi, '')
+        .replace(/^[\s:;,.\-–—]+|[\s:;,.\-–—]+$/g, '')
+        .trim();
+    if(!licenseLabel) {
+        licenseLabel = 'laut Auswahl';
+    }
+    const licenseHtml = `
+        <ul class="src-license-list">
+            <li><strong>Projekt:</strong> ${projectLabel || '—'}</li>
+            <li><strong>Lizenz:</strong> ${licenseLabel}</li>
+            <li><strong>Gebiet:</strong> ${regionLabel}</li>
+            <li><strong>Laufzeit:</strong> ${durationLabel}</li>
+        </ul>
+    `;
     const licBox = document.getElementById('src-license-text');
     const licSection = document.getElementById('src-license-section');
-    licBox.innerHTML = dynamicLicenseText;
+    licBox.innerHTML = licenseHtml;
     licBox.classList.remove('hidden');
     licBox.style.display = '';
     if(licSection) srcToggleCollapse(licSection, true);
