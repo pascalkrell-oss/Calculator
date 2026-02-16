@@ -1640,17 +1640,14 @@ window.srcStartTutorial = function() {
     const advancedAccordion = document.getElementById('src-advanced-accordion');
     if(advancedAccordion) advancedAccordion.open = true;
 
-    // 2. Sofortiger Sprung nach oben, ohne sanftes Scrollen
-    window.scrollTo({ top: 0, behavior: 'instant' });
-
-    // 3. Warten, bis das UI 100% gerendert ist
+    // 2. Warten, bis das UI 100% gerendert ist (Manueller scrollTo() entfernt, da Driver.js das übernehmen soll)
     setTimeout(() => {
         const driver = window.driver.js.driver;
         const driverObj = driver({
             showProgress: true,
             progressText: '{{current}} von {{total}}',
-            animate: true, // Animation wieder aktivieren für weiche Übergänge
-            smoothScroll: true, // Sanftes Scrollen zum jeweiligen Element
+            animate: true,
+            smoothScroll: false, // Deaktiviert natives Driver-Scrollen, da wir den Hook nutzen
             opacity: 0.65,
             popoverOffset: 15,
             nextBtnText: 'Weiter &rarr;',
@@ -1658,6 +1655,14 @@ window.srcStartTutorial = function() {
             doneBtnText: 'Beenden',
             popoverClass: 'src-modern-theme',
             onDestroyed: () => { srcReset(); },
+
+            // FIX: Element immer vertikal zentrieren, damit unten garantiert Platz für das Popup ('side: bottom') ist.
+            onHighlightStarted: (element) => {
+                if (element && element.node) {
+                    element.node.scrollIntoView({ block: 'center', behavior: 'smooth' });
+                }
+            },
+
             steps: [
                 { element: '#src-genre', popover: { title: '1. Projektart', description: 'Wähle hier aus, wofür Deine Sprachaufnahme genutzt wird.', side: 'bottom', align: 'center' } },
                 { element: '#src-language', popover: { title: '2. Sprache', description: 'Fremdsprachen oder Englisch haben oft Aufschläge.', side: 'bottom', align: 'center' } },
