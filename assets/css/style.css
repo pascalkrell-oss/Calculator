@@ -2547,53 +2547,71 @@
     justify-content: center;
 }
 
-/* --- 1. Exakte 30px Trennstriche (Mathematisch präziser Reset) --- */
-.src-layout-block {
-    padding-top: 0 !important;
+/* --- 1. HARD-RESET DER ABSTÄNDE IN DER LINKEN SPALTE --- */
+#src-calc-v6 .src-col-left > div {
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+}
+
+/* Abstand innerhalb des ersten Blocks (Projekt bis Advanced) */
+.src-top-grid,
+#src-linked-projects-wrap,
+.src-advanced {
+    margin-bottom: 20px !important;
+}
+
+/* --- 2. EXAKTE 30px TRENNLINIEN DIREKT AUF DIE ELEMENTE --- */
+/* Linie nach Skript / Phone */
+#src-group-text,
+#mod-phone {
     padding-bottom: 30px !important;
     margin-bottom: 30px !important;
     border-bottom: 1px solid rgba(226, 232, 240, 0.9) !important;
 }
-.src-layout-block:last-child {
-    padding-bottom: 0 !important;
-    margin-bottom: 0 !important;
-    border-bottom: none !important;
+
+/* Linie nach Nutzungsrechte */
+.src-rights-card {
+    padding-bottom: 30px !important;
+    margin-bottom: 30px !important;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.9) !important;
 }
 
-/* * HARD RESET: Diese Elemente grenzen direkt an die Trennlinien.
- * Ihre inneren Margins müssen auf 0 gezwungen werden, sonst werden aus den 30px schnell 50px!
- */
+/* Linie nach Produktion & Aufwand */
+.src-complexity-group {
+    padding-bottom: 30px !important;
+    margin-bottom: 30px !important;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.9) !important;
+}
 
-/* Entfernt den 20px Abstand unter der Nutzungsrechte-Box */
+/* Optionen haben keinen Strich */
+#src-global-settings {
+    padding-top: 0 !important;
+    margin-top: 0 !important;
+}
+
+/* --- 3. STÖRENFRIEDE LÖSCHEN (Verhindert summierte Abstände) --- */
+/* Diese Boxen haben interne Margins, die die 30px verfälschen. Wir setzen sie auf 0! */
+.src-group,
 #mod-ads .src-light-box-wrapper,
 #mod-image .src-rights-panel,
-.src-layout-block > *:last-child {
+.src-rights-panel {
     margin-bottom: 0 !important;
 }
 
-/* Entfernt den 20px Abstand über der Produktion-Box */
-.src-complexity-group {
-    margin-top: 0 !important;
-    padding-top: 0 !important;
+/* --- 4. LINIEN VERSTECKEN, WENN ELEMENTE LEER SIND --- */
+#src-calc-v6:not(.src-has-project) #src-group-text,
+#src-calc-v6:not(.src-has-project) #mod-phone,
+#src-calc-v6:not(.src-show-rights-section) .src-rights-card {
+    border-bottom: none !important;
+    padding-bottom: 0 !important;
+    margin-bottom: 0 !important;
 }
 
-/* Entfernt den 15px Inline-Style Abstand über der Optionen-Box */
-#src-global-settings {
-    margin-top: 0 !important;
-    padding-top: 0 !important;
-}
-
-/* Verstecke leere Blöcke im Default-Zustand */
-#src-calc-v6:not(.src-has-project) .src-layout-block:has(.src-rights-card),
-#src-calc-v6:not(.src-has-project) .src-layout-block:has(.src-complexity-group),
-#src-calc-v6:not(.src-has-project) .src-layout-block:has(#src-global-settings),
-#src-calc-v6:not(.src-show-rights-section) .src-layout-block:has(.src-rights-card) {
-    display: none !important;
-}
-
-/* --- 2. Tutorial Anti-Jump Fix --- */
-/* Verhindert, dass globale Theme-Transitions die Driver-Berechnung zerstören */
-.driver-popover {
-    transition: opacity 0.2s ease !important;
-    animation: none !important;
+/* --- 5. DRIVER.JS OVERLAP FIX --- */
+/* Stellt sicher, dass das Popover nicht in die Box gequetscht wird */
+.driver-popover.src-modern-theme {
+    position: fixed !important;
+    z-index: 999999 !important;
+    margin-top: 10px !important;
 }
