@@ -1128,11 +1128,11 @@ const srcRenderPackages = function() {
                     <div class="src-package-price">${srcFormatCurrency(pkg.price)}</div>
                 </div>
                 <div class="src-package-sep" aria-hidden="true"></div>
-                <div class="src-package-right">
+                <div class="src-package-mid">
                     <div class="src-package-meta">${pkg.meta.join(' · ')}</div>
-                </div>
-                <div class="src-package-actions">
-                    <button class="src-mini-btn" type="button" data-export-package="${key}">Als Angebot exportieren</button>
+                    <div class="src-package-action">
+                        <button class="src-mini-btn" type="button" data-export-package="${key}">Als Angebot exportieren</button>
+                    </div>
                 </div>
             </div>
         `;
@@ -1157,6 +1157,13 @@ const srcUpdateDurationSliderFill = function() {
     const range = max - min;
     const pct = range > 0 ? ((value - min) / range) * 100 : 0;
     wrap.style.setProperty('--src-range-fill', `${pct}%`);
+
+    const dots = wrap.querySelectorAll('.src-range-dot');
+    if(!dots.length) return;
+    const idx = range > 0 ? Math.round(((value - min) / range) * (dots.length - 1)) : 0;
+    dots.forEach((dot, dotIndex) => {
+        dot.classList.toggle('is-active', dotIndex === idx);
+    });
 }
 
 const srcUpdateExportPackageVisibility = function() {
