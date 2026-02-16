@@ -14,6 +14,7 @@ let mainAmountExitListener = null;
 let currentBreakdownData = null;
 let currentRiskChecks = [];
 let currentProjectTips = [];
+let stickyRaf = 0;
 let compareState = { enabled: false, A: null, B: null, activeTab: 'A' };
 let packagesState = null;
 let exportModalKeyHandler = null;
@@ -93,16 +94,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const tipEl = document.getElementById('src-tooltip-fixed');
     document.querySelectorAll('.src-tooltip-icon').forEach(icon => {
         icon.addEventListener('mouseenter', e => {
+            if(!tipEl) return;
             const tipText = e.target.getAttribute('data-tip');
             if(!tipText) return;
             tipEl.innerText = tipText;
             tipEl.classList.add('is-visible');
             // Initial Pos
-            const rect = e.target.getBoundingClientRect();
-            tipEl.style.top = (rect.top - tipEl.offsetHeight - 10) + 'px';
-            tipEl.style.left = (rect.left + (rect.width/2) - (tipEl.offsetWidth/2)) + 'px';
+            requestAnimationFrame(() => {
+                const rect = e.target.getBoundingClientRect();
+                tipEl.style.top = (rect.top - tipEl.offsetHeight - 10) + 'px';
+                tipEl.style.left = (rect.left + (rect.width/2) - (tipEl.offsetWidth/2)) + 'px';
+            });
         });
-        icon.addEventListener('mouseleave', () => tipEl.classList.remove('is-visible'));
+        icon.addEventListener('mouseleave', () => {
+            if(!tipEl) return;
+            tipEl.classList.remove('is-visible');
+        });
     });
 
     const exportModal = document.getElementById('src-export-modal');
@@ -175,8 +182,15 @@ document.addEventListener('DOMContentLoaded', () => {
     srcSyncExportTiles();
     srcUpdateExportPackageVisibility();
     updateStickyOffset();
-    window.addEventListener('resize', updateStickyOffset);
-    window.addEventListener('scroll', updateStickyOffset, { passive: true });
+    const scheduleStickyOffsetUpdate = () => {
+        if(stickyRaf) return;
+        stickyRaf = requestAnimationFrame(() => {
+            stickyRaf = 0;
+            updateStickyOffset();
+        });
+    };
+    window.addEventListener('resize', scheduleStickyOffsetUpdate);
+    window.addEventListener('scroll', scheduleStickyOffsetUpdate, { passive: true });
 
     // Erster UI Check
     srcUIUpdate();
@@ -486,7 +500,10 @@ const srcGetStateFromUI = function() {
         discountToggle: document.getElementById('src-discount-toggle').checked,
         discountPct: parseFloat(document.getElementById('src-discount-percent').value) || 0,
         discountReason: document.getElementById('src-discount-reason').value || '',
-        finalFeeInput: parseFloat(document.getElementById('src-final-fee-user').value),
+        finalFeeInput: (() => {
+            const raw = parseFloat(document.getElementById('src-final-fee-user').value);
+            return Number.isFinite(raw) ? raw : null;
+        })(),
         complexitySelections,
         advanced
     };
@@ -957,6 +974,7 @@ const srcRenderRiskChecks = function(checks) {
     srcRenderNotesTips();
 }
 
+// LEGACY: Compare UI removed; keep logic for now (guarded) to avoid breaking changes.
 const srcToggleCompare = function() {
     compareState.enabled = !compareState.enabled;
     const calcRoot = document.getElementById('src-calc-v6');
