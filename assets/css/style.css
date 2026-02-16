@@ -2264,3 +2264,48 @@
     position: relative;
     z-index: 2; /* Stellt sicher, dass der Titel über nachrückenden Elementen liegt */
 }
+
+/* 1. Nutzungsrechte & Lizenzen: Äußere Box entfernen & Titel modernisieren */
+#src-calc-v6 .src-rights-card {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin-bottom: 25px !important;
+}
+#src-calc-v6 .src-rights-card::before {
+    display: none !important;
+}
+#src-calc-v6 .src-rights-card .src-box-header {
+    margin: 0 0 16px 0 !important; /* Fester, konstanter Abstand nach unten */
+    padding: 0 !important;
+}
+/* Titel angleichen an "Produktion & Aufwand" */
+#src-calc-v6 .src-rights-card .src-box-title {
+    font-size: 14px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.02em !important;
+    color: rgb(15, 23, 42) !important;
+}
+
+/* 2. & 3. Abstände bei Skript, Projektart und Sprache vergrößern */
+#src-group-text .src-section-title,
+.src-top-grid .src-section-title {
+    margin-bottom: 14px !important;
+}
+
+/* 4. Angebot exportieren Button (Sidebar Pakete) dezenter gestalten */
+.src-package-action .src-mini-btn {
+    background: #f8fafc !important; /* Sehr helles Grau */
+    border: 1px solid #e2e8f0 !important; /* Zarter Rahmen */
+    color: #64748b !important; /* Dezentes Schiefergrau */
+    font-weight: 600 !important;
+    padding: 10px 16px !important;
+    transition: all 0.2s ease !important;
+}
+.src-package-action .src-mini-btn:hover {
+    background: #f1f5f9 !important; /* Etwas dunkler beim Hover */
+    border-color: #cbd5e1 !important;
+    color: #0f172a !important; /* Dunkle Schrift beim Hover */
+    box-shadow: none !important;
+}
