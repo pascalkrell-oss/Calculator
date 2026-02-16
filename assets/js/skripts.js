@@ -1630,6 +1630,63 @@ window.srcReset = function() {
     srcCalc();
 }
 
+window.srcStartTutorial = function() {
+    if(!window.driver || !window.driver.js || typeof window.driver.js.driver !== 'function') {
+        console.warn('SRC Tutorial: Driver.js ist nicht verfügbar.');
+        return;
+    }
+
+    const driver = window.driver.js.driver;
+    const rightsElement = document.querySelector('#mod-ads') || document.querySelector('.src-license-settings-block');
+
+    const tutorial = driver({
+        animate: true,
+        opacity: 0.65,
+        nextBtnText: 'Weiter',
+        prevBtnText: 'Zurück',
+        doneBtnText: 'Beenden',
+        steps: [
+            {
+                element: '#src-genre',
+                popover: {
+                    title: 'Schritt 1: Projektart',
+                    description: 'Wähle hier aus, wofür Deine Sprachaufnahme genutzt wird.'
+                }
+            },
+            {
+                element: '#src-language',
+                popover: {
+                    title: 'Schritt 2: Sprache',
+                    description: 'Fremdsprachen oder Englisch haben oft einen branchenüblichen Aufschlag.'
+                }
+            },
+            {
+                element: '#src-group-text',
+                popover: {
+                    title: 'Schritt 3: Skript',
+                    description: 'Füge Deinen Text ein, um die Länge in Minuten automatisch schätzen zu lassen.'
+                }
+            },
+            {
+                element: rightsElement,
+                popover: {
+                    title: 'Schritt 4: Nutzungsrechte',
+                    description: 'Lege hier fest, wo (Gebiet) und wie lange (Dauer) die Aufnahme genutzt werden darf.'
+                }
+            },
+            {
+                element: '.src-sidebar-sticky',
+                popover: {
+                    title: 'Schritt 5: Ergebnis',
+                    description: 'Hier siehst Du live die berechnete Spanne und den Mittelwert. Du kannst von hier aus direkt ein PDF generieren!'
+                }
+            }
+        ]
+    });
+
+    tutorial.drive();
+}
+
 window.srcUIUpdate = function() {
     const genre = document.getElementById('src-genre').value;
     const layoutMode = document.getElementById('src-layout-mode').checked;
