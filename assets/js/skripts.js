@@ -931,7 +931,7 @@ const srcRenderPriceDetails = function(info, state, result) {
         : srcFormatCurrency(currentResult.mid);
     rows.push(`<div class="src-breakdown-row src-price-row is-total">
         <span class="src-breakdown-label src-price-row__label">Summe</span>
-        <span class="src-breakdown-value src-price-row__value">${totalValue}</span>
+        <span class="src-breakdown-value src-price-row__value"><span class="src-marker">${totalValue}</span></span>
     </div>`);
     list.innerHTML = rows.join('');
 }
@@ -1184,7 +1184,7 @@ const srcRenderPackages = function() {
                         </div>
                         <div class="src-package-subtext">${packageSubline[key] || ''}</div>
                     </div>
-                    <div class="src-package-price">${srcFormatCurrency(pkg.price)}</div>
+                    <div class="src-package-price"><span class="src-marker">${srcFormatCurrency(pkg.price)}</span></div>
                 </div>
                 <div class="src-package-meta-wrap">
                     <ul class="src-package-meta-list">
