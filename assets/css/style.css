@@ -2547,71 +2547,77 @@
     justify-content: center;
 }
 
-/* --- 1. HARD-RESET DER ABSTÄNDE IN DER LINKEN SPALTE --- */
-#src-calc-v6 .src-col-left > div {
-    margin: 0 !important;
-    padding: 0 !important;
-    border: none !important;
+/* ==========================================================================
+   1. MODERNES LAYOUT & ABSTÄNDE (LINKE SPALTE)
+   ========================================================================== */
+
+/* Die Haupt-Blöcke (generieren die sauberen Trennlinien) */
+.src-layout-block {
+    padding-bottom: 32px !important;
+    margin-bottom: 32px !important;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.85) !important;
 }
 
-/* Abstand innerhalb des ersten Blocks (Projekt bis Advanced) */
+/* Der allerletzte Block bekommt logischerweise keinen Strich nach unten */
+.src-layout-block:last-child {
+    padding-bottom: 0 !important;
+    margin-bottom: 0 !important;
+    border-bottom: none !important;
+}
+
+/* Wenn ein Block unsichtbare Elemente enthält, verstecke den gesamten Block (inkl. Strich) */
+#src-calc-v6:not(.src-show-rights-section) .src-layout-block:has(.src-rights-card),
+#src-calc-v6:not(.src-has-project) .src-layout-block:has(.src-complexity-group),
+#src-calc-v6:not(.src-has-project) .src-layout-block:has(#src-global-settings) {
+    display: none !important;
+}
+
+/* Im Start-Zustand (kein Projekt gewählt) ist das Skript der letzte Block -> Strich ausblenden */
+#src-calc-v6:not(.src-has-project) .src-layout-block:has(#src-group-text) {
+    padding-bottom: 0 !important;
+    margin-bottom: 0 !important;
+    border-bottom: none !important;
+}
+
+/* ==========================================================================
+   2. INNERE ABSTÄNDE (Kein Quetschen, kein Addieren von Margins)
+   ========================================================================== */
+
+/* Dezenter, gleichmäßiger Abstand zwischen den oberen Elementen innerhalb des ersten Blocks */
 .src-top-grid,
 #src-linked-projects-wrap,
 .src-advanced {
-    margin-bottom: 20px !important;
+    margin-bottom: 24px !important;
 }
 
-/* --- 2. EXAKTE 30px TRENNLINIEN DIREKT AUF DIE ELEMENTE --- */
-/* Linie nach Skript / Phone */
+/* Hard-Reset: Verhindert, dass innere Boxen die 32px Trennlinien künstlich vergrößern */
+.src-layout-block > div:last-child,
+.src-rights-card,
+.src-complexity-group,
 #src-group-text,
-#mod-phone {
-    padding-bottom: 30px !important;
-    margin-bottom: 30px !important;
-    border-bottom: 1px solid rgba(226, 232, 240, 0.9) !important;
-}
-
-/* Linie nach Nutzungsrechte */
-.src-rights-card {
-    padding-bottom: 30px !important;
-    margin-bottom: 30px !important;
-    border-bottom: 1px solid rgba(226, 232, 240, 0.9) !important;
-}
-
-/* Linie nach Produktion & Aufwand */
-.src-complexity-group {
-    padding-bottom: 30px !important;
-    margin-bottom: 30px !important;
-    border-bottom: 1px solid rgba(226, 232, 240, 0.9) !important;
-}
-
-/* Optionen haben keinen Strich */
-#src-global-settings {
-    padding-top: 0 !important;
-    margin-top: 0 !important;
-}
-
-/* --- 3. STÖRENFRIEDE LÖSCHEN (Verhindert summierte Abstände) --- */
-/* Diese Boxen haben interne Margins, die die 30px verfälschen. Wir setzen sie auf 0! */
-.src-group,
+#mod-phone,
 #mod-ads .src-light-box-wrapper,
 #mod-image .src-rights-panel,
 .src-rights-panel {
     margin-bottom: 0 !important;
 }
 
-/* --- 4. LINIEN VERSTECKEN, WENN ELEMENTE LEER SIND --- */
-#src-calc-v6:not(.src-has-project) #src-group-text,
-#src-calc-v6:not(.src-has-project) #mod-phone,
-#src-calc-v6:not(.src-show-rights-section) .src-rights-card {
-    border-bottom: none !important;
-    padding-bottom: 0 !important;
-    margin-bottom: 0 !important;
+#src-global-settings {
+    padding-top: 0 !important;
+    margin-top: 0 !important;
 }
 
-/* --- 5. DRIVER.JS OVERLAP FIX --- */
-/* Stellt sicher, dass das Popover nicht in die Box gequetscht wird */
+/* ==========================================================================
+   3. DRIVER.JS TUTORIAL FIX (Anti-Springen)
+   ========================================================================== */
+
 .driver-popover.src-modern-theme {
-    position: fixed !important;
+    position: absolute !important; /* WICHTIG: Fixed entfernt, das verursachte den Sprung nach links! */
     z-index: 999999 !important;
-    margin-top: 10px !important;
+    margin-top: 15px !important;
+}
+
+.driver-popover {
+    transition: none !important; /* Blockiert jegliches CSS-Flackern während der Berechnung */
+    animation: none !important;
 }
