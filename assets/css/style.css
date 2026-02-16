@@ -2429,12 +2429,6 @@
 .driver-popover.src-modern-theme * {
     font-family: "Rubik", sans-serif !important;
 }
-/* Behebt den Fehler, dass das Popover zu weit wegfliegt */
-.driver-popover {
-    margin: 0 !important;
-    transform: scale(1) !important;
-}
-
 /* --- 2. Styling für Handbuch Modal (2026 UI) --- */
 .src-guide-dialog {
     max-width: 800px !important;
@@ -2490,4 +2484,57 @@
     font-size: 15px;
     display: inline-block;
     margin-bottom: 6px;
+}
+
+
+/* --- 1. Header Flex Layout & Action Links --- */
+.src-header-flex {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+.src-header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.src-action-link {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0;
+    transition: color 0.2s ease;
+}
+.src-action-link:hover {
+    color: var(--src-primary); /* Blau statt Rot beim Hover */
+}
+.src-divider {
+    color: #cbd5e1;
+    font-size: 14px;
+}
+
+/* --- 2. Großzügige Spacings & Trennlinien in der linken Spalte --- */
+#src-calc-v6 .src-col-left > div {
+    padding-bottom: 35px !important;
+    margin-bottom: 35px !important;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+}
+/* Letztes Element braucht keinen Rahmen/Abstand nach unten */
+#src-calc-v6 .src-col-left > div:last-child {
+    border-bottom: none !important;
+    padding-bottom: 0 !important;
+    margin-bottom: 0 !important;
+}
+
+/* Verhindert doppelte Abstände, falls innere Boxen bereits margins haben */
+#src-calc-v6 .src-col-left > div > .src-group:last-child,
+#src-calc-v6 .src-col-left > div > .src-advanced:last-child {
+    margin-bottom: 0 !important;
 }

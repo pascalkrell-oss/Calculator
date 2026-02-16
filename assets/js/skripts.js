@@ -1647,6 +1647,7 @@ window.srcStartTutorial = function() {
         progressText: '{{current}} von {{total}}',
         animate: true,
         opacity: 0.65,
+        popoverOffset: 20,
         nextBtnText: 'Weiter &rarr;',
         prevBtnText: '&larr; Zurück',
         doneBtnText: 'Beenden',

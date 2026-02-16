@@ -95,13 +95,16 @@ function src_is_calculator_page() {
 function src_shortcode_output_v7() {
     ob_start();
     ?>
-    <div class="src-reset-header">
-        <button class="src-tutorial-btn" onclick="srcStartTutorial()">
-            <span class="dashicons dashicons-welcome-learn-more"></span> Tutorial starten
-        </button>
-        <button class="src-reset-btn" onclick="srcOpenGuide()">
-            <span class="dashicons dashicons-book"></span> Handbuch
-        </button>
+    <div class="src-reset-header src-header-flex">
+        <div class="src-header-left">
+            <button class="src-action-link" onclick="srcStartTutorial()">
+                <span class="dashicons dashicons-welcome-learn-more"></span> Tutorial starten
+            </button>
+            <span class="src-divider">|</span>
+            <button class="src-action-link" onclick="srcOpenGuide()">
+                <span class="dashicons dashicons-book"></span> Anleitung
+            </button>
+        </div>
         <button class="src-reset-btn" onclick="srcReset()">
             <span class="dashicons dashicons-image-rotate"></span> Gagenrechner zurücksetzen
         </button>
@@ -908,7 +911,7 @@ function src_shortcode_output_v7() {
         <div class="src-modal-dialog src-guide-dialog" role="dialog" aria-modal="true">
             <div class="src-modal__head">
                 <div>
-                    <div class="src-modal__title">Handbuch & Leitfaden</div>
+                    <div class="src-modal__title">Anleitung & Leitfaden</div>
                     <div class="src-modal__subtitle">So kalkulierst Du Sprechergagen professionell</div>
                 </div>
                 <button class="src-modal__close" type="button" aria-label="Schließen" data-guide-close>×</button>
@@ -952,6 +955,13 @@ function src_shortcode_output_v7() {
 
                 <h3 class="src-guide-h3">5. Studio & Technik</h3>
                 <p>Die reine Sprechergage entlohnt die kreative Leistung und die Rechte. Wenn der Sprecher die Aufnahme im eigenen Studio produziert, schneidet und säubert, fällt eine Technik-Pauschale (Studiokosten) an, die Du unter "Optionen" zuschalten kannst.</p>
+
+                <h3 class="src-guide-h3">6. Kleinräumiges Segment (Lokal / KMU)</h3>
+                <p>Für stark eingegrenzte Nutzungen gibt es im VDS Sondertarife, die nicht über die regulären Gebiets- und Laufzeitfaktoren berechnet werden:</p>
+                <div class="src-guide-tip">
+                    <strong>📍 Lokalradio & Online Paid (KMU)</strong><br>
+                    Ein "Funkspot (Lokal)" deckt die Sender eines lokalen Gebiets für bis zu 1 Jahr ab. "Online Video (Kleinräumig)" gilt exklusiv für kleine Unternehmen (KMU) mit einem Media-Budget unter 5.000 € für maximal 3 Monate. Aktiviere hierfür einfach den Schalter "Kleinräumiges Segment" unter "Optionen".
+                </div>
             </div>
         </div>
     </div>
