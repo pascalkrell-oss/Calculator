@@ -28,6 +28,7 @@
     --src-header-bg: #0f141a;
     --src-header-panel: #0f141a;
     --src-sticky-offset: 90px;
+    --src-check-icon: none;
 }
 
 .src-reset-header { max-width: 1100px; margin: 0 auto 10px; text-align: right; font-family: "Rubik", system-ui, sans-serif; }
@@ -1531,6 +1532,25 @@
 .src-license-list li strong{
     font-weight: 800;
     color: #0f172a;
+}
+
+.src-license-list li{
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.src-license-list li::before{
+    content: "";
+    width: 16px;
+    height: 16px;
+    flex: 0 0 16px;
+    margin-top: 2px;
+    background-image: var(--src-check-icon);
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    opacity: .95;
 }
 
 .src-sidebar .src-license-sidebar .src-license-box {

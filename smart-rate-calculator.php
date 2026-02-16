@@ -60,7 +60,8 @@ function src_enqueue_assets_v7() {
     wp_localize_script('src-script', 'srcPluginData', array(
         'rates' => json_decode($saved_rates),
         'vdsExpected' => json_decode(src_get_default_json()),
-        'ajaxUrl' => admin_url('admin-ajax.php')
+        'ajaxUrl' => admin_url('admin-ajax.php'),
+        'checkIconUrl' => wp_get_attachment_url(407) ?: ''
     ));
 }
 add_action('wp_enqueue_scripts', 'src_enqueue_assets_v7');
