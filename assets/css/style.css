@@ -2608,16 +2608,15 @@
 }
 
 /* ==========================================================================
-   3. DRIVER.JS TUTORIAL FIX (Anti-Springen)
+   3. DRIVER.JS TUTORIAL FIX
    ========================================================================== */
 
+/* Wir lassen Driver.js die Positionierung (fixed/absolute) selbst übernehmen! */
 .driver-popover.src-modern-theme {
-    position: absolute !important; /* WICHTIG: Fixed entfernt, das verursachte den Sprung nach links! */
     z-index: 999999 !important;
-    margin-top: 15px !important;
 }
 
+/* Entfernt flackernde Übergänge bei Neupositionierung, falls das Layout sich anpasst */
 .driver-popover {
-    transition: none !important; /* Blockiert jegliches CSS-Flackern während der Berechnung */
-    animation: none !important;
+    transition: transform 0.2s ease, opacity 0.2s ease !important;
 }
