@@ -2309,3 +2309,30 @@
     color: #0f172a !important; /* Dunkle Schrift beim Hover */
     box-shadow: none !important;
 }
+
+/* Äußere Wrapper-Box bei Nutzungsrechte & Lizenzen endgültig auflösen */
+#src-calc-v6 #mod-ads .src-light-box-wrapper {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 0 20px 0 !important; /* Nur Abstand nach unten beibehalten */
+}
+
+/* Verhindern, dass Pseudo-Elemente (Gradients) oder Hover-Effekte die Box wieder sichtbar machen */
+#src-calc-v6 #mod-ads .src-light-box-wrapper::before,
+#src-calc-v6 #mod-ads .src-light-box-wrapper::after {
+    display: none !important;
+}
+
+#src-calc-v6 #mod-ads .src-light-box-wrapper:hover {
+    box-shadow: none !important;
+    border-color: transparent !important;
+    background: transparent !important;
+    transform: none !important;
+}
+
+/* Sicherstellen, dass die verbleibenden inneren Panels (Verbreitungsgebiet etc.) korrekt abschließen */
+#src-calc-v6 #mod-ads .src-rights-panel:last-child {
+    margin-bottom: 0 !important;
+}
