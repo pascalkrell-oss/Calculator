@@ -2564,40 +2564,40 @@
     padding-left: 18px;
     padding-bottom: var(--src-left-block-gap) !important;
     margin-bottom: var(--src-left-block-gap) !important;
-    border-bottom: 1px solid rgba(226, 232, 240, 0.85) !important;
+    border-bottom: none !important;
 }
 
 #src-calc-v6 .src-col-left .src-layout-block::before {
     content: "";
     position: absolute;
     left: 0;
-    top: 10px;
-    bottom: 10px;
+    top: 0;
+    bottom: 0;
     width: 4px;
-    border-radius: 10px;
-    background: linear-gradient(180deg, rgba(26,147,238,.55), rgba(0,102,179,.28));
+    border-radius: 12px;
+    background: linear-gradient(180deg, #0f141a 0%, #151c24 100%) !important;
     pointer-events: none;
 }
 
 #src-calc-v6 .src-col-left .src-layout-block:has(.src-top-grid)::before {
-    background: linear-gradient(180deg, rgba(26,147,238,.60), rgba(0,102,179,.30));
+    background: linear-gradient(180deg, #0f141a 0%, #151c24 100%) !important;
 }
 
 #src-calc-v6 .src-col-left .src-layout-block:has(.src-group-text)::before,
 #src-calc-v6 .src-col-left .src-layout-block:has(#src-group-text)::before {
-    background: linear-gradient(180deg, rgba(26,147,238,.50), rgba(0,102,179,.24));
+    background: linear-gradient(180deg, #0f141a 0%, #151c24 100%) !important;
 }
 
 #src-calc-v6 .src-col-left .src-layout-block:has(.src-license-settings-block)::before {
-    background: linear-gradient(180deg, rgba(26,147,238,.65), rgba(0,102,179,.32));
+    background: linear-gradient(180deg, #0f141a 0%, #151c24 100%) !important;
 }
 
 #src-calc-v6 .src-col-left .src-layout-block:has(.src-complexity-group)::before {
-    background: linear-gradient(180deg, rgba(26,147,238,.54), rgba(0,102,179,.26));
+    background: linear-gradient(180deg, #0f141a 0%, #151c24 100%) !important;
 }
 
 #src-calc-v6 .src-col-left .src-layout-block:has(.src-options)::before {
-    background: linear-gradient(180deg, rgba(26,147,238,.48), rgba(0,102,179,.22));
+    background: linear-gradient(180deg, #0f141a 0%, #151c24 100%) !important;
 }
 
 /* Der allerletzte Block bekommt logischerweise keinen Strich nach unten */
@@ -2668,7 +2668,13 @@
 
 #src-calc-v6 .src-col-left .src-rights-card .src-box-header,
 #src-calc-v6 .src-col-left .src-license-settings-block .src-box-header {
-    margin: 0 0 16px 0 !important;
+    margin: 0 0 12px 0 !important;
+}
+
+#src-calc-v6 .src-col-left .src-license-settings-block .src-license-settings-title,
+#src-calc-v6 .src-col-left .src-license-settings-block .src-section-title,
+#src-calc-v6 .src-col-left .src-license-settings-block h2 {
+    margin-bottom: 12px !important;
 }
 
 #src-calc-v6 .src-col-left .src-slide-wrap:not(.open) {
@@ -2695,9 +2701,63 @@
 
     #src-calc-v6 .src-col-left .src-layout-block::before {
         width: 3px;
-        top: 8px;
-        bottom: 8px;
+        top: 0;
+        bottom: 0;
     }
+}
+
+#src-calc-v6 .src-col-right #src-license-section,
+#src-calc-v6 .src-col-right .src-license-sidebar {
+    border-radius: 16px !important;
+    overflow: hidden;
+}
+
+#src-calc-v6 .src-col-right #src-license-section .src-license-sidebar__head,
+#src-calc-v6 .src-col-right .src-license-sidebar .src-license-sidebar__head {
+    border-top-left-radius: 16px !important;
+    border-top-right-radius: 16px !important;
+}
+
+#src-calc-v6 .src-package-action .src-mini-btn,
+#src-calc-v6 button[data-export-package],
+#src-calc-v6 #src-export-offer {
+    padding: 10px 16px !important;
+    font-size: 14px !important;
+    line-height: 1.2 !important;
+    background: #1a93ee !important;
+    color: #fff !important;
+    border: 1px solid transparent !important;
+    border-radius: 14px !important;
+}
+
+#src-calc-v6 .src-package-action .src-mini-btn:hover,
+#src-calc-v6 button[data-export-package]:hover,
+#src-calc-v6 #src-export-offer:hover {
+    background: #0066b3 !important;
+    color: #fff !important;
+}
+
+#src-calc-v6 .src-footer-actions .src-note-text {
+    font-size: 0 !important;
+    text-align: center !important;
+}
+
+#src-calc-v6 .src-footer-actions .src-note-text .src-vds-link {
+    display: block !important;
+    margin: 10px 0 0 !important;
+    text-align: center !important;
+    font-size: 13px !important;
+}
+
+#src-calc-v6 .src-slider-container .src-range-dots {
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+}
+
+#src-calc-v6 .src-slider-container .src-range-dot {
+    position: relative;
+    top: 50%;
+    transform: translateY(-50%);
 }
 
 /* ==========================================================================
