@@ -2737,8 +2737,18 @@
 }
 
 #src-calc-v6 .src-footer-actions .src-note-text .src-vds-link {
-    font-size: 13px !important;
+    font-size: 12.5px !important;
     color: #0f141a !important;
+}
+
+#src-calc-v6 .src-footer-actions .src-btn,
+#src-calc-v6 .src-footer-actions .src-save-btn,
+#src-calc-v6 #src-save-offer,
+#src-calc-v6 .src-footer-actions .src-btn:hover,
+#src-calc-v6 .src-footer-actions .src-save-btn:hover,
+#src-calc-v6 #src-save-offer:hover {
+    box-shadow: none !important;
+    filter: none !important;
 }
 
 #src-calc-v6 .src-vds-link {
@@ -2746,8 +2756,14 @@
     width: auto !important;
     max-width: max-content !important;
     color: #0f141a !important;
+    font-size: 12.5px !important;
     text-decoration: none !important;
     border-bottom: 1px dashed rgba(15,20,26,.55) !important;
+}
+
+#src-calc-v6 .src-vds-link::before {
+    content: "→ ";
+    margin-right: 2px;
 }
 
 #src-calc-v6 .src-vds-link:hover {
