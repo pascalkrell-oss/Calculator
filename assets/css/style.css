@@ -2571,11 +2571,14 @@
     content: "";
     position: absolute;
     left: 0;
-    top: 0;
-    bottom: 0;
-    width: 4px;
-    border-radius: 12px;
-    background: linear-gradient(180deg, #0f141a 0%, #151c24 100%) !important;
+    top: 8px !important;
+    bottom: 8px !important;
+    width: 3px !important;
+    border-radius: 10px !important;
+    background: linear-gradient(180deg,
+    rgba(15,20,26,.80) 0%,
+    rgba(21,28,36,.55) 100%
+  ) !important;
     pointer-events: none;
 }
 
@@ -2700,9 +2703,9 @@
     }
 
     #src-calc-v6 .src-col-left .src-layout-block::before {
-        width: 3px;
-        top: 0;
-        bottom: 0;
+        width: 3px !important;
+        top: 8px !important;
+        bottom: 8px !important;
     }
 }
 
@@ -2718,35 +2721,37 @@
     border-top-right-radius: 16px !important;
 }
 
-#src-calc-v6 .src-package-action .src-mini-btn,
-#src-calc-v6 button[data-export-package],
-#src-calc-v6 #src-export-offer {
+#src-calc-v6 #src-packages-list .src-mini-btn[data-export-package] {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
     padding: 10px 16px !important;
     font-size: 14px !important;
-    line-height: 1.2 !important;
+    line-height: 1.1 !important;
+    border-radius: 999px !important;
     background: #1a93ee !important;
     color: #fff !important;
     border: 1px solid transparent !important;
-    border-radius: 14px !important;
+    min-height: 38px !important;
+    width: auto !important;
 }
 
-#src-calc-v6 .src-package-action .src-mini-btn:hover,
-#src-calc-v6 button[data-export-package]:hover,
-#src-calc-v6 #src-export-offer:hover {
+#src-calc-v6 #src-packages-list .src-mini-btn[data-export-package]:hover {
     background: #0066b3 !important;
-    color: #fff !important;
 }
 
-#src-calc-v6 .src-footer-actions .src-note-text {
-    font-size: 0 !important;
-    text-align: center !important;
+#src-calc-v6 .src-note-text { text-align: center !important; }
+
+#src-calc-v6 .src-vds-link {
+    display: inline-block !important;
+    width: auto !important;
+    max-width: max-content !important;
+    text-decoration: none !important;
+    border-bottom: 1px dashed rgba(26,147,238,.45) !important;
 }
 
-#src-calc-v6 .src-footer-actions .src-note-text .src-vds-link {
-    display: block !important;
-    margin: 10px 0 0 !important;
-    text-align: center !important;
-    font-size: 13px !important;
+#src-calc-v6 .src-vds-link:hover {
+    border-bottom-color: rgba(26,147,238,.85) !important;
 }
 
 #src-calc-v6 .src-slider-container .src-range-dots {
