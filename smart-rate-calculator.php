@@ -296,7 +296,7 @@ function src_shortcode_output_v7() {
                 <div class="src-rights-inner">
                     <div id="mod-ads" class="src-slide-wrap">
                         <div class="src-light-box-wrapper">
-                            <div id="src-pos-type-wrap" class="src-slide-wrap" style="margin-bottom:15px;">
+                            <div id="src-pos-type-wrap" class="src-slide-wrap">
                                 <div class="src-section-title"><span class="dashicons dashicons-admin-site"></span> POS Typ</div>
                                 <select id="src-pos-type" class="src-select" onchange="srcCalc()">
                                     <option value="pos_spot">POS Spot (mit Bild)</option>
