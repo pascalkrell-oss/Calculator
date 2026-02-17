@@ -1678,10 +1678,48 @@ function srcTutorialScrollAnchorTo(el) {
 
     const rect = node.getBoundingClientRect();
     const offset = window.__srcTutorialHeaderOffset || 0;
-    const gap = 16;
+    const gap = 18;
     const targetTop = Math.max(0, window.scrollY + rect.top - offset - gap);
 
     window.scrollTo({ top: targetTop, behavior: 'auto' });
+}
+
+function srcTutorialHideTopMiniBars() {
+    const hidden = [];
+    const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
+    document.querySelectorAll('body *').forEach((node) => {
+        if(!node || node.dataset.srcTutorialHidden === '1') return;
+        const styles = window.getComputedStyle(node);
+        if(styles.position !== 'fixed' || styles.display === 'none' || styles.visibility === 'hidden') return;
+
+        const rect = node.getBoundingClientRect();
+        if(rect.height <= 0 || rect.height > 12) return;
+        if(rect.top < -2 || rect.top > 6) return;
+        if(viewportWidth > 0 && rect.width < viewportWidth * 0.7) return;
+
+        const prevInlineStyle = node.getAttribute('style') || '';
+        node.dataset.srcTutorialHidden = '1';
+        node.dataset.srcTutorialPrevStyle = prevInlineStyle;
+        node.style.setProperty('display', 'none', 'important');
+        hidden.push(node);
+    });
+    window.__srcTutorialHiddenTopBars = hidden;
+}
+
+function srcTutorialRestoreTopMiniBars() {
+    const hidden = Array.isArray(window.__srcTutorialHiddenTopBars) ? window.__srcTutorialHiddenTopBars : [];
+    hidden.forEach((node) => {
+        if(!node || node.dataset.srcTutorialHidden !== '1') return;
+        const prevInlineStyle = node.dataset.srcTutorialPrevStyle || '';
+        if(prevInlineStyle) {
+            node.setAttribute('style', prevInlineStyle);
+        } else {
+            node.removeAttribute('style');
+        }
+        delete node.dataset.srcTutorialPrevStyle;
+        delete node.dataset.srcTutorialHidden;
+    });
+    window.__srcTutorialHiddenTopBars = [];
 }
 
 window.srcStartTutorial = function() {
@@ -1694,6 +1732,8 @@ window.srcStartTutorial = function() {
 
     srcTutorialMeasureHeaderOffset();
     document.body.classList.add('src-tutorial-active');
+    document.documentElement.classList.add('src-tutorial-mode');
+    srcTutorialHideTopMiniBars();
 
     // 2. Warten, bis das UI 100% gerendert ist (Manueller scrollTo() entfernt, da Driver.js das übernehmen soll)
     setTimeout(() => {
@@ -1701,8 +1741,8 @@ window.srcStartTutorial = function() {
         const driverObj = driver({
             showProgress: true,
             progressText: '{{current}} von {{total}}',
-            animate: true,
-            smoothScroll: false, // Deaktiviert natives Driver-Scrollen, da wir den Hook nutzen
+            animate: false,
+            smoothScroll: false,
             opacity: 0.65,
             popoverOffset: 15,
             nextBtnText: 'Weiter &rarr;',
@@ -1711,12 +1751,25 @@ window.srcStartTutorial = function() {
             popoverClass: 'src-modern-theme',
             onDestroyed: () => {
                 document.body.classList.remove('src-tutorial-active');
+                document.documentElement.classList.remove('src-tutorial-mode');
+                srcTutorialRestoreTopMiniBars();
                 srcReset();
             },
 
-            // FIX: Element immer vertikal zentrieren, damit unten garantiert Platz für das Popup ('side: bottom') ist.
             onHighlightStarted: (element) => {
+                const targetNode = element && element.node ? element.node : element;
+                const details = targetNode && typeof targetNode.closest === 'function' ? targetNode.closest('details') : null;
+                if(details && !details.open) {
+                    details.open = true;
+                }
                 srcTutorialScrollAnchorTo(element);
+            },
+
+            onHighlighted: (element, step, opts) => {
+                if(opts && opts.driver && typeof opts.driver.refresh === 'function') {
+                    opts.driver.refresh();
+                    setTimeout(() => opts.driver.refresh(), 30);
+                }
             },
 
             steps: [

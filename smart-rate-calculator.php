@@ -285,9 +285,8 @@ function src_shortcode_output_v7() {
                     <input type="number" id="src-phone-count" class="src-input-text" value="1" min="1" oninput="srcCalc()">
                     <div style="font-size:11px; color:#64748b; margin-top:5px;">Bis zu 3 Module sind in der Pauschale enthalten. Jedes weitere Modul kostet extra.</div>
                 </div>
-                </div>
             </div>
-            </div>
+        </div>
 
             <div class="src-layout-block">
                 <div class="src-left-section src-rights-card src-collapse src-settings-block src-license-settings-block">
