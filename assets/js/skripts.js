@@ -1786,6 +1786,16 @@ window.srcStartTutorial = function() {
     const advancedAccordion = document.getElementById('src-advanced-accordion');
     if(advancedAccordion) advancedAccordion.open = true;
 
+    const licSec = document.getElementById('src-license-section');
+    const pdSec = document.getElementById('src-pricedetails-section');
+    const ntSec = document.getElementById('src-notes-tips-section');
+    const pkSec = document.getElementById('src-packages-section');
+    const infoSec = document.querySelector('.src-info-section');
+
+    [licSec, pdSec, ntSec, pkSec, infoSec].forEach((el) => {
+        if(el) el.classList.add('is-open');
+    });
+
     srcTutorialMeasureHeaderOffset();
     document.body.classList.add('src-tutorial-active');
     document.documentElement.classList.add('src-tutorial-mode');
@@ -1836,7 +1846,13 @@ window.srcStartTutorial = function() {
                 { element: '.src-rights-card', popover: { title: '5. Nutzungsrechte & Lizenzen', description: 'Definiere genau, wo und wie lange die Aufnahme genutzt werden darf.', side: 'bottom', align: 'center' } },
                 { element: '#src-complexity-group', popover: { title: '6. Produktion & Aufwand', description: 'Anforderungen wie Lipsync oder spezielle Stile fließen hier ein.', side: 'bottom', align: 'center' } },
                 { element: '#src-global-settings', popover: { title: '7. Optionen', description: 'Füge Studiokosten oder Express-Lieferungen hinzu.', side: 'bottom', align: 'center' } },
-                { element: '.src-result-card', popover: { title: '8. Ergebnis & Kalkulation', description: 'Hier siehst Du live Deine kalkulierte Gage.', side: 'bottom', align: 'center' } }
+                { element: '.src-result-card', popover: { title: '8. Ergebnis & Kalkulation', description: 'Hier siehst Du live Deine kalkulierte Gage.', side: 'bottom', align: 'center' } },
+                { element: '#src-license-section .src-sidebar-head, #src-license-section .src-sidebar-title', popover: { title: '9. Nutzungsrechte (Sidebar)', description: 'Hier siehst Du Deine gewählten Nutzungsrechte kompakt zusammengefasst.', side: 'bottom', align: 'center' } },
+                { element: '#src-pricedetails-section .src-sidebar-title, #src-pricedetails-section', popover: { title: '10. Preis-Details', description: 'Transparenter Rechenweg: so setzt sich die Gage zusammen.', side: 'bottom', align: 'center' } },
+                { element: '#src-notes-tips-section .src-sidebar-title, #src-notes-tips-section', popover: { title: '11. Hinweise & Tipps', description: 'Kontext & Empfehlungen passend zu Deinen Eingaben.', side: 'bottom', align: 'center' } },
+                { element: '#src-packages-section .src-sidebar-title, #src-packages-section', popover: { title: '12. Pakete', description: 'Erzeuge Paketvorschläge und exportiere sie als Angebot.', side: 'bottom', align: 'center' } },
+                { element: '.src-info-section .src-sidebar-title, .src-info-section', popover: { title: '13. Wissenswertes', description: 'Kurze Erklärungen zu Kalkulationslogik, Rechten & typischen Stolperfallen.', side: 'bottom', align: 'center' } },
+                { element: '.src-footer-actions .src-btn, button[onclick="srcOpenExportModal()"]', popover: { title: '14. Angebot speichern', description: 'Exportiere Dein Angebot als PDF – inkl. Deiner Eingaben & Zusammenfassung.', side: 'top', align: 'center' } }
             ]
         });
         driverObj.drive();
