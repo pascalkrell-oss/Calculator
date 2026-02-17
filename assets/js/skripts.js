@@ -1716,6 +1716,41 @@ function srcTutorialResolveBlock(node) {
         || node;
 }
 
+function srcTutorialForcePopoverBelow() {
+    const popover = document.querySelector('.driver-popover');
+    const anchor = window.__srcTutorialAnchorEl;
+    if(!popover || !anchor || typeof anchor.getBoundingClientRect !== 'function') return;
+
+    const GAP = 14;
+    const pad = 12;
+    const setPopoverPosition = () => {
+        const rect = anchor.getBoundingClientRect();
+        const desiredTop = rect.bottom + GAP;
+
+        popover.style.position = 'fixed';
+        popover.style.top = desiredTop + 'px';
+        popover.style.left = (rect.left + (rect.width / 2)) + 'px';
+        popover.style.transform = 'translateX(-50%)';
+        popover.style.margin = '0';
+        popover.style.zIndex = '9999999';
+
+        const popW = popover.offsetWidth;
+        let left = rect.left + (rect.width / 2);
+        left = Math.max(pad + (popW / 2), Math.min(window.innerWidth - pad - (popW / 2), left));
+        popover.style.left = left + 'px';
+
+        return { rect, desiredTop };
+    };
+
+    const { desiredTop } = setPopoverPosition();
+    const popH = popover.offsetHeight;
+    const overflow = (desiredTop + popH + 12) - window.innerHeight;
+    if(overflow > 0) {
+        window.scrollBy({ top: overflow, behavior: 'auto' });
+        setPopoverPosition();
+    }
+}
+
 function srcTutorialHideTopMiniBars() {
     const hidden = [];
     const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
@@ -1775,6 +1810,9 @@ window.srcStartTutorial = function() {
     document.body.classList.add('src-tutorial-active');
     document.documentElement.classList.add('src-tutorial-mode');
     srcTutorialHideTopMiniBars();
+    window.__srcTutorialReposHandler = () => srcTutorialForcePopoverBelow();
+    window.addEventListener('scroll', window.__srcTutorialReposHandler, true);
+    window.addEventListener('resize', window.__srcTutorialReposHandler);
 
     // 2. Warten, bis das UI 100% gerendert ist (Manueller scrollTo() entfernt, da Driver.js das übernehmen soll)
     setTimeout(() => {
@@ -1793,9 +1831,20 @@ window.srcStartTutorial = function() {
             onDestroyed: () => {
                 document.body.classList.remove('src-tutorial-active');
                 document.documentElement.classList.remove('src-tutorial-mode');
+                if(window.__srcTutorialReposHandler) {
+                    window.removeEventListener('scroll', window.__srcTutorialReposHandler, true);
+                    window.removeEventListener('resize', window.__srcTutorialReposHandler);
+                    window.__srcTutorialReposHandler = null;
+                }
+                window.__srcTutorialAnchorEl = null;
                 srcTutorialRestoreTopMiniBars();
                 srcReset();
                 window.scrollTo({ top: 0, behavior: 'smooth' });
+            },
+
+            onPopoverRender: () => {
+                setTimeout(() => srcTutorialForcePopoverBelow(), 0);
+                requestAnimationFrame(() => srcTutorialForcePopoverBelow());
             },
 
             onHighlightStarted: (element, step) => {
@@ -1805,6 +1854,7 @@ window.srcStartTutorial = function() {
                     details.open = true;
                 }
                 const block = srcTutorialResolveBlock(targetNode);
+                window.__srcTutorialAnchorEl = block;
                 srcTutorialPinToTop(block);
             },
 
@@ -1819,12 +1869,18 @@ window.srcStartTutorial = function() {
                 }
                 if(opts && opts.driver && typeof opts.driver.refresh === 'function') {
                     opts.driver.refresh();
+                    setTimeout(() => srcTutorialForcePopoverBelow(), 0);
+                    setTimeout(() => srcTutorialForcePopoverBelow(), 50);
                     setTimeout(() => {
                         opts.driver.refresh();
                         const n = element && element.node ? element.node : element;
                         const block = srcTutorialResolveBlock(n);
+                        window.__srcTutorialAnchorEl = block;
                         srcTutorialPinToTop(block);
-                        setTimeout(() => opts.driver.refresh(), 20);
+                        setTimeout(() => {
+                            opts.driver.refresh();
+                            srcTutorialForcePopoverBelow();
+                        }, 20);
                     }, 30);
                 }
             },
