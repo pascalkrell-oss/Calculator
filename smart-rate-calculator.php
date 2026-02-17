@@ -646,7 +646,7 @@ function src_shortcode_output_v7() {
                     <div class="src-sidebar-section">
                         <div class="src-sidebar-title"><span class="src-title-main"><span class="src-title-icon" aria-hidden="true"><span class="dashicons dashicons-calculator"></span></span><span class="src-title-text">Kalkulation</span></span><span class="src-live-badge">Live-Rechnung</span></div>
                         <div class="src-result-card">
-                            <div class="src-price-label">Kalkulierte Gage (Netto)</div>
+                            <div class="src-price-label">Empfohlene Gage (Netto)</div>
                             <div class="src-price-main-box">
                                 <div class="src-price-main">
                                     <div class="src-amount-anim">
@@ -914,51 +914,72 @@ function src_shortcode_output_v7() {
                 <button class="src-modal__close" type="button" aria-label="Schließen" data-guide-close>×</button>
             </div>
             <div class="src-modal__body src-guide-body">
-                <div class="src-guide-intro">
-                    Willkommen im Smart Rate Calculator! Die Kalkulation von Sprechergagen basiert nicht auf Stundenlöhnen, sondern auf dem Prinzip der <strong>Nutzungsrechte</strong>. Hier erklären wir Dir die wichtigsten Konzepte.
-                </div>
+    
+    <div class="src-guide-toc">
+        <div class="src-guide-toc-title">Inhalt</div>
+        <ul>
+            <li><a href="#guide-1">1. Das Verwertungsprinzip</a></li>
+            <li><a href="#guide-2">2. Projektarten & Layout</a></li>
+            <li><a href="#guide-3">3. Skriptlänge & Module</a></li>
+            <li><a href="#guide-4">4. Verbreitungsgebiet & Lokal</a></li>
+            <li><a href="#guide-5">5. Laufzeiten & Buyouts</a></li>
+            <li><a href="#guide-6">6. Zusatzlizenzen & Cut-downs</a></li>
+            <li><a href="#guide-7">7. Optionen, Aufwand & Rabatte</a></li>
+        </ul>
+    </div>
 
-                <h3 class="src-guide-h3">1. Verwertungsgesellschaft & Grundprinzip</h3>
-                <p>Du bezahlst für die Reichweite und die Zeit, in der Deine Marke die Stimme nutzt. Ein TV-Spot, der ein Jahr lang national läuft, hat einen deutlich höheren Werbewert als ein internes Schulungsvideo. Daher steigen die Kosten mit dem Medium, der Verbreitung und der Laufzeit.</p>
+    <div class="src-guide-intro">
+        Willkommen im Leitfaden zur Gagenkalkulation! Die Honorierung von professionellen Sprecherleistungen basiert nicht auf Stundenlöhnen, sondern auf dem Prinzip der <strong>Nutzungsrechte</strong>. Diese Anleitung beantwortet alle Fragen zur korrekten Einstellung und Nutzung des Systems.
+    </div>
 
-                <div class="src-guide-tip">
-                    <strong>💡 Experten-Tipp: Layout & Pitch</strong><br>
-                    Benötigst Du die Aufnahme nur, um intern eine Idee zu präsentieren (Pitch), wähle die Option "Nur Layout". Hierfür wird eine stark reduzierte Pauschale berechnet, da keine Veröffentlichung stattfindet.
-                </div>
+    <h3 id="guide-1" class="src-guide-h3">1. Das Verwertungsprinzip</h3>
+    <p>Man bezahlt primär für die Reichweite und die Zeit, in der eine Marke die Stimme nutzt. Ein Werbespot, der ein Jahr lang national im TV läuft, hat einen deutlich höheren medialen Werbewert als ein reines internes Schulungsvideo. Daher steigen die Kosten exponentiell mit dem Medium, der Verbreitung (Gebiet) und der Laufzeit.</p>
 
-                <h3 class="src-guide-h3">2. Skriptlänge & Timing</h3>
-                <p>Die Länge Deines Textes ist essenziell für die Berechnung, besonders bei Corporate- oder E-Learning-Projekten. Das System schätzt die Dauer automatisch, wenn Du ein Skript einfügst.</p>
+    <h3 id="guide-2" class="src-guide-h3">2. Projektarten & Layout</h3>
+    <p>Die Projektart bestimmt die Grundlage der Berechnung. Paid Media (TV, Funk, Online Ads) basiert auf Reichweiten-Faktoren, während Unpaid Media (Imagefilme, E-Learning) meist nach Textlänge abgerechnet wird.</p>
+    <div class="src-guide-tip">
+        <strong>💡 Layout & Pitch (Sonderfall)</strong><br>
+        Wird die Aufnahme lediglich genutzt, um intern eine Idee zu präsentieren oder in einem Pitchbild zu fungieren, aktiviere unter Optionen die Funktion <em>"Nur Layout / Pitch"</em>. Hierfür wird eine stark reduzierte Pauschale ohne Nutzungsrechte berechnet, da keine Veröffentlichung stattfindet.
+    </div>
 
-                <div class="src-guide-tip">
-                    <strong>⏱️ Faustregel zur Textlänge</strong><br>
-                    Kalkuliere pro gesprochener Minute mit etwa 900 Zeichen (inklusive Leerzeichen). Schreibe Zahlen und Abkürzungen (z. B. "zwei Millionen" statt "2 Mio.") im Text aus, da diese beim Sprechen mehr Zeit in Anspruch nehmen.
-                </div>
+    <h3 id="guide-3" class="src-guide-h3">3. Skriptlänge & Module</h3>
+    <p>Die Länge des Textes ist besonders bei Corporate-, Podcast- oder E-Learning-Projekten essenziell. Das System schätzt die Dauer automatisch, sobald ein Skript eingefügt wird.</p>
+    <div class="src-guide-tip">
+        <strong>⏱️ Faustregel & Telefonansagen</strong><br>
+        Kalkuliere pro Minute mit etwa 900 Zeichen (inkl. Leerzeichen). Schreibe Zahlen aus (z.B. "zwei Millionen" statt "2 Mio."). Bei <em>Telefonansagen/IVR</em> wird nicht nach Länge, sondern nach Modulen (Anzahl der Ansagen) abgerechnet. Bis zu 3 Module sind in der Grundpauschale enthalten, danach greift ein Staffelpreis.
+    </div>
 
-                <h3 class="src-guide-h3">3. Buyouts & Laufzeiten</h3>
-                <p>Die Standard-Lizenz für Werbespots beträgt meist 1 Jahr. Wenn Du den Spot länger nutzen möchtest, kannst Du die Laufzeit verlängern oder einen "Buyout" erwerben.</p>
+    <h3 id="guide-4" class="src-guide-h3">4. Verbreitungsgebiet & Lokal</h3>
+    <p>Das Gebiet definiert die Ausstrahlungsgrenzen (Regional, National, DACH, Weltweit) und ist für Werbespots hochrelevant.</p>
+    <div class="src-guide-tip">
+        <strong>📍 Kleinräumiges Segment (Lokal / KMU)</strong><br>
+        Für stark begrenzte Nutzungen existieren Sondertarife, die nicht über die regulären Multiplikatoren laufen. Aktiviere in den Optionen <em>"Kleinräumiges Segment"</em>. Dies gilt z.B. für "Funkspot (Lokal)" (bis 1 Jahr im Lokalsender) oder "Online Video (Kleinräumig)" (ausschließlich KMU, Media-Budget max. 5.000 €, max. 3 Monate).
+    </div>
 
-                <div class="src-guide-tip">
-                    <strong>♾️ Unlimited & Exklusivität</strong><br>
-                    Möchtest Du eine Aufnahme zeitlich unbegrenzt nutzen, vervielfacht sich das Grundhonorar (häufig Faktor 3 bis 4). Bedenke: Durch eine dauerhafte oder sehr prominente Nutzung blockierst Du die Stimme unter Umständen für Konkurrenzprodukte (Konkurrenzschutz), was den Wert der Aufnahme steigert.
-                </div>
+    <h3 id="guide-5" class="src-guide-h3">5. Laufzeiten & Buyouts</h3>
+    <p>Die Standard-Lizenz für Werbespots beträgt oft 1 Jahr. Unter dem Reiter "Erweitert" lassen sich komplexere Buyout-Modelle abbilden:</p>
+    <ul>
+        <li><strong>Buyout (einmalig):</strong> Ein Aufschlag von 25% auf die Endsumme für unkomplizierte, pauschale Abgeltungen.</li>
+        <li><strong>Staffel (Perioden):</strong> Oft gewählt für langfristige Kampagnen, bei denen jede weitere Nutzungsperiode mit einem vergünstigten Aufschlag (z.B. +12%) berechnet wird.</li>
+        <li><strong>Unlimited:</strong> Eine zeitlich unbegrenzte Nutzung im Paid-Bereich vervielfacht das Grundhonorar enorm (Faktor 4). Durch eine dauerhafte Nutzung wird die Stimme potenziell für Konkurrenzprodukte blockiert.</li>
+    </ul>
 
-                <h3 class="src-guide-h3">4. Zusätzliche Verwertungen (Cut-downs)</h3>
-                <p>Oft wird aus einem 30-sekündigen Hauptspot noch eine 15-sekündige Kurzversion (Reminder) geschnitten.</p>
+    <h3 id="guide-6" class="src-guide-h3">6. Zusatzlizenzen & Cut-downs</h3>
+    <p>Zusätzliche Medienkanäle oder Kurzversionen können dem Projekt flexibel hinzugefügt werden.</p>
+    <div class="src-guide-tip">
+        <strong>✂️ Cut-downs, Tag-ons & Pakete</strong><br>
+        Wird aus einem 30-sekündigen Hauptspot noch eine 15-sekündige Kurzversion geschnitten, berechnet man dies als Cut-down (50 % der Gage). Nutze zudem die vorgefertigten Pakete (z.B. <em>Online Audio</em> für Funkspots oder <em>ATV/CTV</em> für Online-Spots), um typische Cross-Media-Kampagnen mit dem branchenüblichen Aufschlag (+60%) abzubilden.
+    </div>
 
-                <div class="src-guide-tip">
-                    <strong>✂️ Cut-downs & Tag-ons</strong><br>
-                    Kurzversionen oder Reminder eines Hauptspots werden üblicherweise mit 50 % des regulären Honorars berechnet. Wähle dafür im Rechner einfach die Option "Cut-down" aus.
-                </div>
-
-                <h3 class="src-guide-h3">5. Studio & Technik</h3>
-                <p>Die reine Sprechergage entlohnt die kreative Leistung und die Rechte. Wenn der Sprecher die Aufnahme im eigenen Studio produziert, schneidet und säubert, fällt eine Technik-Pauschale (Studiokosten) an, die Du unter "Optionen" zuschalten kannst.</p>
-
-                <h3 class="src-guide-h3">6. Kleinräumiges Segment (Lokal / KMU)</h3>
-                <p>Für stark eingegrenzte Nutzungen gibt es im VDS Sondertarife, die nicht über die regulären Gebiets- und Laufzeitfaktoren berechnet werden:</p>
-                <div class="src-guide-tip">
-                    <strong>📍 Lokalradio & Online Paid (KMU)</strong><br>
-                    Ein "Funkspot (Lokal)" deckt die Sender eines lokalen Gebiets für bis zu 1 Jahr ab. "Online Video (Kleinräumig)" gilt exklusiv für kleine Unternehmen (KMU) mit einem Media-Budget unter 5.000 € für maximal 3 Monate. Aktiviere hierfür einfach den Schalter "Kleinräumiges Segment" unter "Optionen".
-                </div>
+    <h3 id="guide-7" class="src-guide-h3">7. Optionen, Aufwand & Rabatte</h3>
+    <p>Die reine Gage entlohnt die kreative Sprecherleistung. Weitere Projektumstände können die Summe final anpassen:</p>
+    <ul>
+        <li><strong>Produktion & Aufwand:</strong> Spezielles Lipsync, sehr technisches Vokabular oder mehrere gewollte Sprachversionen fließen hier als Komplexitätsfaktor ein.</li>
+        <li><strong>Studiokosten:</strong> Produziert, schneidet und säubert der Sprecher das Audio im eigenen Studio (Remote), greift die Technik-Pauschale.</li>
+        <li><strong>Express & Rabatte:</strong> Für Lieferungen innerhalb von 4h oder 24h berechnet das System branchenübliche Express-Aufschläge. Rabatte können prozentual vom Endpreis inkl. Begründung (z.B. Neukunde, Non-Profit) abgezogen werden.</li>
+    </ul>
+    <br>
+</div>
             </div>
         </div>
     </div>

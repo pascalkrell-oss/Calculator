@@ -2705,3 +2705,96 @@
     top: 50%;
     transform: translateY(-50%);
 }
+
+
+/* --- 1. Moderne Export Links in den Paket-Karten --- */
+.src-package-export-link {
+    background: transparent !important;
+    border: none !important;
+    color: var(--src-primary) !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    padding: 6px 0 !important;
+    transition: color 0.2s ease !important;
+    box-shadow: none !important;
+}
+.src-package-export-link:hover {
+    color: var(--src-primary-hover) !important;
+}
+.src-package-export-link .dashicons {
+    font-size: 16px !important;
+    width: 16px !important;
+    height: 16px !important;
+    transition: transform 0.25s ease !important;
+}
+.src-package-export-link:hover .dashicons {
+    transform: translateX(4px) !important;
+}
+
+/* --- 2. Anleitung Modal Styling & Inhaltsverzeichnis --- */
+.src-guide-body {
+    scroll-behavior: smooth; /* Ermöglicht weiches Scrollen beim Klick aufs TOC */
+}
+.src-guide-toc {
+    float: right;
+    width: 260px;
+    margin: 0 0 20px 24px;
+    background: #ffffff;
+    border: 1px solid var(--src-border-light);
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
+}
+.src-guide-toc-title {
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: #0f172a;
+    margin-bottom: 12px;
+    letter-spacing: 0.05em;
+}
+.src-guide-toc ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 8px;
+}
+.src-guide-toc a {
+    font-size: 13px;
+    color: #475569;
+    text-decoration: none;
+    transition: color 0.2s;
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    line-height: 1.4;
+}
+.src-guide-toc a::before {
+    content: "•";
+    color: var(--src-primary);
+    font-weight: bold;
+}
+.src-guide-toc a:hover {
+    color: var(--src-primary);
+}
+.src-guide-h3 {
+    clear: both; /* Verhindert, dass Text neben das TOC rutscht, wenn es dort nicht soll */
+    margin: 60px 0 16px 0 !important; /* Deutlich mehr Abstand nach oben */
+}
+.src-guide-h3:first-of-type {
+    margin-top: 25px !important;
+}
+
+/* Mobile Anpassung für das Inhaltsverzeichnis */
+@media (max-width: 768px) {
+    .src-guide-toc {
+        float: none;
+        width: 100%;
+        margin: 20px 0;
+    }
+}
