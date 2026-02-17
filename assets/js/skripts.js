@@ -498,7 +498,7 @@ const srcGetStateFromUI = function() {
         packageAtv: document.getElementById('src-pkg-atv') ? document.getElementById('src-pkg-atv').checked : false,
         licenseSocial: document.getElementById('src-lic-social') ? document.getElementById('src-lic-social').checked : false,
         licenseEvent: document.getElementById('src-lic-event') ? document.getElementById('src-lic-event').checked : false,
-        licenseInternal: document.getElementById('src-lic-internal') ? document.getElementById('src-lic-internal').checked : false,
+        licenseInternal: srcProjectSupportsInternalUse(genre) && (document.getElementById('src-lic-internal') ? document.getElementById('src-lic-internal').checked : false),
         cutdown: document.getElementById('src-cutdown') ? document.getElementById('src-cutdown').checked : false,
         phoneCount: parseInt(document.getElementById('src-phone-count').value, 10) || 1,
         minutes,
@@ -763,23 +763,29 @@ const srcProjectSupportsInternalUse = function(projectKey) {
     return Number.isFinite(value);
 }
 
+const srcGetInternalUseToggle = function() {
+    return document.querySelector('#src-lic-internal');
+}
+
+const srcGetInternalUseRow = function(toggleEl) {
+    if(!toggleEl) return null;
+    return toggleEl.closest('.src-option-row')
+        || toggleEl.closest('.src-checkbox-row')
+        || toggleEl.closest('.src-switch-row')
+        || toggleEl.closest('label')?.parentElement
+        || toggleEl.parentElement;
+}
+
 const srcHasPositiveAddonAmount = function(extraRates) {
     if(!Array.isArray(extraRates) || extraRates.length < 3) return false;
     return extraRates.some(value => Number(value) > 0);
 }
 
 const srcUpdateInternalUseToggleAvailability = function(projectKey) {
-    const toggle = document.getElementById('src-lic-internal');
+    const toggle = srcGetInternalUseToggle();
     if(!toggle) return { supported: false, wasReset: false };
-    const row = toggle.closest('.src-switch-row');
+    const row = srcGetInternalUseRow(toggle);
     const supportsInternal = srcProjectSupportsInternalUse(projectKey);
-    let hint = row ? row.querySelector('.src-internal-use-hint') : null;
-    if(!hint && row) {
-        hint = document.createElement('small');
-        hint.className = 'src-internal-use-hint';
-        hint.textContent = 'Für diesen Projekttyp nicht definiert';
-        row.appendChild(hint);
-    }
 
     let wasReset = false;
     if(!supportsInternal) {
@@ -788,15 +794,9 @@ const srcUpdateInternalUseToggleAvailability = function(projectKey) {
             srcSetOptionRowState(toggle);
             wasReset = true;
         }
-        toggle.disabled = true;
-        toggle.setAttribute('title', 'Für diesen Projekttyp nicht definiert');
-        if(row) row.classList.add('is-disabled');
-        if(hint) hint.style.display = '';
+        if(row) row.style.display = 'none';
     } else {
-        toggle.disabled = false;
-        toggle.removeAttribute('title');
-        if(row) row.classList.remove('is-disabled');
-        if(hint) hint.style.display = 'none';
+        if(row) row.style.display = '';
     }
 
     return { supported: supportsInternal, wasReset };
@@ -2064,8 +2064,7 @@ const srcComputeGlobalAddons = function(state, projectKeys) {
     const projectNames = keys.map(srcGetProjectName).filter(Boolean);
     const addonDefaults = {
         social_organic: [150, 150, 150],
-        event_pos: [150, 150, 150],
-        internal_use: [0, 0, 0] // TODO: VDS Wert einsetzen
+        event_pos: [150, 150, 150]
     };
     const addons = [
         {
@@ -2109,8 +2108,15 @@ const srcComputeGlobalAddons = function(state, projectKeys) {
             const rateCandidates = eligibleProjects.map(key => {
                 const data = srcRatesData[key] || {};
                 const licenseExtras = data.license_extras || {};
-                return srcGetLicenseExtraAmount(licenseExtras, addon.key) || addonDefaults[addon.key] || [0, 0, 0];
-            });
+                const projectExtra = srcGetLicenseExtraAmount(licenseExtras, addon.key);
+                if(addon.key === 'internal_use') {
+                    return (srcProjectSupportsInternalUse(key) && projectExtra) ? projectExtra : null;
+                }
+                return projectExtra || addonDefaults[addon.key] || [0, 0, 0];
+            }).filter(Boolean);
+            if(!rateCandidates.length) {
+                return;
+            }
             const extraRates = rateCandidates.reduce((acc, rates) => {
                 return acc.map((value, idx) => Math.max(value, rates[idx] || 0));
             }, [0, 0, 0]);
