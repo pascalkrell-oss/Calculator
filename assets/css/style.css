@@ -2560,9 +2560,44 @@
 
 /* Die Haupt-Blöcke (generieren die sauberen Trennlinien) */
 #src-calc-v6 .src-col-left .src-layout-block {
+    position: relative;
+    padding-left: 18px;
     padding-bottom: var(--src-left-block-gap) !important;
     margin-bottom: var(--src-left-block-gap) !important;
     border-bottom: 1px solid rgba(226, 232, 240, 0.85) !important;
+}
+
+#src-calc-v6 .src-col-left .src-layout-block::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 10px;
+    bottom: 10px;
+    width: 4px;
+    border-radius: 10px;
+    background: linear-gradient(180deg, rgba(26,147,238,.55), rgba(0,102,179,.28));
+    pointer-events: none;
+}
+
+#src-calc-v6 .src-col-left .src-layout-block:has(.src-top-grid)::before {
+    background: linear-gradient(180deg, rgba(26,147,238,.60), rgba(0,102,179,.30));
+}
+
+#src-calc-v6 .src-col-left .src-layout-block:has(.src-group-text)::before,
+#src-calc-v6 .src-col-left .src-layout-block:has(#src-group-text)::before {
+    background: linear-gradient(180deg, rgba(26,147,238,.50), rgba(0,102,179,.24));
+}
+
+#src-calc-v6 .src-col-left .src-layout-block:has(.src-license-settings-block)::before {
+    background: linear-gradient(180deg, rgba(26,147,238,.65), rgba(0,102,179,.32));
+}
+
+#src-calc-v6 .src-col-left .src-layout-block:has(.src-complexity-group)::before {
+    background: linear-gradient(180deg, rgba(26,147,238,.54), rgba(0,102,179,.26));
+}
+
+#src-calc-v6 .src-col-left .src-layout-block:has(.src-options)::before {
+    background: linear-gradient(180deg, rgba(26,147,238,.48), rgba(0,102,179,.22));
 }
 
 /* Der allerletzte Block bekommt logischerweise keinen Strich nach unten */
@@ -2651,6 +2686,18 @@
 #src-global-settings {
     padding-top: 0 !important;
     margin-top: 0 !important;
+}
+
+@media (max-width:768px) {
+    #src-calc-v6 .src-col-left .src-layout-block {
+        padding-left: 14px;
+    }
+
+    #src-calc-v6 .src-col-left .src-layout-block::before {
+        width: 3px;
+        top: 8px;
+        bottom: 8px;
+    }
 }
 
 /* ==========================================================================
