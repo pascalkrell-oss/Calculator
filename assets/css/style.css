@@ -34,8 +34,6 @@
 .src-reset-header { max-width: 1100px; margin: 0 auto 10px; text-align: right; font-family: "Rubik", sans-serif; }
 .src-reset-btn { background: transparent; border: none; color: #999; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; transition: color 0.2s; }
 .src-reset-btn:hover { color: #d63638; }
-.src-tutorial-btn { background: transparent; border: none; color: #1a93ee; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; transition: color 0.2s; margin-right: 12px; }
-.src-tutorial-btn:hover { color: #137ecf; }
 
 #src-calc-v6 {
     font-family: "Rubik", sans-serif;
@@ -877,7 +875,6 @@
     border-radius: 12px 12px 0 0;
     border-bottom: 1px solid var(--src-border-light);
 }
-
 
 .src-left-card,
 .src-result-card,
@@ -2352,86 +2349,6 @@
     margin-bottom: 0 !important;
 }
 
-/* --- Driver.js Custom Modern Theme --- */
-.driver-popover.src-modern-theme {
-    font-family: "Rubik", sans-serif !important;
-    border-radius: 16px !important;
-    border: 1px solid rgba(15, 23, 42, 0.08) !important;
-    box-shadow: 0 24px 50px rgba(15, 23, 42, 0.15) !important;
-    padding: 28px 24px 24px !important;
-    background: #ffffff !important;
-    position: relative;
-}
-
-/* Titel und Beschreibung */
-.driver-popover.src-modern-theme .driver-popover-title {
-    font-size: 16px !important;
-    font-weight: 800 !important;
-    color: #0f172a !important;
-    margin-bottom: 8px !important;
-}
-.driver-popover.src-modern-theme .driver-popover-description {
-    font-size: 13px !important;
-    line-height: 1.5 !important;
-    color: #475569 !important;
-}
-
-/* Footer & Progress */
-.driver-popover.src-modern-theme .driver-popover-footer {
-    margin-top: 20px !important;
-}
-.driver-popover.src-modern-theme .driver-popover-progress-text {
-    font-size: 12px !important;
-    color: #94a3b8 !important;
-    font-weight: 600 !important;
-}
-
-/* Tutorial Buttons modernisieren (Rund & Akzentfarben) */
-.driver-popover.src-modern-theme button {
-    font-family: "Rubik", sans-serif !important;
-    border-radius: 999px !important;
-    padding: 8px 16px !important;
-    font-size: 12px !important;
-    font-weight: 700 !important;
-    transition: all 0.2s ease !important;
-    text-shadow: none !important;
-}
-.driver-popover.src-modern-theme .driver-popover-next-btn,
-.driver-popover.src-modern-theme .driver-popover-done-btn {
-    background: #1a93ee !important;
-    color: #ffffff !important;
-    border: none !important;
-    box-shadow: 0 4px 10px rgba(26, 147, 238, 0.2) !important;
-}
-.driver-popover.src-modern-theme .driver-popover-next-btn:hover,
-.driver-popover.src-modern-theme .driver-popover-done-btn:hover {
-    background: #137ecf !important;
-    box-shadow: 0 0 0 3px rgba(26, 147, 238, 0.15) !important;
-}
-.driver-popover.src-modern-theme .driver-popover-prev-btn {
-    background: #f8fafc !important;
-    border: 1px solid #e2e8f0 !important;
-    color: #64748b !important;
-}
-.driver-popover.src-modern-theme .driver-popover-prev-btn:hover {
-    background: #f1f5f9 !important;
-    color: #0f172a !important;
-}
-.driver-popover.src-modern-theme .driver-popover-close-btn {
-    position: absolute !important;
-    color: #94a3b8 !important;
-    top: 10px !important;
-    right: 10px !important;
-}
-.driver-popover.src-modern-theme .driver-popover-close-btn:hover {
-    color: #0f172a !important;
-}
-
-/* --- 1. Font Fix & Driver.js Popover Positioning --- */
-.driver-popover.src-modern-theme,
-.driver-popover.src-modern-theme * {
-    font-family: "Rubik", sans-serif !important;
-}
 /* --- 2. Styling für Handbuch Modal (2026 UI) --- */
 .src-guide-dialog {
     max-width: 800px !important;
@@ -2492,7 +2409,6 @@
     margin-bottom: 6px;
 }
 
-
 /* --- 1. Header Flex Layout & Action Links --- */
 .src-header-flex {
     display: flex;
@@ -2527,16 +2443,6 @@
 .src-divider {
     color: #cbd5e1;
     font-size: 14px;
-}
-
-/* --- 4. Driver.js Popover Fixes (Kein Überschneiden mit X) --- */
-.driver-popover.src-modern-theme .driver-popover-title {
-    padding-right: 35px !important;
-    line-height: 1.4 !important;
-    display: block !important;
-}
-.driver-popover.src-modern-theme {
-    max-width: 320px !important;
 }
 
 /* --- 5. Dashicons in Sidebar Titeln --- */
@@ -2781,62 +2687,4 @@
     transform: translateY(-50%);
 }
 
-/* ==========================================================================
-   3. DRIVER.JS TUTORIAL FIX
-   ========================================================================== */
 
-/* Wir lassen Driver.js die Positionierung (fixed/absolute) selbst übernehmen! */
-.driver-popover.src-modern-theme {
-    z-index: 999999 !important;
-}
-
-/* Entfernt flackernde Übergänge bei Neupositionierung, falls das Layout sich anpasst */
-.driver-popover {
-    transition: transform 0.2s ease, opacity 0.2s ease !important;
-}
-
-html.src-tutorial-mode #wpadminbar {
-    display: none !important;
-}
-
-html.src-tutorial-mode header#header,
-html.src-tutorial-mode .ct-header,
-html.src-tutorial-mode .ct-header-sticky,
-html.src-tutorial-mode .ct-sticky-container,
-html.src-tutorial-mode #masthead,
-html.src-tutorial-mode header.site-header,
-html.src-tutorial-mode #site-header,
-html.src-tutorial-mode .ast-primary-header-bar,
-html.src-tutorial-mode .elementor-sticky,
-html.src-tutorial-mode .sticky-header {
-    display: none !important;
-}
-
-html.src-tutorial-mode .ct-scroll-progress,
-html.src-tutorial-mode .ct-reading-progress,
-html.src-tutorial-mode .reading-progress,
-html.src-tutorial-mode #reading-progress,
-html.src-tutorial-mode #scroll-progress,
-html.src-tutorial-mode .scroll-progress {
-    display: none !important;
-}
-
-html.src-tutorial-mode body {
-    margin-top: 0 !important;
-    padding-top: 0 !important;
-}
-
-html.src-tutorial-mode {
-    scroll-behavior: auto !important;
-}
-
-html.src-tutorial-mode .driver-highlighted-element {
-    background: #ffffff !important;
-    border-radius: 16px !important;
-    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.18) !important;
-    outline: 2px solid rgba(26,147,238,.25) !important;
-    outline-offset: 2px !important;
-    position: sticky !important;
-    top: 16px !important;
-    z-index: 999999 !important;
-}
