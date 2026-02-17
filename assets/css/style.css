@@ -2358,8 +2358,9 @@
     border-radius: 16px !important;
     border: 1px solid rgba(15, 23, 42, 0.08) !important;
     box-shadow: 0 24px 50px rgba(15, 23, 42, 0.15) !important;
-    padding: 24px !important;
+    padding: 28px 24px 24px !important;
     background: #ffffff !important;
+    position: relative;
 }
 
 /* Titel und Beschreibung */
@@ -2417,9 +2418,10 @@
     color: #0f172a !important;
 }
 .driver-popover.src-modern-theme .driver-popover-close-btn {
+    position: absolute !important;
     color: #94a3b8 !important;
-    top: 14px !important;
-    right: 14px !important;
+    top: 10px !important;
+    right: 10px !important;
 }
 .driver-popover.src-modern-theme .driver-popover-close-btn:hover {
     color: #0f172a !important;
@@ -2561,25 +2563,16 @@
 /* Die Haupt-Blöcke (generieren die sauberen Trennlinien) */
 #src-calc-v6 .src-col-left .src-layout-block {
     position: relative;
-    padding-left: 18px;
-    padding-bottom: var(--src-left-block-gap) !important;
-    margin-bottom: var(--src-left-block-gap) !important;
+    padding: 18px !important;
+    margin-bottom: 18px !important;
+    border: 1px solid rgba(15,20,26,.08) !important;
+    border-radius: 16px !important;
+    background: #fff !important;
     border-bottom: none !important;
 }
 
 #src-calc-v6 .src-col-left .src-layout-block::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: 8px !important;
-    bottom: 8px !important;
-    width: 3px !important;
-    border-radius: 10px !important;
-    background: linear-gradient(180deg,
-    rgba(15,20,26,.80) 0%,
-    rgba(21,28,36,.55) 100%
-  ) !important;
-    pointer-events: none;
+    content: none !important;
 }
 
 #src-calc-v6 .src-col-left .src-layout-block:has(.src-top-grid)::before {
@@ -2605,7 +2598,7 @@
 
 /* Der allerletzte Block bekommt logischerweise keinen Strich nach unten */
 #src-calc-v6 .src-col-left .src-layout-block:last-child {
-    padding-bottom: 0 !important;
+    padding-bottom: 18px !important;
     margin-bottom: 0 !important;
     border-bottom: none !important;
 }
@@ -2619,8 +2612,8 @@
 
 /* Im Start-Zustand (kein Projekt gewählt) ist das Skript der letzte Block -> Strich ausblenden */
 #src-calc-v6:not(.src-has-project) .src-col-left .src-layout-block:has(#src-group-text) {
-    padding-bottom: 0 !important;
-    margin-bottom: 0 !important;
+    padding-bottom: 18px !important;
+    margin-bottom: 18px !important;
     border-bottom: none !important;
 }
 
@@ -2699,13 +2692,11 @@
 
 @media (max-width:768px) {
     #src-calc-v6 .src-col-left .src-layout-block {
-        padding-left: 14px;
+        padding-left: 14px !important;
     }
 
     #src-calc-v6 .src-col-left .src-layout-block::before {
-        width: 3px !important;
-        top: 8px !important;
-        bottom: 8px !important;
+        content: none !important;
     }
 }
 
@@ -2740,18 +2731,27 @@
     background: #0066b3 !important;
 }
 
-#src-calc-v6 .src-note-text { text-align: center !important; }
+#src-calc-v6 .src-note-text {
+    text-align: center !important;
+    font-size: 0 !important;
+}
+
+#src-calc-v6 .src-footer-actions .src-note-text .src-vds-link {
+    font-size: 13px !important;
+    color: #0f141a !important;
+}
 
 #src-calc-v6 .src-vds-link {
     display: inline-block !important;
     width: auto !important;
     max-width: max-content !important;
+    color: #0f141a !important;
     text-decoration: none !important;
-    border-bottom: 1px dashed rgba(26,147,238,.45) !important;
+    border-bottom: 1px dashed rgba(15,20,26,.55) !important;
 }
 
 #src-calc-v6 .src-vds-link:hover {
-    border-bottom-color: rgba(26,147,238,.85) !important;
+    border-bottom-color: rgba(15,20,26,.9) !important;
 }
 
 #src-calc-v6 .src-slider-container .src-range-dots {
