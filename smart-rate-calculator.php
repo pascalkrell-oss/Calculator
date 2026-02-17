@@ -122,7 +122,7 @@ function src_shortcode_output_v7() {
                         <optgroup label="E-Learning & Content">
                             <option value="elearning">E-Learning / WBT</option>
                             <option value="audioguide">Audioguide</option>
-                            <option value="podcast">Podcast</option>
+                            <option value="podcast">Podcast (Redaktionell)</option>
                             <option value="doku">TV-Doku / Reportage</option>
                         </optgroup>
                         <optgroup label="Service">
@@ -925,12 +925,12 @@ function src_shortcode_output_v7() {
             <li><a href="#guide-5">5. Laufzeiten & Buyouts</a></li>
             <li><a href="#guide-6">6. Zusatzlizenzen & Cut-downs</a></li>
             <li><a href="#guide-7">7. Optionen, Aufwand & Rabatte</a></li>
+            <li><a href="#guide-8">8. Datenschutz & Sicherheit</a></li>
         </ul>
     </div>
-
-    <div class="src-guide-intro">
-        Willkommen im Leitfaden zur Gagenkalkulation! Die Honorierung von professionellen Sprecherleistungen basiert nicht auf Stundenlöhnen, sondern auf dem Prinzip der <strong>Nutzungsrechte</strong>. Diese Anleitung beantwortet alle Fragen zur korrekten Einstellung und Nutzung des Systems.
-    </div>
+    <p class="src-guide-intro-text">
+        Willkommen im Leitfaden zur Gagenkalkulation! Die Honorierung von professionellen Sprecherleistungen basiert nicht auf Stundenlöhnen, sondern auf dem Prinzip der <strong>Nutzungsrechte</strong>. Grundlage für alle hier abgebildeten Berechnungen ist der offizielle <a href="https://www.sprecherverband.de/wp-content/uploads/2025/02/VDS_Gagenkompass_2025.pdf" target="_blank" rel="noopener" class="src-vds-link-inline">VDS Gagenkompass 2025</a>. Diese Anleitung beantwortet alle Fragen zur korrekten Einstellung und Nutzung des Systems.
+    </p>
 
     <h3 id="guide-1" class="src-guide-h3">1. Das Verwertungsprinzip</h3>
     <p>Man bezahlt primär für die Reichweite und die Zeit, in der eine Marke die Stimme nutzt. Ein Werbespot, der ein Jahr lang national im TV läuft, hat einen deutlich höheren medialen Werbewert als ein reines internes Schulungsvideo. Daher steigen die Kosten exponentiell mit dem Medium, der Verbreitung (Gebiet) und der Laufzeit.</p>
@@ -979,6 +979,9 @@ function src_shortcode_output_v7() {
         <li><strong>Express & Rabatte:</strong> Für Lieferungen innerhalb von 4h oder 24h berechnet das System branchenübliche Express-Aufschläge. Rabatte können prozentual vom Endpreis inkl. Begründung (z.B. Neukunde, Non-Profit) abgezogen werden.</li>
     </ul>
     <br>
+
+    <h3 id="guide-8" class="src-guide-h3">8. Datenschutz & Sicherheit</h3>
+    <p><strong>100% Lokal & Privat:</strong> Alle Deine eingegebenen Daten, Projektinformationen, Skripte und kalkulierten Zahlen werden <strong>niemals</strong> auf unseren Servern gespeichert oder an Dritte übertragen. Die gesamte Berechnung und auch die Erstellung der PDF-Angebote findet ausschließlich lokal in Deinem eigenen Browser statt. Deine Daten gehören nur Dir.</p>
 </div>
             </div>
         </div>

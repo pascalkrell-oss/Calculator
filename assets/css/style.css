@@ -2360,15 +2360,6 @@
     line-height: 1.6;
     color: #334155;
 }
-.src-guide-intro {
-    font-size: 15px;
-    color: #0f172a;
-    padding: 16px 20px;
-    background: linear-gradient(135deg, rgba(26, 147, 238, 0.1), rgba(0, 102, 179, 0.05));
-    border-left: 4px solid var(--src-primary);
-    border-radius: 8px;
-    margin-bottom: 24px;
-}
 .src-guide-h3 {
     font-size: 18px;
     font-weight: 800;
@@ -2797,4 +2788,64 @@
         width: 100%;
         margin: 20px 0;
     }
+}
+
+
+/* --- 1. Neues Styling für den Einleitungstext --- */
+.src-guide-intro-text {
+    font-size: 15px;
+    color: #0f172a;
+    line-height: 1.6;
+    margin: 0 0 24px 0;
+}
+.src-vds-link-inline {
+    color: var(--src-primary);
+    text-decoration: none;
+    border-bottom: 1px dashed var(--src-primary);
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+.src-vds-link-inline:hover {
+    color: var(--src-primary-hover);
+    border-bottom-style: solid;
+}
+
+/* --- 2. Custom Bulletpoints für Listen in der Anleitung --- */
+.src-guide-body ul {
+    list-style: none !important;
+    padding: 0 !important;
+    margin: 0 0 16px 0 !important;
+    display: grid;
+    gap: 12px;
+}
+.src-guide-body ul li {
+    position: relative;
+    padding-left: 28px !important;
+    font-size: 14px;
+    color: #334155;
+    line-height: 1.5;
+}
+.src-guide-body ul li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 2px;
+    width: 18px;
+    height: 18px;
+    background-image: url("https://dev.pascal-krell.de/wp-content/uploads/2025/08/check-mark-icon.svg");
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+/* Verhindert, dass das Inhaltsverzeichnis (TOC) diese neuen Bulletpoints übernimmt */
+.src-guide-toc ul {
+    display: grid;
+    gap: 8px;
+}
+.src-guide-toc ul li {
+    padding-left: 0 !important;
+}
+.src-guide-toc ul li::before {
+    content: none !important;
 }
