@@ -1688,24 +1688,32 @@ window.srcReset = function() {
     srcCalc();
 }
 
-function srcTutorialEnsureInView(node, opts = {}) {
+function srcTutorialPinToTop(node, opts = {}) {
     if(!node || typeof node.getBoundingClientRect !== 'function') return;
 
-    const viewportPaddingTop = Number.isFinite(opts.viewportPaddingTop) ? opts.viewportPaddingTop : 24;
-    const viewportPaddingBottom = Number.isFinite(opts.viewportPaddingBottom) ? opts.viewportPaddingBottom : 220;
+    const topPad = Number.isFinite(opts.topPad) ? opts.topPad : 16;
+    const bottomPad = Number.isFinite(opts.bottomPad) ? opts.bottomPad : 260;
     const rect = node.getBoundingClientRect();
-    const viewportBottom = window.innerHeight - viewportPaddingBottom;
-    let scrollToTop = null;
+    let target = window.scrollY + rect.top - topPad;
+    const viewportBottom = window.innerHeight - bottomPad;
 
-    if(rect.top < viewportPaddingTop) {
-        scrollToTop = window.scrollY + rect.top - viewportPaddingTop;
-    } else if(rect.bottom > viewportBottom) {
-        scrollToTop = window.scrollY + (rect.bottom - viewportBottom);
+    if(rect.bottom > viewportBottom) {
+        const delta = rect.bottom - viewportBottom;
+        target += delta;
     }
 
-    if(scrollToTop !== null) {
-        window.scrollTo({ top: Math.max(0, scrollToTop), behavior: 'auto' });
-    }
+    window.scrollTo({ top: Math.max(0, target), behavior: 'auto' });
+}
+
+function srcTutorialResolveBlock(node) {
+    if(!node || typeof node.closest !== 'function') return node;
+    return node.closest('.src-layout-block')
+        || node.closest('#src-license-section')
+        || node.closest('#src-pricedetails-section')
+        || node.closest('#src-notes-tips-section')
+        || node.closest('#src-packages-section')
+        || node.closest('.src-info-section')
+        || node;
 }
 
 function srcTutorialHideTopMiniBars() {
@@ -1796,10 +1804,8 @@ window.srcStartTutorial = function() {
                 if(details && !details.open) {
                     details.open = true;
                 }
-                if(targetNode && typeof targetNode.closest === 'function') {
-                    const block = targetNode.closest('.src-layout-block') || targetNode.closest('.src-rights-card') || targetNode.closest('.src-light-box-wrapper') || targetNode;
-                    srcTutorialEnsureInView(block);
-                }
+                const block = srcTutorialResolveBlock(targetNode);
+                srcTutorialPinToTop(block);
             },
 
             onHighlighted: (element, step, opts) => {
@@ -1813,10 +1819,13 @@ window.srcStartTutorial = function() {
                 }
                 if(opts && opts.driver && typeof opts.driver.refresh === 'function') {
                     opts.driver.refresh();
-                    setTimeout(() => opts.driver.refresh(), 40);
-                    if(element && element.node) {
-                        setTimeout(() => srcTutorialEnsureInView(element.node), 0);
-                    }
+                    setTimeout(() => {
+                        opts.driver.refresh();
+                        const n = element && element.node ? element.node : element;
+                        const block = srcTutorialResolveBlock(n);
+                        srcTutorialPinToTop(block);
+                        setTimeout(() => opts.driver.refresh(), 20);
+                    }, 30);
                 }
             },
 
@@ -1831,10 +1840,10 @@ window.srcStartTutorial = function() {
                 { element: '.src-result-card', popover: { title: '8. Ergebnis & Kalkulation', description: 'Hier siehst Du live Deine empfohlene Gage (Richtwert).', side: 'bottom', align: 'center' } },
                 { element: '#src-license-section', popover: { title: '9. Nutzungsrechte', description: 'Hier siehst Du Deine gewählten Nutzungsrechte kompakt zusammengefasst.', side: 'bottom', align: 'center' } },
                 { element: '#src-pricedetails-section', popover: { title: '10. Preis-Details', description: 'Transparenter Rechenweg für die empfohlene Gage (Richtwert).', side: 'bottom', align: 'center' } },
-                { element: '#src-notes-tips-section .src-sidebar-title, #src-notes-tips-section', popover: { title: '11. Hinweise & Tipps', description: 'Kontext & Empfehlungen passend zu Deinen Eingaben.', side: 'bottom', align: 'center' } },
-                { element: '#src-packages-section .src-sidebar-title, #src-packages-section', popover: { title: '12. Pakete', description: 'Erzeuge Paketvorschläge und exportiere sie als Angebot.', side: 'bottom', align: 'center' } },
-                { element: '.src-info-section .src-sidebar-title, .src-info-section', popover: { title: '13. Wissenswertes', description: 'Kurze Erklärungen zu Kalkulationslogik, Rechten & typischen Stolperfallen.', side: 'bottom', align: 'center' } },
-                { element: '.src-footer-actions .src-btn, button[onclick="srcOpenExportModal()"]', popover: { title: '14. Angebot speichern', description: 'Exportiere Dein Angebot als PDF – inkl. Deiner Eingaben & Zusammenfassung als empfohlene Gage (Richtwert).', side: 'bottom', align: 'center' } }
+                { element: '#src-notes-tips-section', popover: { title: '11. Hinweise & Tipps', description: 'Kontext & Empfehlungen passend zu Deinen Eingaben.', side: 'bottom', align: 'center' } },
+                { element: '#src-packages-section', popover: { title: '12. Pakete', description: 'Erzeuge Paketvorschläge und exportiere sie als Angebot.', side: 'bottom', align: 'center' } },
+                { element: '.src-info-section', popover: { title: '13. Wissenswertes', description: 'Kurze Erklärungen zu Kalkulationslogik, Rechten & typischen Stolperfallen.', side: 'bottom', align: 'center' } },
+                { element: '.src-footer-actions', popover: { title: '14. Angebot speichern', description: 'Exportiere Dein Angebot als PDF – inkl. Deiner Eingaben & Zusammenfassung als empfohlene Gage (Richtwert).', side: 'bottom', align: 'center' } }
             ]
         });
         driverObj.drive();
