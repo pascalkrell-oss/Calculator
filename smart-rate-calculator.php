@@ -999,6 +999,25 @@ function src_shortcode_output_v7() {
             </div>
         </div>
     </div>
+
+    <div id="src-tutorial-overlay"></div>
+    <div id="src-tutorial-panel" class="src-tutorial-hidden">
+        <div class="src-tutorial-panel-inner">
+            <div class="src-tutorial-header">
+                <span class="src-tutorial-step-badge" id="src-tut-badge">1 / 8</span>
+                <h3 id="src-tut-title">Titel</h3>
+                <button type="button" class="src-tut-close" onclick="srcEndTutorial()" aria-label="Beenden">×</button>
+            </div>
+            <p id="src-tut-desc">Beschreibungstext...</p>
+            <div class="src-tutorial-footer">
+                <div class="src-tutorial-dots" id="src-tut-dots"></div>
+                <div class="src-tutorial-nav">
+                    <button type="button" id="src-tut-prev" class="src-tut-btn src-tut-btn-secondary" onclick="srcTutPrev()">Zurück</button>
+                    <button type="button" id="src-tut-next" class="src-tut-btn src-tut-btn-primary" onclick="srcTutNext()">Weiter <span class="dashicons dashicons-arrow-right-alt"></span></button>
+                </div>
+            </div>
+        </div>
+    </div>
     <?php
     return ob_get_clean();
 }
