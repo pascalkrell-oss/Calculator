@@ -2931,3 +2931,53 @@
     box-sizing: content-box !important;
     flex-shrink: 0;
 }
+
+/* --- 1. Moderne Export Links (Pakete) --- */
+.src-package-export-link {
+    background: transparent !important; border: none !important;
+    color: var(--src-primary) !important; font-size: 13px !important; font-weight: 700 !important;
+    cursor: pointer !important; display: inline-flex !important; align-items: center !important; gap: 6px !important;
+    padding: 6px 0 !important; transition: color 0.2s ease !important; box-shadow: none !important;
+}
+.src-package-export-link:hover { color: var(--src-primary-hover) !important; }
+.src-package-export-link .dashicons { font-size: 16px !important; width: 16px !important; height: 16px !important; transition: transform 0.25s ease !important; }
+.src-package-export-link:hover .dashicons { transform: translateX(4px) !important; }
+
+/* --- 2. Inhaltsverzeichnis (TOC) & Modal Spacing --- */
+.src-modal__body.src-guide-body { padding-top: 32px !important; scroll-behavior: smooth; }
+.src-guide-toc {
+    float: right; width: 260px; margin: 4px 0 20px 24px;
+    background: #ffffff; border: 1px solid var(--src-border-light); border-radius: 12px;
+    padding: 16px; box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
+}
+.src-guide-toc-title { font-size: 11px; font-weight: 800; text-transform: uppercase; color: #0f172a; margin-bottom: 12px; letter-spacing: 0.05em; }
+.src-guide-toc a { font-size: 13px; color: #475569; text-decoration: none; transition: color 0.2s; display: flex; align-items: flex-start; gap: 6px; line-height: 1.4; }
+.src-guide-toc a::before { content: "•"; color: var(--src-primary); font-weight: bold; }
+.src-guide-toc a:hover { color: var(--src-primary); }
+@media (max-width: 768px) { .src-guide-toc { float: none; width: 100%; margin: 20px 0; } }
+
+/* --- 3. Währungs-Umschalter --- */
+.src-currency-switch {
+    display: inline-flex; background: #f1f5f9; border-radius: 999px; padding: 2px; border: 1px solid #e2e8f0; margin-left: 6px;
+}
+.src-curr-btn {
+    background: transparent; border: none; border-radius: 999px; padding: 4px 10px; font-size: 11px;
+    font-weight: 700; color: #64748b; cursor: pointer; transition: all 0.2s; line-height: 1;
+}
+.src-curr-btn.is-active { background: #ffffff; color: var(--src-primary); box-shadow: 0 2px 6px rgba(15,23,42,0.08); }
+
+/* --- 4. CSS Glossar-Tooltip (Hover) --- */
+.src-glossary-term {
+    text-decoration: underline; text-decoration-style: dotted; text-decoration-color: var(--src-primary);
+    text-underline-offset: 3px; cursor: help; position: relative; color: var(--src-primary); font-weight: 600;
+}
+.src-glossary-term:hover::after {
+    content: attr(data-hover); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%) translateY(-6px);
+    width: max-content; max-width: 220px; background: #0f172a; color: #ffffff; font-size: 11px; font-weight: 400;
+    padding: 8px 12px; border-radius: 8px; box-shadow: 0 8px 24px rgba(15,23,42,0.2); white-space: normal;
+    line-height: 1.4; z-index: 9999; pointer-events: none; text-align: left;
+}
+.src-glossary-term:hover::before {
+    content: ""; position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
+    border: 5px solid transparent; border-top-color: #0f172a; z-index: 9999; pointer-events: none;
+}
