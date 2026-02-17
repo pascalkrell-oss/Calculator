@@ -1688,58 +1688,24 @@ window.srcReset = function() {
     srcCalc();
 }
 
-function srcTutorialMeasureHeaderOffset() {
-    const isVisibleFixedElement = (el) => {
-        if(!el) return false;
-        const styles = window.getComputedStyle(el);
-        if(styles.display === 'none' || styles.visibility === 'hidden' || parseFloat(styles.opacity || '1') === 0) return false;
-        return styles.position === 'fixed' || styles.position === 'sticky';
-    };
-
-    let offset = 0;
-
-    const adminBar = document.querySelector('#wpadminbar');
-    if(isVisibleFixedElement(adminBar)) {
-        offset += adminBar.getBoundingClientRect().height || 0;
-    }
-
-    const headerSelectors = [
-        'header.ct-header',
-        '.ct-header',
-        '#header',
-        '#site-header',
-        '#masthead',
-        'header.site-header',
-        '.site-header',
-        '.main-header',
-        '.ast-primary-header-bar',
-        '.elementor-sticky',
-        '.sticky-header'
-    ];
-
-    for(const selector of headerSelectors) {
-        const header = document.querySelector(selector);
-        if(isVisibleFixedElement(header)) {
-            offset += header.getBoundingClientRect().height || 0;
-            break;
-        }
-    }
-
-    window.__srcTutorialHeaderOffset = Math.max(0, Math.round(offset));
-}
-
-function srcTutorialScrollAnchorTo(el, step) {
-    const node = el && el.node ? el.node : el;
+function srcTutorialEnsureInView(node, opts = {}) {
     if(!node || typeof node.getBoundingClientRect !== 'function') return;
 
+    const viewportPaddingTop = Number.isFinite(opts.viewportPaddingTop) ? opts.viewportPaddingTop : 24;
+    const viewportPaddingBottom = Number.isFinite(opts.viewportPaddingBottom) ? opts.viewportPaddingBottom : 220;
     const rect = node.getBoundingClientRect();
-    const offset = window.__srcTutorialHeaderOffset || 0;
-    const gap = 18;
-    const side = step && step.popover ? step.popover.side : null;
-    const extraOffset = side === 'bottom' ? 120 : gap;
-    const targetTop = Math.max(0, window.scrollY + rect.top - offset - extraOffset);
+    const viewportBottom = window.innerHeight - viewportPaddingBottom;
+    let scrollToTop = null;
 
-    window.scrollTo({ top: targetTop, behavior: 'auto' });
+    if(rect.top < viewportPaddingTop) {
+        scrollToTop = window.scrollY + rect.top - viewportPaddingTop;
+    } else if(rect.bottom > viewportBottom) {
+        scrollToTop = window.scrollY + (rect.bottom - viewportBottom);
+    }
+
+    if(scrollToTop !== null) {
+        window.scrollTo({ top: Math.max(0, scrollToTop), behavior: 'auto' });
+    }
 }
 
 function srcTutorialHideTopMiniBars() {
@@ -1798,7 +1764,6 @@ window.srcStartTutorial = function() {
         if(el) el.classList.add('is-open');
     });
 
-    srcTutorialMeasureHeaderOffset();
     document.body.classList.add('src-tutorial-active');
     document.documentElement.classList.add('src-tutorial-mode');
     srcTutorialHideTopMiniBars();
@@ -1831,7 +1796,10 @@ window.srcStartTutorial = function() {
                 if(details && !details.open) {
                     details.open = true;
                 }
-                srcTutorialScrollAnchorTo(element, step);
+                if(targetNode && typeof targetNode.closest === 'function') {
+                    const block = targetNode.closest('.src-layout-block') || targetNode.closest('.src-rights-card') || targetNode.closest('.src-light-box-wrapper') || targetNode;
+                    srcTutorialEnsureInView(block);
+                }
             },
 
             onHighlighted: (element, step, opts) => {
@@ -1845,7 +1813,10 @@ window.srcStartTutorial = function() {
                 }
                 if(opts && opts.driver && typeof opts.driver.refresh === 'function') {
                     opts.driver.refresh();
-                    setTimeout(() => opts.driver.refresh(), 30);
+                    setTimeout(() => opts.driver.refresh(), 40);
+                    if(element && element.node) {
+                        setTimeout(() => srcTutorialEnsureInView(element.node), 0);
+                    }
                 }
             },
 
