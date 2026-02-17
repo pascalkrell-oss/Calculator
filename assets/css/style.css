@@ -2849,3 +2849,85 @@
 .src-guide-toc ul li::before {
     content: none !important;
 }
+
+/* --- 1. Moderner Guide Header --- */
+.src-guide-header-modern {
+    background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%) !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+    padding: 24px 30px !important;
+    align-items: center !important;
+}
+.src-guide-header-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+.src-guide-header-icon {
+    width: 48px;
+    height: 48px;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 6px 14px rgba(15, 23, 42, 0.05);
+    color: var(--src-primary);
+    flex-shrink: 0;
+}
+.src-guide-header-icon .dashicons {
+    font-size: 24px;
+    width: 24px;
+    height: 24px;
+}
+/* Runder, moderner Close Button im Header */
+.src-guide-header-modern .src-modal__close {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+}
+.src-guide-header-modern .src-modal__close:hover {
+    background: #ffffff;
+    border-color: #cbd5e1;
+    color: #ef4444; /* Dezentes Rot beim Hover */
+    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.06);
+}
+
+/* --- 2. H3 Kapitel & Icons (Abstände fixiert) --- */
+.src-guide-h3 {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    clear: both; 
+    margin: 45px 0 16px 0 !important; /* Exakt gleicher Abstand für alle (inklusive Punkt 8) */
+}
+.src-guide-h3:first-of-type {
+    margin-top: 25px !important;
+}
+
+/* Verhindert Margin-Collapsing, falls eine Liste vor dem Titel stand */
+.src-guide-body ul, 
+.src-guide-tip {
+    margin-bottom: 0 !important;
+}
+
+.src-guide-h3-icon {
+    color: var(--src-primary) !important;
+    font-size: 20px !important;
+    width: 20px !important;
+    height: 20px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: rgba(26, 147, 238, 0.1) !important;
+    padding: 8px !important;
+    border-radius: 10px !important;
+    box-sizing: content-box !important;
+    flex-shrink: 0;
+}
