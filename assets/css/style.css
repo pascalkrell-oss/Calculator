@@ -2590,6 +2590,14 @@
     margin-bottom: 24px !important;
 }
 
+#src-calc-v6 .src-col-left #src-linked-projects-wrap {
+    margin-top: 0 !important;
+}
+
+#src-calc-v6 .src-col-left .src-linked-projects {
+    margin: 0 0 24px !important;
+}
+
 /* Hard-Reset: Verhindert, dass innere Boxen die 32px Trennlinien künstlich vergrößern */
 .src-layout-block > div:last-child,
 .src-rights-card,
@@ -2619,4 +2627,26 @@
 /* Entfernt flackernde Übergänge bei Neupositionierung, falls das Layout sich anpasst */
 .driver-popover {
     transition: transform 0.2s ease, opacity 0.2s ease !important;
+}
+
+body.src-tutorial-active #wpadminbar {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+
+body.src-tutorial-active header.ct-header,
+body.src-tutorial-active .ct-header,
+body.src-tutorial-active #header,
+body.src-tutorial-active #site-header,
+body.src-tutorial-active #masthead,
+body.src-tutorial-active header.site-header,
+body.src-tutorial-active .site-header,
+body.src-tutorial-active .main-header,
+body.src-tutorial-active .ast-primary-header-bar,
+body.src-tutorial-active .elementor-sticky,
+body.src-tutorial-active .sticky-header {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
 }

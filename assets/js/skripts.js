@@ -1632,6 +1632,58 @@ window.srcReset = function() {
     srcCalc();
 }
 
+function srcTutorialMeasureHeaderOffset() {
+    const isVisibleFixedElement = (el) => {
+        if(!el) return false;
+        const styles = window.getComputedStyle(el);
+        if(styles.display === 'none' || styles.visibility === 'hidden' || parseFloat(styles.opacity || '1') === 0) return false;
+        return styles.position === 'fixed' || styles.position === 'sticky';
+    };
+
+    let offset = 0;
+
+    const adminBar = document.querySelector('#wpadminbar');
+    if(isVisibleFixedElement(adminBar)) {
+        offset += adminBar.getBoundingClientRect().height || 0;
+    }
+
+    const headerSelectors = [
+        'header.ct-header',
+        '.ct-header',
+        '#header',
+        '#site-header',
+        '#masthead',
+        'header.site-header',
+        '.site-header',
+        '.main-header',
+        '.ast-primary-header-bar',
+        '.elementor-sticky',
+        '.sticky-header'
+    ];
+
+    for(const selector of headerSelectors) {
+        const header = document.querySelector(selector);
+        if(isVisibleFixedElement(header)) {
+            offset += header.getBoundingClientRect().height || 0;
+            break;
+        }
+    }
+
+    window.__srcTutorialHeaderOffset = Math.max(0, Math.round(offset));
+}
+
+function srcTutorialScrollAnchorTo(el) {
+    const node = el && el.node ? el.node : el;
+    if(!node || typeof node.getBoundingClientRect !== 'function') return;
+
+    const rect = node.getBoundingClientRect();
+    const offset = window.__srcTutorialHeaderOffset || 0;
+    const gap = 16;
+    const targetTop = Math.max(0, window.scrollY + rect.top - offset - gap);
+
+    window.scrollTo({ top: targetTop, behavior: 'auto' });
+}
+
 window.srcStartTutorial = function() {
     // 1. UI komplett entfalten
     const genreSelect = document.getElementById('src-genre');
@@ -1639,6 +1691,9 @@ window.srcStartTutorial = function() {
     
     const advancedAccordion = document.getElementById('src-advanced-accordion');
     if(advancedAccordion) advancedAccordion.open = true;
+
+    srcTutorialMeasureHeaderOffset();
+    document.body.classList.add('src-tutorial-active');
 
     // 2. Warten, bis das UI 100% gerendert ist (Manueller scrollTo() entfernt, da Driver.js das übernehmen soll)
     setTimeout(() => {
@@ -1654,13 +1709,14 @@ window.srcStartTutorial = function() {
             prevBtnText: '&larr; Zurück',
             doneBtnText: 'Beenden',
             popoverClass: 'src-modern-theme',
-            onDestroyed: () => { srcReset(); },
+            onDestroyed: () => {
+                document.body.classList.remove('src-tutorial-active');
+                srcReset();
+            },
 
             // FIX: Element immer vertikal zentrieren, damit unten garantiert Platz für das Popup ('side: bottom') ist.
             onHighlightStarted: (element) => {
-                if (element && element.node) {
-                    element.node.scrollIntoView({ block: 'center', behavior: 'smooth' });
-                }
+                srcTutorialScrollAnchorTo(element);
             },
 
             steps: [
