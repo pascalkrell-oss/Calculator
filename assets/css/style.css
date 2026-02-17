@@ -2440,6 +2440,22 @@
 .src-action-link:hover {
     color: var(--src-primary); /* Blau statt Rot beim Hover */
 }
+.src-action-link.src-guide-btn {
+    border-radius: 999px;
+    padding: 8px 12px;
+    background: rgba(26, 147, 238, 0.10);
+    border: 1px solid rgba(26, 147, 238, 0.28);
+    color: #1a93ee;
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+.src-action-link.src-guide-btn .dashicons {
+    color: currentColor;
+}
+.src-action-link.src-guide-btn:hover {
+    background: rgba(26, 147, 238, 0.16);
+    border-color: rgba(26, 147, 238, 0.36);
+    color: #0066b3;
+}
 .src-divider {
     color: #cbd5e1;
     font-size: 14px;
@@ -2591,9 +2607,12 @@
     gap: 0 !important;
 }
 
-#src-global-settings {
-    padding-top: 0 !important;
-    margin-top: 0 !important;
+#src-calc-v6 .src-col-left #src-global-settings,
+#src-calc-v6 .src-col-left .src-license-settings-block,
+#src-calc-v6 .src-col-left #src-complexity-group,
+#src-calc-v6 .src-col-left .src-complexity-group {
+    margin-top: 15px !important;
+    padding-top: 15px !important;
 }
 
 @media (max-width:768px) {
@@ -2686,5 +2705,4 @@
     top: 50%;
     transform: translateY(-50%);
 }
-
 

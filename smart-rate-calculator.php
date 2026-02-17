@@ -89,7 +89,7 @@ function src_shortcode_output_v7() {
     ?>
     <div class="src-reset-header src-header-flex">
         <div class="src-header-left">
-            <button class="src-action-link" onclick="srcOpenGuide()">
+            <button class="src-action-link src-guide-btn" onclick="srcOpenGuide()">
                 <span class="dashicons dashicons-book"></span> Anleitung
             </button>
         </div>
