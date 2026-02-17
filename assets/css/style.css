@@ -350,6 +350,10 @@
 .src-switch-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; cursor: pointer; user-select: none; }
 .src-switch-row.boxed { padding: 10px 15px; background: #fff; border: 1px solid var(--src-border-light); border-radius: 10px; margin-bottom: 8px; transition: 0.2s; }
 .src-switch-row.boxed:hover { border-color: #cbd5e1; }
+.src-switch-row.is-disabled { opacity: 0.65; }
+.src-switch-row.is-disabled .src-switch-content { opacity: 0.85; }
+.src-switch-row.is-disabled .src-toggle-slider { cursor: not-allowed; }
+.src-internal-use-hint { display: block; margin-top: 6px; color: #94a3b8; font-size: 11px; }
 
 /* --- GLOBAL TOGGLE ROWS (Spacing Fix) --- */
 .src-global-toggle-row {

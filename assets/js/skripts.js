@@ -178,6 +178,13 @@ document.addEventListener('DOMContentLoaded', () => {
         durationSlider.addEventListener('input', srcUpdateDurationSliderFill);
         durationSlider.addEventListener('change', srcUpdateDurationSliderFill);
     }
+    const genreSelect = document.getElementById('src-genre');
+    if(genreSelect) {
+        genreSelect.addEventListener('change', () => {
+            srcUpdateInternalUseToggleAvailability(genreSelect.value);
+            srcCalc();
+        });
+    }
     srcUpdateDurationSliderFill();
 
     srcSyncExportTiles();
@@ -744,6 +751,55 @@ const srcGetLicenseExtraAmount = function(data, key) {
     const value = data[key];
     if(value === undefined || value === null) return null;
     return srcEnsurePriceTriple(value, null);
+}
+
+const srcProjectSupportsInternalUse = function(projectKey) {
+    if(!projectKey || !srcRatesData || !srcRatesData[projectKey]) return false;
+    const projectConfig = srcRatesData[projectKey];
+    const extras = projectConfig.license_extras;
+    if(!extras || !Object.prototype.hasOwnProperty.call(extras, 'internal_use')) return false;
+    const value = extras.internal_use;
+    if(Array.isArray(value)) return value.length > 0;
+    return Number.isFinite(value);
+}
+
+const srcHasPositiveAddonAmount = function(extraRates) {
+    if(!Array.isArray(extraRates) || extraRates.length < 3) return false;
+    return extraRates.some(value => Number(value) > 0);
+}
+
+const srcUpdateInternalUseToggleAvailability = function(projectKey) {
+    const toggle = document.getElementById('src-lic-internal');
+    if(!toggle) return { supported: false, wasReset: false };
+    const row = toggle.closest('.src-switch-row');
+    const supportsInternal = srcProjectSupportsInternalUse(projectKey);
+    let hint = row ? row.querySelector('.src-internal-use-hint') : null;
+    if(!hint && row) {
+        hint = document.createElement('small');
+        hint.className = 'src-internal-use-hint';
+        hint.textContent = 'Für diesen Projekttyp nicht definiert';
+        row.appendChild(hint);
+    }
+
+    let wasReset = false;
+    if(!supportsInternal) {
+        if(toggle.checked) {
+            toggle.checked = false;
+            srcSetOptionRowState(toggle);
+            wasReset = true;
+        }
+        toggle.disabled = true;
+        toggle.setAttribute('title', 'Für diesen Projekttyp nicht definiert');
+        if(row) row.classList.add('is-disabled');
+        if(hint) hint.style.display = '';
+    } else {
+        toggle.disabled = false;
+        toggle.removeAttribute('title');
+        if(row) row.classList.remove('is-disabled');
+        if(hint) hint.style.display = 'none';
+    }
+
+    return { supported: supportsInternal, wasReset };
 }
 
 const srcAuditRatesAgainstVDS = function() {
@@ -1907,6 +1963,11 @@ window.srcUIUpdate = function() {
         }
     }
     srcUpdateSidebarCollapse();
+
+    const internalToggleState = srcUpdateInternalUseToggleAvailability(genre);
+    if(internalToggleState.wasReset) {
+        srcCalc();
+    }
 }
 
 window.srcToggleManualTime = function() {
@@ -2038,10 +2099,12 @@ const srcComputeGlobalAddons = function(state, projectKeys) {
             const hasExtra = data.license_extras && data.license_extras[addon.key] !== undefined;
             return Array.isArray(data.tiers) || hasExtra;
         });
+        if(addon.key === 'internal_use' && !eligibleProjects.some(key => srcProjectSupportsInternalUse(key))) {
+            return;
+        }
         const eligibleNames = eligibleProjects.map(srcGetProjectName).filter(Boolean);
         const scopeNames = eligibleNames.length ? eligibleNames : projectNames;
         const scopeSuffix = scopeNames.length > 1 ? ` (gilt für: ${scopeNames.join(', ')})` : '';
-        result.licenseLines.push(`${addon.label}${scopeSuffix}`);
         if(eligibleProjects.length) {
             const rateCandidates = eligibleProjects.map(key => {
                 const data = srcRatesData[key] || {};
@@ -2051,6 +2114,10 @@ const srcComputeGlobalAddons = function(state, projectKeys) {
             const extraRates = rateCandidates.reduce((acc, rates) => {
                 return acc.map((value, idx) => Math.max(value, rates[idx] || 0));
             }, [0, 0, 0]);
+            if(!srcHasPositiveAddonAmount(extraRates)) {
+                return;
+            }
+            result.licenseLines.push(`${addon.label}${scopeSuffix}`);
             result.rangeAdd = result.rangeAdd.map((value, idx) => value + extraRates[idx]);
             result.breakdownSteps.push({
                 label: addon.label,
@@ -2080,7 +2147,7 @@ const srcComputeGlobalAddons = function(state, projectKeys) {
         if(state.licenseEvent && extras.event_pos) {
             extrasText.push(extras.event_pos);
         }
-        if(state.licenseInternal && extras.internal_use) {
+        if(state.licenseInternal && srcProjectSupportsInternalUse(key) && extras.internal_use) {
             extrasText.push(extras.internal_use);
         }
     });
@@ -2273,22 +2340,28 @@ const srcComputeSingleProjectResult = function(state, projectKey, options = {}) 
             if(state.licenseSocial && applyAddons) {
                 const extraRates = socialExtra || [150, 150, 150];
                 final = final.map((v, idx) => v + extraRates[idx]);
-                breakdownSteps.push({ label: "Social Media", amountOrFactor: `+${extraRates[1]} €`, effectOnRange: 'add' });
-                addInfo("Social Media", srcFormatSignedCurrency(extraRates[1]), "Zusatzlizenz");
+                if(srcHasPositiveAddonAmount(extraRates)) {
+                    breakdownSteps.push({ label: "Social Media", amountOrFactor: `+${extraRates[1]} €`, effectOnRange: 'add' });
+                    addInfo("Social Media", srcFormatSignedCurrency(extraRates[1]), "Zusatzlizenz");
+                }
                 licParts.push("+ Social Media");
             }
             if(state.licenseEvent && applyAddons) {
                 const extraRates = eventExtra || [150, 150, 150];
                 final = final.map((v, idx) => v + extraRates[idx]);
-                breakdownSteps.push({ label: "Event", amountOrFactor: `+${extraRates[1]} €`, effectOnRange: 'add' });
-                addInfo("Event / Messe / POS", srcFormatSignedCurrency(extraRates[1]), "Zusatzlizenz");
+                if(srcHasPositiveAddonAmount(extraRates)) {
+                    breakdownSteps.push({ label: "Event", amountOrFactor: `+${extraRates[1]} €`, effectOnRange: 'add' });
+                    addInfo("Event / Messe / POS", srcFormatSignedCurrency(extraRates[1]), "Zusatzlizenz");
+                }
                 licParts.push("+ Event");
             }
-            if(state.licenseInternal && applyAddons) {
-                const extraRates = internalExtra || [0, 0, 0];
+            if(state.licenseInternal && applyAddons && srcProjectSupportsInternalUse(genre) && internalExtra) {
+                const extraRates = internalExtra;
                 final = final.map((v, idx) => v + extraRates[idx]);
-                breakdownSteps.push({ label: "Interne Nutzung", amountOrFactor: `+${extraRates[1]} €`, effectOnRange: 'add' });
-                addInfo("Interne Nutzung (Intranet)", srcFormatSignedCurrency(extraRates[1]), "Zusatzlizenz");
+                if(srcHasPositiveAddonAmount(extraRates)) {
+                    breakdownSteps.push({ label: "Interne Nutzung", amountOrFactor: `+${extraRates[1]} €`, effectOnRange: 'add' });
+                    addInfo("Interne Nutzung (Intranet)", srcFormatSignedCurrency(extraRates[1]), "Zusatzlizenz");
+                }
                 licParts.push("+ Intern");
             }
         }
@@ -2321,7 +2394,12 @@ const srcComputeSingleProjectResult = function(state, projectKey, options = {}) 
     if(applyAddons) {
         if(state.licenseSocial) { licMeta.push("Zusatzlizenz: Social Media (organisch)"); }
         if(state.licenseEvent) { licMeta.push("Zusatzlizenz: Event / Messe / POS"); }
-        if(state.licenseInternal) { licMeta.push("Zusatzlizenz: Interne Nutzung (Mitarbeiterschulung / Intranet)"); }
+        if(state.licenseInternal && srcProjectSupportsInternalUse(genre)) {
+            const internalAmount = srcGetLicenseExtraAmount((data.license_extras || {}), 'internal_use');
+            if(srcHasPositiveAddonAmount(internalAmount)) {
+                licMeta.push("Zusatzlizenz: Interne Nutzung (Mitarbeiterschulung / Intranet)");
+            }
+        }
     }
 
     if(state.studioFee > 0) {
@@ -2381,7 +2459,7 @@ const srcComputeSingleProjectResult = function(state, projectKey, options = {}) 
         if(state.licenseEvent && extras.event_pos) {
             extrasText.push(extras.event_pos);
         }
-        if(state.licenseInternal && extras.internal_use) {
+        if(state.licenseInternal && srcProjectSupportsInternalUse(genre) && extras.internal_use) {
             extrasText.push(extras.internal_use);
         }
     }
