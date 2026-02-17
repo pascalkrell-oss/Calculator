@@ -1253,7 +1253,9 @@ const srcRenderPackages = function() {
                     </ul>
                 </div>
                 <div class="src-package-action">
-                    <button class="src-mini-btn" type="button" data-export-package="${key}">Als Angebot exportieren</button>
+                    <button class="src-package-export-link" type="button" data-export-package="${key}">
+                        Als Angebot exportieren <span class="dashicons dashicons-arrow-right-alt"></span>
+                    </button>
                 </div>
             </div>
         `;
