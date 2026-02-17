@@ -2271,12 +2271,9 @@
     max-height: 4000px !important; 
 }
 
-/* 4. Nutzungsrechte & Lizenzen: Abstand nach unten um 30px verringern */
-/* Der vorherige Wert war 12px margin-bottom. 12px - 30px = -18px */
+/* 4. Nutzungsrechte & Lizenzen: Sauberer Titelabstand ohne negative Margins */
 #src-calc-v6 .src-col-left .src-license-settings-block .src-box-header {
-    margin-bottom: -18px !important;
-    position: relative;
-    z-index: 2; /* Stellt sicher, dass der Titel über nachrückenden Elementen liegt */
+    margin: 0 0 16px 0 !important;
 }
 
 /* 1. Nutzungsrechte & Lizenzen: Äußere Box entfernen & Titel modernisieren */
@@ -2290,7 +2287,7 @@
 #src-calc-v6 .src-rights-card::before {
     display: none !important;
 }
-#src-calc-v6 .src-rights-card .src-box-header {
+#src-calc-v6 .src-col-left .src-rights-card .src-box-header {
     margin: 0 0 16px 0 !important; /* Fester, konstanter Abstand nach unten */
     padding: 0 !important;
 }
@@ -2551,15 +2548,21 @@
    1. MODERNES LAYOUT & ABSTÄNDE (LINKE SPALTE)
    ========================================================================== */
 
+#src-calc-v6 .src-col-left {
+    --src-left-block-gap: 32px;
+    --src-left-inner-gap: 24px;
+    --src-left-title-gap: 12px;
+}
+
 /* Die Haupt-Blöcke (generieren die sauberen Trennlinien) */
-.src-layout-block {
-    padding-bottom: 32px !important;
-    margin-bottom: 32px !important;
+#src-calc-v6 .src-col-left .src-layout-block {
+    padding-bottom: var(--src-left-block-gap) !important;
+    margin-bottom: var(--src-left-block-gap) !important;
     border-bottom: 1px solid rgba(226, 232, 240, 0.85) !important;
 }
 
 /* Der allerletzte Block bekommt logischerweise keinen Strich nach unten */
-.src-layout-block:last-child {
+#src-calc-v6 .src-col-left .src-layout-block:last-child {
     padding-bottom: 0 !important;
     margin-bottom: 0 !important;
     border-bottom: none !important;
@@ -2573,7 +2576,7 @@
 }
 
 /* Im Start-Zustand (kein Projekt gewählt) ist das Skript der letzte Block -> Strich ausblenden */
-#src-calc-v6:not(.src-has-project) .src-layout-block:has(#src-group-text) {
+#src-calc-v6:not(.src-has-project) .src-col-left .src-layout-block:has(#src-group-text) {
     padding-bottom: 0 !important;
     margin-bottom: 0 !important;
     border-bottom: none !important;
@@ -2584,10 +2587,11 @@
    ========================================================================== */
 
 /* Dezenter, gleichmäßiger Abstand zwischen den oberen Elementen innerhalb des ersten Blocks */
-.src-top-grid,
-#src-linked-projects-wrap,
-.src-advanced {
-    margin-bottom: 24px !important;
+#src-calc-v6 .src-col-left .src-top-grid,
+#src-calc-v6 .src-col-left #src-linked-projects-wrap,
+#src-calc-v6 .src-col-left .src-advanced,
+#src-calc-v6 .src-col-left #src-group-text {
+    margin-bottom: var(--src-left-inner-gap) !important;
 }
 
 #src-calc-v6 .src-col-left #src-linked-projects-wrap {
@@ -2595,19 +2599,49 @@
 }
 
 #src-calc-v6 .src-col-left .src-linked-projects {
-    margin: 0 0 24px !important;
+    margin: 0 0 var(--src-left-inner-gap) !important;
+}
+
+#src-calc-v6 .src-col-left .src-layout-block > .src-top-grid:last-child,
+#src-calc-v6 .src-col-left .src-layout-block > #src-linked-projects-wrap:last-child,
+#src-calc-v6 .src-col-left .src-layout-block > .src-advanced:last-child,
+#src-calc-v6 .src-col-left .src-layout-block > #src-group-text:last-child {
+    margin-bottom: 0 !important;
 }
 
 /* Hard-Reset: Verhindert, dass innere Boxen die 32px Trennlinien künstlich vergrößern */
-.src-layout-block > div:last-child,
-.src-rights-card,
-.src-complexity-group,
-#src-group-text,
-#mod-phone,
-#mod-ads .src-light-box-wrapper,
-#mod-image .src-rights-panel,
-.src-rights-panel {
+#src-calc-v6 .src-col-left .src-layout-block > div:last-child,
+#src-calc-v6 .src-col-left .src-rights-card,
+#src-calc-v6 .src-col-left .src-complexity-group,
+#src-calc-v6 .src-col-left #src-group-text,
+#src-calc-v6 .src-col-left #mod-phone,
+#src-calc-v6 .src-col-left #mod-ads .src-light-box-wrapper {
     margin-bottom: 0 !important;
+}
+
+#src-calc-v6 .src-col-left .src-section-title {
+    margin: 0 0 var(--src-left-title-gap) 0 !important;
+}
+
+#src-calc-v6 .src-col-left .src-section-head {
+    margin: 0 0 12px 0 !important;
+}
+
+#src-calc-v6 .src-col-left .src-rights-card .src-box-header,
+#src-calc-v6 .src-col-left .src-license-settings-block .src-box-header {
+    margin: 0 0 16px 0 !important;
+}
+
+#src-calc-v6 .src-col-left .src-slide-wrap:not(.open) {
+    margin: 0 !important;
+}
+
+#src-calc-v6 .src-col-left #src-pos-type-wrap.open {
+    margin-bottom: 15px !important;
+}
+
+#src-calc-v6 .src-col-left .src-rights-inner {
+    gap: 0 !important;
 }
 
 #src-global-settings {
