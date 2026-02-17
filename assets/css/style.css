@@ -2629,24 +2629,37 @@
     transition: transform 0.2s ease, opacity 0.2s ease !important;
 }
 
-body.src-tutorial-active #wpadminbar {
-    opacity: 0 !important;
-    visibility: hidden !important;
-    pointer-events: none !important;
+html.src-tutorial-mode #wpadminbar {
+    display: none !important;
 }
 
-body.src-tutorial-active header.ct-header,
-body.src-tutorial-active .ct-header,
-body.src-tutorial-active #header,
-body.src-tutorial-active #site-header,
-body.src-tutorial-active #masthead,
-body.src-tutorial-active header.site-header,
-body.src-tutorial-active .site-header,
-body.src-tutorial-active .main-header,
-body.src-tutorial-active .ast-primary-header-bar,
-body.src-tutorial-active .elementor-sticky,
-body.src-tutorial-active .sticky-header {
-    opacity: 0 !important;
-    visibility: hidden !important;
-    pointer-events: none !important;
+html.src-tutorial-mode header#header,
+html.src-tutorial-mode .ct-header,
+html.src-tutorial-mode .ct-header-sticky,
+html.src-tutorial-mode .ct-sticky-container,
+html.src-tutorial-mode #masthead,
+html.src-tutorial-mode header.site-header,
+html.src-tutorial-mode #site-header,
+html.src-tutorial-mode .ast-primary-header-bar,
+html.src-tutorial-mode .elementor-sticky,
+html.src-tutorial-mode .sticky-header {
+    display: none !important;
+}
+
+html.src-tutorial-mode .ct-scroll-progress,
+html.src-tutorial-mode .ct-reading-progress,
+html.src-tutorial-mode .reading-progress,
+html.src-tutorial-mode #reading-progress,
+html.src-tutorial-mode #scroll-progress,
+html.src-tutorial-mode .scroll-progress {
+    display: none !important;
+}
+
+html.src-tutorial-mode body {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+}
+
+html.src-tutorial-mode {
+    scroll-behavior: auto !important;
 }
