@@ -89,9 +89,17 @@ function src_shortcode_output_v7() {
     ?>
     <div class="src-reset-header src-header-flex">
         <div class="src-header-left">
-            <button class="src-action-link src-guide-btn" onclick="srcOpenGuide()">
+            <button class="src-action-link" onclick="srcStartTutorial()">
+                <span class="dashicons dashicons-welcome-learn-more"></span> Tutorial starten
+            </button>
+            <span class="src-divider">|</span>
+            <button class="src-action-link" onclick="srcOpenGuide()">
                 <span class="dashicons dashicons-book"></span> Anleitung
             </button>
+            <div class="src-currency-switch">
+                <button class="src-curr-btn is-active" id="btn-curr-eur" onclick="srcSetCurrency('EUR')">EUR</button>
+                <button class="src-curr-btn" id="btn-curr-chf" onclick="srcSetCurrency('CHF')">CHF</button>
+            </div>
         </div>
         <button class="src-reset-btn" onclick="srcReset()">
             <span class="dashicons dashicons-image-rotate"></span> Gagenrechner zurücksetzen
@@ -935,58 +943,59 @@ function src_shortcode_output_v7() {
                 </div>
 
                 <p class="src-guide-intro-text">
-                    Willkommen im Leitfaden zur Gagenkalkulation! Die Honorierung von professionellen Sprecherleistungen basiert nicht auf Stundenlöhnen, sondern auf dem Prinzip der <strong>Nutzungsrechte</strong>. Grundlage für alle hier abgebildeten Berechnungen ist der offizielle <a href="https://www.sprecherverband.de/wp-content/uploads/2025/02/VDS_Gagenkompass_2025.pdf" target="_blank" rel="noopener" class="src-vds-link-inline">VDS Gagenkompass 2025</a>. Diese Anleitung beantwortet alle Fragen zur korrekten Einstellung und Nutzung des Systems.
+                    Willkommen im Leitfaden zur Gagenkalkulation! Die Honorierung von professionellen Sprecherleistungen basiert nicht auf Stundenlöhnen, sondern auf dem Prinzip der <strong>Nutzungsrechte</strong>. Grundlage für alle Berechnungen ist der offizielle <a href="https://www.sprecherverband.de/wp-content/uploads/2025/02/VDS_Gagenkompass_2025.pdf" target="_blank" rel="noopener" class="src-vds-link-inline">VDS Gagenkompass 2025</a>. Diese Anleitung beantwortet alle Fragen zur korrekten Einstellung und Nutzung.
                 </p>
 
                 <h3 id="guide-1" class="src-guide-h3"><span class="dashicons dashicons-chart-pie src-guide-h3-icon"></span> 1. Das Verwertungsprinzip</h3>
-                <p>Man bezahlt primär für die Reichweite und die Zeit, in der eine Marke die Stimme nutzt. Ein Werbespot, der ein Jahr lang national im TV läuft, hat einen deutlich höheren medialen Werbewert als ein reines internes Schulungsvideo. Daher steigen die Kosten exponentiell mit dem Medium, der Verbreitung (Gebiet) und der Laufzeit.</p>
+                <p>Man bezahlt primär für die Reichweite und die Zeit, in der eine Marke die Stimme nutzt. Ein Werbespot, der ein Jahr lang national im TV läuft, hat einen deutlich höheren Werbewert als ein reines internes Schulungsvideo. Daher steigen die Kosten exponentiell mit dem Medium, der Verbreitung (Gebiet) und der Laufzeit.</p>
 
                 <h3 id="guide-2" class="src-guide-h3"><span class="dashicons dashicons-portfolio src-guide-h3-icon"></span> 2. Projektarten & Layout</h3>
-                <p>Die Projektart bestimmt die Grundlage der Berechnung. Paid Media (TV, Funk, Online Ads) basiert auf Reichweiten-Faktoren, während Unpaid Media (Imagefilme, E-Learning) meist nach Textlänge abgerechnet wird.</p>
+                <p>Die Projektart bestimmt die Grundlage. Paid Media (TV, Funk, Online Ads) basiert auf Reichweiten-Faktoren, während Unpaid Media (Imagefilme, E-Learning) meist nach Textlänge abgerechnet wird.</p>
                 <div class="src-guide-tip">
                     <strong>💡 Layout & Pitch (Sonderfall)</strong><br>
-                    Wird die Aufnahme lediglich genutzt, um intern eine Idee zu präsentieren oder in einem Pitchbild zu fungieren, aktiviere unter Optionen die Funktion <em>"Nur Layout / Pitch"</em>. Hierfür wird eine stark reduzierte Pauschale ohne Nutzungsrechte berechnet, da keine Veröffentlichung stattfindet.
+                    Wird die Aufnahme lediglich genutzt, um intern eine Idee in einem <span class="src-glossary-term" data-hover="Präsentation einer Idee vor dem Kunden, bevor das eigentliche Projekt final beauftragt wird.">Pitchbild</span> zu präsentieren, wähle in den Optionen <em>"Nur Layout / Pitch"</em>. Hier wird eine stark reduzierte Pauschale ohne Rechte berechnet.
                 </div>
 
                 <h3 id="guide-3" class="src-guide-h3"><span class="dashicons dashicons-clock src-guide-h3-icon"></span> 3. Skriptlänge & Module</h3>
-                <p>Die Länge des Textes ist besonders bei Corporate-, Podcast- oder E-Learning-Projekten essenziell. Das System schätzt die Dauer automatisch, sobald ein Skript eingefügt wird.</p>
+                <p>Die Länge des Textes ist bei Corporate- oder E-Learning-Projekten essenziell. Das System schätzt die Dauer automatisch, sobald ein Skript eingefügt wird.</p>
                 <div class="src-guide-tip">
                     <strong>⏱️ Faustregel & Telefonansagen</strong><br>
-                    Kalkuliere pro Minute mit etwa 900 Zeichen (inkl. Leerzeichen). Schreibe Zahlen aus (z.B. "zwei Millionen" statt "2 Mio."). Bei <em>Telefonansagen/IVR</em> wird nicht nach Länge, sondern nach Modulen (Anzahl der Ansagen) abgerechnet. Bis zu 3 Module sind in der Grundpauschale enthalten, danach greift ein Staffelpreis.
+                    Kalkuliere pro Minute mit etwa 900 Zeichen (inkl. Leerzeichen). Bei <em>Telefonansagen (IVR)</em> wird nicht nach Länge, sondern nach <span class="src-glossary-term" data-hover="Ein Modul entspricht einer einzelnen, in sich abgeschlossenen Ansage im Telefonsystem.">Modulen</span> abgerechnet. 3 Module sind in der Grundpauschale enthalten.
                 </div>
 
                 <h3 id="guide-4" class="src-guide-h3"><span class="dashicons dashicons-location-alt src-guide-h3-icon"></span> 4. Verbreitungsgebiet & Lokal</h3>
                 <p>Das Gebiet definiert die Ausstrahlungsgrenzen (Regional, National, DACH, Weltweit) und ist für Werbespots hochrelevant.</p>
                 <div class="src-guide-tip">
                     <strong>📍 Kleinräumiges Segment (Lokal / KMU)</strong><br>
-                    Für stark begrenzte Nutzungen existieren Sondertarife, die nicht über die regulären Multiplikatoren laufen. Aktiviere in den Optionen <em>"Kleinräumiges Segment"</em>. Dies gilt z.B. für "Funkspot (Lokal)" (bis 1 Jahr im Lokalsender) oder "Online Video (Kleinräumig)" (ausschließlich KMU, Media-Budget max. 5.000 €, max. 3 Monate).
+                    Aktiviere in den Optionen <em>"Kleinräumiges Segment"</em> für Sondertarife, die nicht über reguläre Multiplikatoren laufen. Z.B. "Funkspot (Lokal)" oder "Online Video (Kleinräumig)" für <span class="src-glossary-term" data-hover="Kleine und mittlere Unternehmen mit einem strikt begrenzten Media-Budget (max. 5.000 €).">KMU</span>.
                 </div>
 
                 <h3 id="guide-5" class="src-guide-h3"><span class="dashicons dashicons-calendar-alt src-guide-h3-icon"></span> 5. Laufzeiten & Buyouts</h3>
-                <p>Die Standard-Lizenz für Werbespots beträgt oft 1 Jahr. Unter dem Reiter "Erweitert" lassen sich komplexere Buyout-Modelle abbilden:</p>
+                <p>Die Standard-Lizenz für Werbung beträgt oft 1 Jahr. Unter "Erweitert" lassen sich komplexe Modelle abbilden:</p>
                 <ul>
-                    <li><strong>Buyout (einmalig):</strong> Ein Aufschlag von 25% auf die Endsumme für unkomplizierte, pauschale Abgeltungen.</li>
-                    <li><strong>Staffel (Perioden):</strong> Oft gewählt für langfristige Kampagnen, bei denen jede weitere Nutzungsperiode mit einem vergünstigten Aufschlag (z.B. +12%) berechnet wird.</li>
-                    <li><strong>Unlimited:</strong> Eine zeitlich unbegrenzte Nutzung im Paid-Bereich vervielfacht das Grundhonorar enorm (Faktor 4). Durch eine dauerhafte Nutzung wird die Stimme potenziell für Konkurrenzprodukte blockiert.</li>
+                    <li><strong><span class="src-glossary-term" data-hover="Ein pauschaler Zuschlag (+25%), um Nutzungsrechte vereinfacht für einen festgelegten Zeitraum abzugelten.">Buyout</span> (einmalig):</strong> Ein Aufschlag von 25% auf die Endsumme.</li>
+                    <li><strong>Staffel (Perioden):</strong> Oft gewählt für langfristige Kampagnen, bei denen jede weitere Nutzungsperiode (z.B. ein weiteres Jahr) mit +12% vergünstigt berechnet wird.</li>
+                    <li><strong>Unlimited:</strong> Eine zeitlich unbegrenzte Nutzung im Paid-Bereich vervielfacht das Honorar, da die Stimme potenziell für Konkurrenzprodukte blockiert wird.</li>
                 </ul>
 
                 <h3 id="guide-6" class="src-guide-h3"><span class="dashicons dashicons-plus-alt src-guide-h3-icon"></span> 6. Zusatzlizenzen & Cut-downs</h3>
                 <p>Zusätzliche Medienkanäle oder Kurzversionen können dem Projekt flexibel hinzugefügt werden.</p>
                 <div class="src-guide-tip">
                     <strong>✂️ Cut-downs, Tag-ons & Pakete</strong><br>
-                    Wird aus einem 30-sekündigen Hauptspot noch eine 15-sekündige Kurzversion geschnitten, berechnet man dies als Cut-down (50 % der Gage). Nutze zudem die vorgefertigten Pakete (z.B. <em>Online Audio</em> für Funkspots oder <em>ATV/CTV</em> für Online-Spots), um typische Cross-Media-Kampagnen mit dem branchenüblichen Aufschlag (+60%) abzubilden.
+                    Wird aus einem 30-sekündigen Hauptspot noch eine Kurzversion geschnitten, gilt dies als <span class="src-glossary-term" data-hover="Eine gekürzte Version des Hauptspots (oft als 15s Reminder) aus dem gleichen Rohmaterial.">Cut-down</span> (50 % der Gage). Nutze zudem Pakete (z.B. <em>Online Audio</em> für Funkspots), um Cross-Media-Kampagnen branchenüblich abzubilden.
                 </div>
 
                 <h3 id="guide-7" class="src-guide-h3"><span class="dashicons dashicons-admin-settings src-guide-h3-icon"></span> 7. Optionen, Aufwand & Rabatte</h3>
-                <p>Die reine Gage entlohnt die kreative Sprecherleistung. Weitere Projektumstände können die Summe final anpassen:</p>
+                <p>Weitere Projektumstände können die Summe final anpassen:</p>
                 <ul>
-                    <li><strong>Produktion & Aufwand:</strong> Spezielles Lipsync, sehr technisches Vokabular oder mehrere gewollte Sprachversionen fließen hier als Komplexitätsfaktor ein.</li>
-                    <li><strong>Studiokosten:</strong> Produziert, schneidet und säubert der Sprecher das Audio im eigenen Studio (Remote), greift die Technik-Pauschale.</li>
-                    <li><strong>Express & Rabatte:</strong> Für Lieferungen innerhalb von 4h oder 24h berechnet das System branchenübliche Express-Aufschläge. Rabatte können prozentual vom Endpreis inkl. Begründung (z.B. Neukunde, Non-Profit) abgezogen werden.</li>
+                    <li><strong>Produktion & Aufwand:</strong> Spezielles <span class="src-glossary-term" data-hover="Die exakte lippensynchrone Anpassung der Sprache an die Bewegungen im Video.">Lipsync</span>, technisches Vokabular oder mehrere Sprachversionen fließen hier als Komplexitätsfaktor ein.</li>
+                    <li><strong>Studiokosten:</strong> Produziert und reinigt der Sprecher das Audio im eigenen Studio, greift die Technik-Pauschale.</li>
+                    <li><strong>Express & Rabatte:</strong> Für schnelle Lieferungen (4h/24h) gibt es Express-Aufschläge. Rabatte können prozentual inkl. Begründung abgezogen werden.</li>
                 </ul>
 
                 <h3 id="guide-8" class="src-guide-h3"><span class="dashicons dashicons-lock src-guide-h3-icon"></span> 8. Datenschutz & Sicherheit</h3>
-                <p><strong>100% Lokal & Privat:</strong> Alle Deine eingegebenen Daten, Projektinformationen, Skripte und kalkulierten Zahlen werden <strong>niemals</strong> auf unseren Servern gespeichert oder an Dritte übertragen. Die gesamte Berechnung und auch die Erstellung der PDF-Angebote findet ausschließlich lokal in Deinem eigenen Browser statt. Deine Daten gehören nur Dir.</p>
+                <p><strong>100% Lokal & Privat:</strong> Alle Deine eingegebenen Daten, Projektinformationen, Skripte und kalkulierten Zahlen werden <strong>niemals</strong> auf unseren Servern gespeichert oder an Dritte übertragen. Die gesamte Berechnung und auch die Erstellung der PDF-Angebote findet ausschließlich lokal in Deinem Browser statt. Deine Daten gehören nur Dir.</p>
+                <br>
             </div>
         </div>
     </div>

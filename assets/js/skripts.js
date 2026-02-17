@@ -17,6 +17,16 @@ let currentProjectTips = [];
 let stickyRaf = 0;
 let compareState = { enabled: false, A: null, B: null, activeTab: 'A' };
 let packagesState = null;
+let srcCurrency = 'EUR';
+const srcChfRate = 1.0; // Umrechnungsfaktor (kann bei Bedarf angepasst werden)
+
+window.srcSetCurrency = function(curr) {
+    srcCurrency = curr;
+    document.getElementById('btn-curr-eur')?.classList.toggle('is-active', curr === 'EUR');
+    document.getElementById('btn-curr-chf')?.classList.toggle('is-active', curr === 'CHF');
+    srcCalc();
+    if(packagesState) srcRenderPackages();
+};
 let exportModalKeyHandler = null;
 let exportModalState = {
     pdf: true,
@@ -352,15 +362,18 @@ window.srcSyncOptionRowStates = function() {
 
 const srcFormatCurrency = function(value) {
     if(!Number.isFinite(value)) return "–";
-    return `${Math.round(value)} €`;
+    let val = srcCurrency === 'CHF' ? value * srcChfRate : value;
+    return `${Math.round(val)} ${srcCurrency === 'CHF' ? 'CHF' : '€'}`;
 }
 
 const srcFormatSignedCurrency = function(value) {
     if(!Number.isFinite(value)) return "";
-    const rounded = Math.round(value);
-    if(rounded === 0) return "0 €";
+    let val = srcCurrency === 'CHF' ? value * srcChfRate : value;
+    const rounded = Math.round(val);
+    const sym = srcCurrency === 'CHF' ? 'CHF' : '€';
+    if(rounded === 0) return `0 ${sym}`;
     const sign = rounded > 0 ? "+" : "−";
-    return `${sign}${Math.abs(rounded)} €`;
+    return `${sign}${Math.abs(rounded)} ${sym}`;
 }
 
 const srcStripHTML = function(str) {
