@@ -38,23 +38,15 @@ function src_enqueue_assets_v7() {
         '7.0.0'
     );
 
-    wp_enqueue_style(
-        'src-driver-css',
-        'https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.css',
-        array(),
-        '1.0.1'
-    );
-
     // Externe PDF Libraries
     wp_enqueue_script('jspdf', 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', array(), '2.5.1', true);
     wp_enqueue_script('jspdf-autotable', 'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js', array('jspdf'), '3.5.28', true);
-    wp_enqueue_script('src-driver-js', 'https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.js.iife.js', array(), '1.0.1', true);
 
     // Unser eigenes JS laden
     wp_enqueue_script(
         'src-script', 
         SRC_PLUGIN_URL . 'assets/js/skripts.js', 
-        array('jquery', 'jspdf', 'jspdf-autotable', 'src-driver-js'), 
+        array('jquery', 'jspdf', 'jspdf-autotable'), 
         '7.0.0', 
         true
     );
@@ -97,10 +89,6 @@ function src_shortcode_output_v7() {
     ?>
     <div class="src-reset-header src-header-flex">
         <div class="src-header-left">
-            <button class="src-action-link" onclick="srcStartTutorial()">
-                <span class="dashicons dashicons-welcome-learn-more"></span> Tutorial starten
-            </button>
-            <span class="src-divider">|</span>
             <button class="src-action-link" onclick="srcOpenGuide()">
                 <span class="dashicons dashicons-book"></span> Anleitung
             </button>
