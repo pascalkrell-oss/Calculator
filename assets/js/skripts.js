@@ -2888,3 +2888,89 @@ window.srcGeneratePDFv6 = function(options = {}) {
 
     doc.save('Gagen_Angebot.pdf');
 }
+
+/* --- CUSTOM HIGH-END TUTORIAL SYSTEM --- */
+let srcTutCurrentStep = 0;
+const srcTutSteps = [
+    { el: '.src-top-grid', title: '1. Projektart', desc: 'Wähle hier aus, wofür Deine Sprachaufnahme genutzt wird. Das System passt sich dynamisch an.' },
+    { el: '.src-advanced', title: '2. Erweiterte Parameter', desc: 'Präzisiere Deinen Vertrag: Lege Exklusivitäten, Buyout-Modelle oder zusätzliche Sprachversionen fest.' },
+    { el: '#src-group-text', title: '3. Skript & Länge', desc: 'Füge Dein Skript ein, um die Länge in Minuten automatisch schätzen zu lassen.' },
+    { el: '.src-rights-card', title: '4. Nutzungsrechte', desc: 'Definiere genau, wo (Gebiet) und wie lange (Dauer) die Aufnahme genutzt werden darf.' },
+    { el: '.src-complexity-group', title: '5. Produktion & Aufwand', desc: 'Anforderungen wie Lipsync oder spezielle Stile fließen hier in die Berechnung ein.' },
+    { el: '#src-global-settings', title: '6. Optionen', desc: 'Füge Studiokosten, Express-Lieferungen oder individuelle Rabatte zu Deinem Angebot hinzu.' },
+    { el: '.src-result-card', title: '7. Ergebnis & Kalkulation', desc: 'Hier siehst Du live Deine kalkulierte Gage. Generiere von hier aus direkt ein professionelles PDF.' }
+];
+
+window.srcStartTutorial = function() {
+    // 1. UI Vorbereiten
+    const genreSelect = document.getElementById('src-genre');
+    if (genreSelect) {
+        genreSelect.value = 'tv';
+        srcUIUpdate();
+        srcCalc();
+    }
+    const advAcc = document.getElementById('src-advanced-accordion');
+    if (advAcc) advAcc.open = true;
+
+    // 2. Tutorial Starten
+    srcTutCurrentStep = 0;
+    document.body.classList.add('src-tutorial-active');
+    document.getElementById('src-tutorial-panel').classList.remove('src-tutorial-hidden');
+
+    // Setup Dots
+    const dotsContainer = document.getElementById('src-tut-dots');
+    dotsContainer.innerHTML = srcTutSteps.map((_, i) => `<div class="src-tutorial-dot ${i === 0 ? 'is-active' : ''}"></div>`).join('');
+
+    setTimeout(() => srcRenderTutStep(), 300);
+};
+
+window.srcRenderTutStep = function() {
+    // Altes Highlight entfernen
+    document.querySelectorAll('.src-is-highlighted').forEach(el => el.classList.remove('src-is-highlighted'));
+
+    const step = srcTutSteps[srcTutCurrentStep];
+    const targetEl = document.querySelector(step.el);
+
+    if (targetEl) {
+        targetEl.classList.add('src-is-highlighted');
+        // Weich zum Element scrollen, so dass es mittig im Bildschirm ist
+        targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    // Panel updaten
+    document.getElementById('src-tut-badge').innerText = `${srcTutCurrentStep + 1} / ${srcTutSteps.length}`;
+    document.getElementById('src-tut-title').innerText = step.title;
+    document.getElementById('src-tut-desc').innerText = step.desc;
+
+    // Buttons & Dots updaten
+    document.getElementById('src-tut-prev').style.display = srcTutCurrentStep === 0 ? 'none' : 'inline-flex';
+    const nextBtn = document.getElementById('src-tut-next');
+    nextBtn.innerHTML = srcTutCurrentStep === srcTutSteps.length - 1 ? 'Beenden <span class="dashicons dashicons-yes"></span>' : 'Weiter <span class="dashicons dashicons-arrow-right-alt"></span>';
+
+    document.querySelectorAll('.src-tutorial-dot').forEach((dot, i) => {
+        dot.classList.toggle('is-active', i === srcTutCurrentStep);
+    });
+};
+
+window.srcTutNext = function() {
+    if (srcTutCurrentStep < srcTutSteps.length - 1) {
+        srcTutCurrentStep++;
+        srcRenderTutStep();
+    } else {
+        srcEndTutorial();
+    }
+};
+
+window.srcTutPrev = function() {
+    if (srcTutCurrentStep > 0) {
+        srcTutCurrentStep--;
+        srcRenderTutStep();
+    }
+};
+
+window.srcEndTutorial = function() {
+    document.body.classList.remove('src-tutorial-active');
+    document.getElementById('src-tutorial-panel').classList.add('src-tutorial-hidden');
+    document.querySelectorAll('.src-is-highlighted').forEach(el => el.classList.remove('src-is-highlighted'));
+    srcReset();
+};
