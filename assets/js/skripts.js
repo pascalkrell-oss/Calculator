@@ -1728,14 +1728,16 @@ function srcTutorialMeasureHeaderOffset() {
     window.__srcTutorialHeaderOffset = Math.max(0, Math.round(offset));
 }
 
-function srcTutorialScrollAnchorTo(el) {
+function srcTutorialScrollAnchorTo(el, step) {
     const node = el && el.node ? el.node : el;
     if(!node || typeof node.getBoundingClientRect !== 'function') return;
 
     const rect = node.getBoundingClientRect();
     const offset = window.__srcTutorialHeaderOffset || 0;
     const gap = 18;
-    const targetTop = Math.max(0, window.scrollY + rect.top - offset - gap);
+    const side = step && step.popover ? step.popover.side : null;
+    const extraOffset = side === 'bottom' ? 120 : gap;
+    const targetTop = Math.max(0, window.scrollY + rect.top - offset - extraOffset);
 
     window.scrollTo({ top: targetTop, behavior: 'auto' });
 }
@@ -1820,18 +1822,27 @@ window.srcStartTutorial = function() {
                 document.documentElement.classList.remove('src-tutorial-mode');
                 srcTutorialRestoreTopMiniBars();
                 srcReset();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
             },
 
-            onHighlightStarted: (element) => {
+            onHighlightStarted: (element, step) => {
                 const targetNode = element && element.node ? element.node : element;
                 const details = targetNode && typeof targetNode.closest === 'function' ? targetNode.closest('details') : null;
                 if(details && !details.open) {
                     details.open = true;
                 }
-                srcTutorialScrollAnchorTo(element);
+                srcTutorialScrollAnchorTo(element, step);
             },
 
             onHighlighted: (element, step, opts) => {
+                const isPackagesStep = step && step.popover && step.popover.title === '12. Pakete';
+                if(isPackagesStep) {
+                    const btn = document.querySelector('#src-build-packages');
+                    const list = document.querySelector('#src-packages-list');
+                    if(btn && list && list.children.length === 0) {
+                        btn.click();
+                    }
+                }
                 if(opts && opts.driver && typeof opts.driver.refresh === 'function') {
                     opts.driver.refresh();
                     setTimeout(() => opts.driver.refresh(), 30);
@@ -1839,20 +1850,20 @@ window.srcStartTutorial = function() {
             },
 
             steps: [
-                { element: '#src-genre', popover: { title: '1. Projektart', description: 'Wähle hier aus, wofür Deine Sprachaufnahme genutzt wird.', side: 'bottom', align: 'center' } },
-                { element: '#src-language', popover: { title: '2. Sprache', description: 'Fremdsprachen oder Englisch haben oft Aufschläge.', side: 'bottom', align: 'center' } },
+                { element: '.src-top-grid > div:first-child', popover: { title: '1. Projektart', description: 'Wähle hier aus, wofür Deine Sprachaufnahme genutzt wird.', side: 'bottom', align: 'center' } },
+                { element: '.src-top-grid > div:last-child', popover: { title: '2. Sprache', description: 'Fremdsprachen oder Englisch haben oft Aufschläge.', side: 'bottom', align: 'center' } },
                 { element: '.src-advanced', popover: { title: '3. Erweiterte Parameter', description: 'Präzisiere Deinen Vertrag hier.', side: 'bottom', align: 'center' } },
                 { element: '#src-group-text', popover: { title: '4. Skript & Länge', description: 'Füge Dein Skript ein, um die Länge schätzen zu lassen.', side: 'bottom', align: 'center' } },
                 { element: '.src-rights-card', popover: { title: '5. Nutzungsrechte & Lizenzen', description: 'Definiere genau, wo und wie lange die Aufnahme genutzt werden darf.', side: 'bottom', align: 'center' } },
                 { element: '#src-complexity-group', popover: { title: '6. Produktion & Aufwand', description: 'Anforderungen wie Lipsync oder spezielle Stile fließen hier ein.', side: 'bottom', align: 'center' } },
                 { element: '#src-global-settings', popover: { title: '7. Optionen', description: 'Füge Studiokosten oder Express-Lieferungen hinzu.', side: 'bottom', align: 'center' } },
-                { element: '.src-result-card', popover: { title: '8. Ergebnis & Kalkulation', description: 'Hier siehst Du live Deine kalkulierte Gage.', side: 'bottom', align: 'center' } },
-                { element: '#src-license-section .src-sidebar-head, #src-license-section .src-sidebar-title', popover: { title: '9. Nutzungsrechte (Sidebar)', description: 'Hier siehst Du Deine gewählten Nutzungsrechte kompakt zusammengefasst.', side: 'bottom', align: 'center' } },
-                { element: '#src-pricedetails-section .src-sidebar-title, #src-pricedetails-section', popover: { title: '10. Preis-Details', description: 'Transparenter Rechenweg: so setzt sich die Gage zusammen.', side: 'bottom', align: 'center' } },
+                { element: '.src-result-card', popover: { title: '8. Ergebnis & Kalkulation', description: 'Hier siehst Du live Deine empfohlene Gage (Richtwert).', side: 'bottom', align: 'center' } },
+                { element: '#src-license-section', popover: { title: '9. Nutzungsrechte', description: 'Hier siehst Du Deine gewählten Nutzungsrechte kompakt zusammengefasst.', side: 'bottom', align: 'center' } },
+                { element: '#src-pricedetails-section', popover: { title: '10. Preis-Details', description: 'Transparenter Rechenweg für die empfohlene Gage (Richtwert).', side: 'bottom', align: 'center' } },
                 { element: '#src-notes-tips-section .src-sidebar-title, #src-notes-tips-section', popover: { title: '11. Hinweise & Tipps', description: 'Kontext & Empfehlungen passend zu Deinen Eingaben.', side: 'bottom', align: 'center' } },
                 { element: '#src-packages-section .src-sidebar-title, #src-packages-section', popover: { title: '12. Pakete', description: 'Erzeuge Paketvorschläge und exportiere sie als Angebot.', side: 'bottom', align: 'center' } },
                 { element: '.src-info-section .src-sidebar-title, .src-info-section', popover: { title: '13. Wissenswertes', description: 'Kurze Erklärungen zu Kalkulationslogik, Rechten & typischen Stolperfallen.', side: 'bottom', align: 'center' } },
-                { element: '.src-footer-actions .src-btn, button[onclick="srcOpenExportModal()"]', popover: { title: '14. Angebot speichern', description: 'Exportiere Dein Angebot als PDF – inkl. Deiner Eingaben & Zusammenfassung.', side: 'top', align: 'center' } }
+                { element: '.src-footer-actions .src-btn, button[onclick="srcOpenExportModal()"]', popover: { title: '14. Angebot speichern', description: 'Exportiere Dein Angebot als PDF – inkl. Deiner Eingaben & Zusammenfassung als empfohlene Gage (Richtwert).', side: 'bottom', align: 'center' } }
             ]
         });
         driverObj.drive();
