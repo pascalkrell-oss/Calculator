@@ -287,6 +287,7 @@ function src_shortcode_output_v7() {
                 </div>
                 </div>
             </div>
+            </div>
 
             <div class="src-layout-block">
                 <div class="src-left-section src-rights-card src-collapse src-settings-block src-license-settings-block">
