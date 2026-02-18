@@ -2891,15 +2891,51 @@ window.srcGeneratePDFv6 = function(options = {}) {
 
 /* --- CUSTOM HIGH-END TUTORIAL SYSTEM --- */
 let srcTutCurrentStep = 0;
-const srcTutSteps = [
-    { el: '.src-top-grid', title: '1. Projektart', desc: 'Wähle hier aus, wofür Deine Sprachaufnahme genutzt wird. Das System passt sich dynamisch an.' },
-    { el: '.src-advanced', title: '2. Erweiterte Parameter', desc: 'Präzisiere Deinen Vertrag: Lege Exklusivitäten, Buyout-Modelle oder zusätzliche Sprachversionen fest.' },
-    { el: '#src-group-text', title: '3. Skript & Länge', desc: 'Füge Dein Skript ein, um die Länge in Minuten automatisch schätzen zu lassen.' },
-    { el: '.src-rights-card', title: '4. Nutzungsrechte', desc: 'Definiere genau, wo (Gebiet) und wie lange (Dauer) die Aufnahme genutzt werden darf.' },
-    { el: '.src-complexity-group', title: '5. Produktion & Aufwand', desc: 'Anforderungen wie Lipsync oder spezielle Stile fließen hier in die Berechnung ein.' },
-    { el: '#src-global-settings', title: '6. Optionen', desc: 'Füge Studiokosten, Express-Lieferungen oder individuelle Rabatte zu Deinem Angebot hinzu.' },
-    { el: '.src-result-card', title: '7. Ergebnis & Kalkulation', desc: 'Hier siehst Du live Deine kalkulierte Gage. Generiere von hier aus direkt ein professionelles PDF.' }
-];
+let srcTutSteps = [];
+let srcTutPackagesTriggered = false;
+window.__srcTutorialActive = false;
+
+function srcTutorialPickSelector(selectors) {
+    for (let i = 0; i < selectors.length; i++) {
+        if (document.querySelector(selectors[i])) {
+            return selectors[i];
+        }
+    }
+    return null;
+}
+
+function srcTutorialEnsurePackages() {
+    const list = document.getElementById('src-packages-list');
+    const btn = document.getElementById('src-build-packages');
+    if (!btn || !list || !window.__srcTutorialActive) return;
+
+    const empty = !list.children || list.children.length === 0;
+    if (empty && !srcTutPackagesTriggered) {
+        srcTutPackagesTriggered = true;
+        btn.click();
+    }
+}
+
+function srcBuildTutorialSteps() {
+    const steps = [
+        { element: srcTutorialPickSelector(['.src-top-grid > div:nth-child(1)', '#src-genre']), title: '1. Projektart', desc: 'Wähle hier aus, welche Art von Projekt kalkuliert wird.' },
+        { element: srcTutorialPickSelector(['.src-top-grid > div:nth-child(2)', '#src-language']), title: '2. Sprache', desc: 'Hier legst Du die Sprachvariante fest, die in die Berechnung einfließt.' },
+        { element: '.src-advanced', title: '3. Erweitert', desc: 'Zusätzliche Vertrags- und Leistungsparameter für eine präzisere Kalkulation.' },
+        { element: '#src-group-text', title: '4. Skript / Länge', desc: 'Skript einfügen und die geschätzte Sprechdauer automatisch ermitteln lassen.' },
+        { element: '.src-rights-card', title: '5. Nutzungsrechte', desc: 'Definiere Medium, Laufzeit und Gebiet der Verwertung.' },
+        { element: '.src-complexity-group', title: '6. Produktion & Aufwand', desc: 'Produktionsanforderungen und Aufwand wirken sich direkt auf die Empfehlung aus.' },
+        { element: '#src-global-settings', title: '7. Optionen', desc: 'Optionale Kostenblöcke wie Studio, Express oder Rabatt hinzufügen.' },
+        { element: srcTutorialPickSelector(['#src-sidebar-kalkulation', '.src-col-right .src-sidebar-section:first-child', '.src-result-card']), title: '8. Kalkulation (Sidebar)', desc: 'Hier siehst Du die empfohlene Gage und die relevanten Richtwerte auf einen Blick.' },
+        { element: '#src-license-section', title: '9. Nutzungsrechte & Lizenzen', desc: 'Diese Box fasst die Lizenzparameter der aktuellen Kalkulation zusammen.' },
+        { element: '#src-pricedetails-section', title: '10. Preis-Details', desc: 'Hier wird die Berechnung transparent und Schritt für Schritt aufgeschlüsselt.' },
+        { element: '#src-notes-tips-section', title: '11. Hinweise & Tipps', desc: 'Kontextbezogene Hinweise helfen bei einer realistischen Angebotsgestaltung.' },
+        { element: '#src-packages-section', title: '12. Pakete', desc: 'In diesem Bereich kannst Du direkt Paketvorschläge auf Basis der Kalkulation erzeugen.' },
+        { element: srcTutorialPickSelector(['#src-knowledge-section', '.src-info-section']), title: '13. Wissenswertes', desc: 'Zusätzliche Fachinformationen unterstützen Dich bei Einordnung und Kommunikation.' },
+        { element: srcTutorialPickSelector(['#src-offer-save-btn', '.src-footer-actions .src-btn']), title: '14. Angebot speichern', desc: 'Speichere Dein Angebot hier als PDF für Versand und Dokumentation.' }
+    ];
+
+    return steps.filter(step => step.element && document.querySelector(step.element));
+}
 
 window.srcStartTutorial = function() {
     // 1. UI Vorbereiten
@@ -2914,6 +2950,15 @@ window.srcStartTutorial = function() {
 
     // 2. Tutorial Starten
     srcTutCurrentStep = 0;
+    srcTutPackagesTriggered = false;
+    window.__srcTutorialActive = true;
+    srcTutSteps = srcBuildTutorialSteps();
+
+    if (!srcTutSteps.length) {
+        window.__srcTutorialActive = false;
+        return;
+    }
+
     document.body.classList.add('src-tutorial-active');
     document.getElementById('src-tutorial-panel').classList.remove('src-tutorial-hidden');
 
@@ -2929,12 +2974,21 @@ window.srcRenderTutStep = function() {
     document.querySelectorAll('.src-is-highlighted').forEach(el => el.classList.remove('src-is-highlighted'));
 
     const step = srcTutSteps[srcTutCurrentStep];
-    const targetEl = document.querySelector(step.el);
+    if (!step) {
+        srcEndTutorial();
+        return;
+    }
+
+    const targetEl = document.querySelector(step.element);
 
     if (targetEl) {
         targetEl.classList.add('src-is-highlighted');
         // Weich zum Element scrollen, so dass es mittig im Bildschirm ist
         targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        if (window.__srcTutorialActive && targetEl.closest('#src-packages-section')) {
+            setTimeout(srcTutorialEnsurePackages, 50);
+        }
     }
 
     // Panel updaten
@@ -2969,6 +3023,7 @@ window.srcTutPrev = function() {
 };
 
 window.srcEndTutorial = function() {
+    window.__srcTutorialActive = false;
     document.body.classList.remove('src-tutorial-active');
     document.getElementById('src-tutorial-panel').classList.add('src-tutorial-hidden');
     document.querySelectorAll('.src-is-highlighted').forEach(el => el.classList.remove('src-is-highlighted'));
