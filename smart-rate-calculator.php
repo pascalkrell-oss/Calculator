@@ -472,16 +472,15 @@ function src_shortcode_output_v7() {
                                         <span class="dashicons dashicons-share src-switch-icon"></span>
                                         <div>
                                             <div class="src-switch-text">Social Media (Organisch)</div>
-                                            <div class="src-switch-sub">Zusatzlizenz-Level auswählen</div>
+                                            <div class="src-switch-sub">Zusatzlizenz aktivieren</div>
                                         </div>
                                     </span>
-                                    <div class="src-field-inline" id="src-lic-social-level-wrap">
-                                        <select id="src-lic-social-level" class="src-select src-select--sm">
-                                            <option value="off" selected>AUS</option>
-                                            <option value="low">LOW</option>
-                                            <option value="mid">MID</option>
-                                            <option value="high">HIGH</option>
-                                        </select>
+                                    <div class="src-field-inline src-social-inline" id="src-lic-social-level-wrap">
+                                        <div class="src-toggle-wrapper">
+                                            <input type="checkbox" id="src-social-toggle">
+                                            <label class="src-toggle-slider" for="src-social-toggle"></label>
+                                        </div>
+                                        <div class="src-social-badges" id="src-social-badges"></div>
                                     </div>
                                 </div>
                                 <div class="src-switch-row boxed">

@@ -17,6 +17,9 @@ let currentProjectTips = [];
 let stickyRaf = 0;
 let compareState = { enabled: false, A: null, B: null, activeTab: 'A' };
 let packagesState = null;
+let srcSocialBadgeBound = false;
+window.srcLicenseSocialEnabled = false;
+window.srcLicenseSocialLevel = 'mid';
 window.srcCurrencyCode = 'EUR';
 window.srcFxRates = { CHF: 1, USD: 1 };
 const SRC_CURRENCY_STORAGE_KEY = 'src_currency';
@@ -177,7 +180,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 'src-local-mode',
                 'src-pkg-online',
                 'src-pkg-atv',
-                'src-lic-social-level',
+                'src-social-toggle',
                 'src-lic-event',
                 'src-lic-internal',
                 'src-express-toggle',
@@ -281,10 +284,31 @@ document.addEventListener('DOMContentLoaded', () => {
         durationSlider.addEventListener('input', srcUpdateDurationSliderFill);
         durationSlider.addEventListener('change', srcUpdateDurationSliderFill);
     }
-    const socialLevelSelect = document.getElementById('src-lic-social-level');
-    if(socialLevelSelect) {
-        socialLevelSelect.addEventListener('change', () => srcCalc());
+    const socialToggle = document.getElementById('src-social-toggle');
+    if(socialToggle) {
+        socialToggle.addEventListener('change', () => {
+            window.srcLicenseSocialEnabled = Boolean(socialToggle.checked);
+            if(window.srcLicenseSocialEnabled && !['low', 'mid', 'high'].includes(window.srcLicenseSocialLevel)) {
+                window.srcLicenseSocialLevel = 'mid';
+            }
+            srcRenderSocialBadges();
+            srcCalc();
+        });
     }
+    const socialBadges = document.getElementById('src-social-badges');
+    if(socialBadges && !srcSocialBadgeBound) {
+        socialBadges.addEventListener('click', (event) => {
+            const btn = event.target.closest('.src-social-badge[data-level]');
+            if(!btn || !window.srcLicenseSocialEnabled) return;
+            const nextLevel = btn.getAttribute('data-level');
+            if(!['low', 'mid', 'high'].includes(nextLevel)) return;
+            window.srcLicenseSocialLevel = nextLevel;
+            srcRenderSocialBadges();
+            srcCalc();
+        });
+        srcSocialBadgeBound = true;
+    }
+    srcEnforceProjectTypeDropdownDownward();
     const genreSelect = document.getElementById('src-genre');
     if(genreSelect) {
         genreSelect.addEventListener('change', () => {
@@ -466,6 +490,12 @@ const srcFormatMoney = function(amountEur) {
 
 const srcFormatCurrency = srcFormatMoney;
 
+const srcFormatMoneyNumberOnly = function(amountEur) {
+    if(!Number.isFinite(amountEur)) return '–';
+    const converted = srcConvertFromEUR(amountEur);
+    return `${srcGetNumberFormatter().format(Math.round(converted))}`;
+}
+
 const srcFormatSignedCurrency = function(value) {
     if(!Number.isFinite(value)) return '';
     const converted = srcConvertFromEUR(value);
@@ -608,7 +638,8 @@ const srcGetStateFromUI = function() {
         duration: parseInt(document.getElementById('src-time-slider').value, 10) || 1,
         packageOnline: document.getElementById('src-pkg-online') ? document.getElementById('src-pkg-online').checked : false,
         packageAtv: document.getElementById('src-pkg-atv') ? document.getElementById('src-pkg-atv').checked : false,
-        licenseSocialLevel: document.getElementById('src-lic-social-level') ? document.getElementById('src-lic-social-level').value : 'off',
+        licenseSocialEnabled: Boolean(window.srcLicenseSocialEnabled),
+        licenseSocialLevel: window.srcLicenseSocialEnabled ? (['low', 'mid', 'high'].includes(window.srcLicenseSocialLevel) ? window.srcLicenseSocialLevel : 'mid') : 'off',
         licenseEvent: document.getElementById('src-lic-event') ? document.getElementById('src-lic-event').checked : false,
         licenseInternal: srcProjectSupportsInternalUse(genre) && (document.getElementById('src-lic-internal') ? document.getElementById('src-lic-internal').checked : false),
         cutdown: document.getElementById('src-cutdown') ? document.getElementById('src-cutdown').checked : false,
@@ -886,17 +917,14 @@ const srcGetInternalUseToggle = function() {
     return document.querySelector('#src-lic-internal');
 }
 
-const srcGetSocialLevelField = function() {
-    return document.querySelector('#src-lic-social-level');
-}
-
-const srcGetSocialLevelRow = function(fieldEl) {
-    if(!fieldEl) return null;
-    return fieldEl.closest('.src-option-row')
-        || fieldEl.closest('.src-checkbox-row')
-        || fieldEl.closest('.src-switch-row')
-        || fieldEl.closest('label')?.parentElement
-        || fieldEl.parentElement;
+const srcGetSocialLevelRow = function() {
+    const wrap = document.getElementById('src-lic-social-level-wrap');
+    if(!wrap) return null;
+    return wrap.closest('.src-option-row')
+        || wrap.closest('.src-checkbox-row')
+        || wrap.closest('.src-switch-row')
+        || wrap.closest('label')?.parentElement
+        || wrap.parentElement;
 }
 
 const srcProjectSupportsSocialOrganic = function(projectKey) {
@@ -905,22 +933,67 @@ const srcProjectSupportsSocialOrganic = function(projectKey) {
     return Object.prototype.hasOwnProperty.call(extras, 'social_organic');
 }
 
+const srcRenderSocialBadges = function() {
+    const wrap = document.getElementById('src-social-badges');
+    if(!wrap) return;
+    if(!window.srcLicenseSocialEnabled) {
+        wrap.innerHTML = '';
+        wrap.style.display = 'none';
+        return;
+    }
+    const state = srcGetStateFromUI();
+    const currentData = (srcRatesData && srcRatesData[state.projectKey]) ? srcRatesData[state.projectKey] : null;
+    const trip = srcEnsurePriceTriple(currentData?.license_extras?.social_organic, [50, 150, 250]);
+    const items = [
+        { k: 'low', v: trip[0] },
+        { k: 'mid', v: trip[1] },
+        { k: 'high', v: trip[2] }
+    ];
+    wrap.style.display = '';
+    wrap.innerHTML = items.map((it) => {
+        const label = srcFormatMoneyNumberOnly(it.v) + srcGetCurrencySuffix();
+        const active = (window.srcLicenseSocialLevel === it.k) ? ' is-active' : '';
+        return `<button type="button" class="src-social-badge${active}" data-level="${it.k}">${label}</button>`;
+    }).join('');
+}
+
 const srcUpdateSocialLevelAvailability = function(projectKey) {
-    const field = srcGetSocialLevelField();
-    if(!field) return { supported: false, wasReset: false };
-    const row = srcGetSocialLevelRow(field);
+    const toggle = document.getElementById('src-social-toggle');
+    const row = srcGetSocialLevelRow();
+    if(!toggle) return { supported: false, wasReset: false };
     const supportsSocial = srcProjectSupportsSocialOrganic(projectKey);
     let wasReset = false;
     if(!supportsSocial) {
-        if(field.value !== 'off') {
-            field.value = 'off';
+        if(window.srcLicenseSocialEnabled || window.srcLicenseSocialLevel !== 'mid') {
+            window.srcLicenseSocialEnabled = false;
+            window.srcLicenseSocialLevel = 'mid';
             wasReset = true;
         }
+        toggle.checked = false;
+        srcSetOptionRowState(toggle);
         if(row) row.style.display = 'none';
     } else {
         if(row) row.style.display = '';
+        if(toggle.checked !== Boolean(window.srcLicenseSocialEnabled)) {
+            window.srcLicenseSocialEnabled = Boolean(toggle.checked);
+        }
+        toggle.checked = Boolean(window.srcLicenseSocialEnabled);
+        srcSetOptionRowState(toggle);
+        if(window.srcLicenseSocialEnabled && !['low', 'mid', 'high'].includes(window.srcLicenseSocialLevel)) {
+            window.srcLicenseSocialLevel = 'mid';
+        }
     }
+    srcRenderSocialBadges();
     return { supported: supportsSocial, wasReset };
+}
+
+const srcEnforceProjectTypeDropdownDownward = function() {
+    const projectField = document.getElementById('src-genre');
+    if(!projectField) return;
+    const host = projectField.closest('.choices, .src-select-wrap, .select2-container, .selectize-control');
+    if(!host) return;
+    host.classList.remove('is-top', 'dropup', 'open-up', 'choices__list--dropdown-up');
+    host.classList.add('src-force-dropdown-down');
 }
 
 const srcGetInternalUseRow = function(toggleEl) {
@@ -1168,7 +1241,7 @@ const srcBuildRiskChecks = function(state) {
             checks.push({ severity: 'info', text: 'Lange Laufzeit + großes Gebiet: ggf. alternative Lizenzstaffel prüfen.' });
         }
     }
-    const hasSocialAddon = state.licenseSocialLevel && state.licenseSocialLevel !== 'off';
+    const hasSocialAddon = state.licenseSocialEnabled && state.licenseSocialLevel && state.licenseSocialLevel !== 'off';
     const mediaChannels = [state.packageOnline, state.packageAtv, hasSocialAddon, state.licenseEvent].filter(Boolean).length;
     if(mediaChannels >= 2 && ['tv','online_paid','radio','cinema','pos'].includes(state.projectKey)) {
         checks.push({ severity: 'info', text: 'Mehrkanal-Nutzung aktiv. Prüfen, ob Paket-/Buyout-Logik sauber passt.' });
@@ -1300,6 +1373,7 @@ const srcBuildPackages = function(currentState) {
         premium: ['Max-Preis', hasDurationControl ? 'Dauer: Unlimited' : 'Dauer: Standard', 'inkl. Social/Extras']
     };
     const disableExtras = {
+        licenseSocialEnabled: false,
         licenseSocialLevel: 'off',
         licenseEvent: false,
         licenseInternal: false,
@@ -1319,6 +1393,7 @@ const srcBuildPackages = function(currentState) {
         if(config.extras === 'full') {
             state = {
                 ...state,
+                licenseSocialEnabled: Boolean(data.license_extras && data.license_extras.social_organic),
                 licenseSocialLevel: (data.license_extras && data.license_extras.social_organic) ? 'mid' : 'off',
                 licenseEvent: Boolean(data.license_extras && data.license_extras.event_pos),
                 licenseInternal: Boolean(data.license_extras && data.license_extras.internal_use),
@@ -1566,7 +1641,7 @@ const srcBuildOfferEmailText = function({ lang, pricingMode, selectedPackage, in
     const addons = [];
     if(state.packageOnline) addons.push('Online Audio');
     if(state.packageAtv) addons.push('ATV/CTV');
-    if(state.licenseSocialLevel && state.licenseSocialLevel !== 'off') addons.push(`Social Media (${(state.licenseSocialLevel || 'mid').toUpperCase()})`);
+    if(state.licenseSocialEnabled && state.licenseSocialLevel && state.licenseSocialLevel !== 'off') addons.push(`Social Media (${(state.licenseSocialLevel || 'mid').toUpperCase()})`);
     if(state.licenseEvent) addons.push('Event / Messe / POS');
     if(state.licenseInternal) addons.push('Interne Nutzung (Intranet)');
     if(state.cutdown) addons.push('Cut-down');
@@ -1728,6 +1803,7 @@ window.srcRestoreStateFromStorage = function() {
     });
 
     srcUIUpdate();
+    srcRenderSocialBadges();
     srcCalc();
     return true;
 }
@@ -1809,8 +1885,14 @@ window.srcReset = function() {
     const toggles = ['src-layout-mode', 'src-own-studio', 'src-express-toggle', 'src-discount-toggle', 'src-cutdown', 'src-lic-event', 'src-lic-internal', 'src-pkg-online', 'src-pkg-atv'];
     toggles.forEach(id => { const el = document.getElementById(id); if(el) el.checked = false; });
 
-    const socialLevel = document.getElementById('src-lic-social-level');
-    if(socialLevel) socialLevel.value = 'off';
+    const socialToggle = document.getElementById('src-social-toggle');
+    window.srcLicenseSocialEnabled = false;
+    window.srcLicenseSocialLevel = 'mid';
+    if(socialToggle) {
+        socialToggle.checked = false;
+        srcSetOptionRowState(socialToggle);
+    }
+    srcRenderSocialBadges();
     document.querySelectorAll('.src-linked-project').forEach(el => {
         el.checked = false;
     });
@@ -1848,6 +1930,7 @@ window.srcReset = function() {
     updateLicenseMetaText({ region: 'national', duration: 1 });
     
     srcUIUpdate();
+    srcRenderSocialBadges();
     srcCalc();
 }
 
@@ -1973,6 +2056,7 @@ window.srcUIUpdate = function() {
     srcUpdateSidebarCollapse();
 
     const socialLevelState = srcUpdateSocialLevelAvailability(genre);
+    srcEnforceProjectTypeDropdownDownward();
     const internalToggleState = srcUpdateInternalUseToggleAvailability(genre);
     if(socialLevelState.wasReset || internalToggleState.wasReset) {
         srcCalc();
@@ -2102,7 +2186,7 @@ const srcComputeGlobalAddons = function(state, projectKeys) {
     };
     if(!state) return result;
     addons.forEach(addon => {
-        if(addon.key === 'social_organic' ? (state.licenseSocialLevel === 'off') : !state[addon.stateKey]) return;
+        if(addon.key === 'social_organic' ? (!state.licenseSocialEnabled || state.licenseSocialLevel === 'off') : !state[addon.stateKey]) return;
         const eligibleProjects = keys.filter(key => {
             const data = srcRatesData[key] || {};
             const hasExtra = data.license_extras && data.license_extras[addon.key] !== undefined;
@@ -2158,7 +2242,7 @@ const srcComputeGlobalAddons = function(state, projectKeys) {
     keys.forEach(key => {
         const guidanceEntry = rightsGuidance[state.layoutMode ? 'default' : key] || defaultGuidance;
         const extras = Object.assign({}, defaultGuidance.extras || {}, guidanceEntry.extras || {});
-        if(state.licenseSocialLevel && state.licenseSocialLevel !== 'off' && extras.social_organic) {
+        if(state.licenseSocialEnabled && state.licenseSocialLevel && state.licenseSocialLevel !== 'off' && extras.social_organic) {
             extrasText.push(extras.social_organic);
         }
         if(state.licenseEvent && extras.event_pos) {
@@ -2354,7 +2438,7 @@ const srcComputeSingleProjectResult = function(state, projectKey, options = {}) 
             const socialExtra = srcGetLicenseExtraAmount(licenseExtras, 'social_organic');
             const eventExtra = srcGetLicenseExtraAmount(licenseExtras, 'event_pos');
             const internalExtra = srcGetLicenseExtraAmount(licenseExtras, 'internal_use');
-            if(state.licenseSocialLevel && state.licenseSocialLevel !== 'off' && applyAddons) {
+            if(state.licenseSocialEnabled && state.licenseSocialLevel && state.licenseSocialLevel !== 'off' && applyAddons) {
                 const socialTrip = srcEnsurePriceTriple(socialExtra, [0, 0, 0]);
                 const socialLevelMap = { low: 0, mid: 1, high: 2 };
                 const socialIdx = socialLevelMap[state.licenseSocialLevel] !== undefined ? socialLevelMap[state.licenseSocialLevel] : 1;
@@ -2414,7 +2498,7 @@ const srcComputeSingleProjectResult = function(state, projectKey, options = {}) 
     }
 
     if(applyAddons) {
-        if(state.licenseSocialLevel && state.licenseSocialLevel !== 'off') { licMeta.push(`Zusatzlizenz: Social Media (organisch) – ${(state.licenseSocialLevel || 'mid').toUpperCase()}`); }
+        if(state.licenseSocialEnabled && state.licenseSocialLevel && state.licenseSocialLevel !== 'off') { licMeta.push(`Zusatzlizenz: Social Media (organisch) – ${(state.licenseSocialLevel || 'mid').toUpperCase()}`); }
         if(state.licenseEvent) { licMeta.push("Zusatzlizenz: Event / Messe / POS"); }
         if(state.licenseInternal && srcProjectSupportsInternalUse(genre)) {
             const internalAmount = srcGetLicenseExtraAmount((data.license_extras || {}), 'internal_use');
@@ -2475,7 +2559,7 @@ const srcComputeSingleProjectResult = function(state, projectKey, options = {}) 
     const extras = Object.assign({}, defaultGuidance.extras || {}, guidanceEntry.extras || {});
     const extrasText = [];
     if(applyAddons) {
-        if(state.licenseSocialLevel && state.licenseSocialLevel !== 'off' && extras.social_organic) {
+        if(state.licenseSocialEnabled && state.licenseSocialLevel && state.licenseSocialLevel !== 'off' && extras.social_organic) {
             extrasText.push(extras.social_organic);
         }
         if(state.licenseEvent && extras.event_pos) {
@@ -2705,6 +2789,11 @@ window.srcCalc = function() {
     const genre = document.getElementById('src-genre').value;
     const finalFeeWrap = document.getElementById('src-final-fee-wrapper');
     const state = srcGetStateFromUI();
+    window.srcLicenseSocialEnabled = Boolean(state.licenseSocialEnabled);
+    if(state.licenseSocialLevel && state.licenseSocialLevel !== 'off') {
+        window.srcLicenseSocialLevel = state.licenseSocialLevel;
+    }
+    srcRenderSocialBadges();
 
     if(!genre) {
         const breakdownBox = document.getElementById('src-calc-breakdown');
@@ -2968,7 +3057,7 @@ window.srcGeneratePDFv6 = function(options = {}) {
     const addons = [];
     if(state.packageOnline) addons.push('Online Audio');
     if(state.packageAtv) addons.push('ATV/CTV');
-    if(state.licenseSocialLevel && state.licenseSocialLevel !== 'off') addons.push(`Social Media (${(state.licenseSocialLevel || 'mid').toUpperCase()})`);
+    if(state.licenseSocialEnabled && state.licenseSocialLevel && state.licenseSocialLevel !== 'off') addons.push(`Social Media (${(state.licenseSocialLevel || 'mid').toUpperCase()})`);
     if(state.licenseEvent) addons.push('Event / Messe / POS');
     if(state.licenseInternal) addons.push('Interne Nutzung (Intranet)');
     if(addons.length) rightsLines.push(`Zusatz: ${addons.join(', ')}`);
@@ -3270,15 +3359,22 @@ window.srcRenderTutStep = function() {
 
         srcTutorialCenterAnchorAbovePanel(anchor);
 
-        srcTutorialSetSpotlight(anchor);
         requestAnimationFrame(() => {
             if (!window.__srcTutorialActive || window.__srcTutorialCurrentAnchor !== anchor) return;
             srcTutorialSetSpotlight(anchor);
+            const firstRect = anchor.getBoundingClientRect();
+            setTimeout(() => {
+                if (!window.__srcTutorialActive || window.__srcTutorialCurrentAnchor !== anchor) return;
+                const nextRect = anchor.getBoundingClientRect();
+                const rectChanged = Math.abs(firstRect.top - nextRect.top) > 6
+                    || Math.abs(firstRect.left - nextRect.left) > 6
+                    || Math.abs(firstRect.width - nextRect.width) > 6
+                    || Math.abs(firstRect.height - nextRect.height) > 6;
+                if (rectChanged) {
+                    srcTutorialSetSpotlight(anchor);
+                }
+            }, 120);
         });
-        setTimeout(() => {
-            if (!window.__srcTutorialActive || window.__srcTutorialCurrentAnchor !== anchor) return;
-            srcTutorialSetSpotlight(anchor);
-        }, 80);
 
         if (window.__srcTutorialActive && targetEl.closest('#src-packages-section')) {
             setTimeout(srcTutorialEnsurePackages, 50);

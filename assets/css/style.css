@@ -543,6 +543,49 @@
 .src-toggle-wrapper input:checked + .src-toggle-slider { background-color: var(--src-primary); }
 .src-toggle-wrapper input:checked + .src-toggle-slider:before { transform: translateX(18px); }
 
+.src-rights-panel .src-social-inline {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.src-rights-panel .src-social-badges {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+.src-rights-panel .src-social-badge {
+    border: 1px solid rgba(26, 147, 238, 0.5);
+    background: #f8fbff;
+    color: #0f4c8a;
+    border-radius: 999px;
+    padding: 5px 10px;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+    transition: background .2s ease, border-color .2s ease, color .2s ease, box-shadow .2s ease;
+}
+.src-rights-panel .src-social-badge:hover {
+    border-color: rgba(26, 147, 238, 0.85);
+    background: #eaf4ff;
+}
+.src-rights-panel .src-social-badge.is-active {
+    background: var(--src-primary);
+    border-color: var(--src-primary);
+    color: #fff;
+    box-shadow: 0 6px 14px rgba(26, 147, 238, 0.22);
+}
+
+#src-calc-v6 .src-force-dropdown-down .choices__list--dropdown,
+#src-calc-v6 .src-force-dropdown-down .select2-dropdown,
+#src-calc-v6 .src-force-dropdown-down .selectize-dropdown,
+#src-calc-v6 .src-force-dropdown-down .dropdown-menu {
+    top: 100% !important;
+    bottom: auto !important;
+    transform: none !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
     .src-slide-wrap,
     .src-option-inline,
@@ -3127,7 +3170,7 @@ body.src-tutorial-active #src-tutorial-overlay {
     pointer-events: none;
     opacity: 0;
     visibility: hidden;
-    transition: none !important;
+    transition: top .22s ease, left .22s ease, width .22s ease, height .22s ease, border-radius .22s ease, opacity .12s ease;
 }
 
 body.src-tutorial-active #src-tutorial-spotlight {
@@ -3171,7 +3214,7 @@ body.src-tutorial-mode .src-tutorial-lift{
 #src-tutorial-panel {
     position: fixed;
     left: 50%;
-    bottom: 22px;
+    bottom: 44px;
     transform: translateX(-50%);
     width: min(680px, calc(100vw - 32px));
     z-index: 999999999;
