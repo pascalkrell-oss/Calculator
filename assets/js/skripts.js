@@ -3050,7 +3050,9 @@ let srcTutCurrentStep = 0;
 let srcTutSteps = [];
 let srcTutPackagesTriggered = false;
 let srcTutLockHandler = null;
+let srcTutorialViewportHandler = null;
 window.__srcTutorialActive = false;
+window.__srcTutorialCurrentAnchor = null;
 
 function srcTutorialPickSelector(selectors) {
     for (let i = 0; i < selectors.length; i++) {
@@ -3076,6 +3078,51 @@ function srcTutorialClearLift(){
     document.querySelectorAll('.src-tutorial-lift').forEach(el => el.classList.remove('src-tutorial-lift'));
 }
 
+function srcTutorialClearSpotlight() {
+    srcTutorialSetSpotlight(null);
+}
+
+function srcTutorialGetAnchorForStep(step){
+    if(step && step.element){
+        const el = document.querySelector(step.element);
+        if(el) return el;
+    }
+    return null;
+}
+
+function srcTutorialPositionPanel(anchor) {
+    const panel = document.getElementById('src-tutorial-panel');
+    if (!panel || !anchor || typeof anchor.getBoundingClientRect !== 'function') return;
+    const rect = anchor.getBoundingClientRect();
+    const panelRect = panel.getBoundingClientRect();
+    const viewportW = window.innerWidth || document.documentElement.clientWidth || 0;
+    const viewportH = window.innerHeight || document.documentElement.clientHeight || 0;
+    const margin = 12;
+    const offset = 14;
+
+    let top = rect.bottom + offset;
+    if (top + panelRect.height > viewportH - margin) {
+        top = rect.top - panelRect.height - offset;
+    }
+    top = Math.max(margin, Math.min(top, viewportH - panelRect.height - margin));
+
+    let left = rect.left + ((rect.width - panelRect.width) / 2);
+    left = Math.max(margin, Math.min(left, viewportW - panelRect.width - margin));
+
+    panel.style.top = `${top}px`;
+    panel.style.left = `${left}px`;
+    panel.style.transform = 'none';
+}
+
+function srcTutorialOnViewportChange(){
+    if(!window.__srcTutorialActive) return;
+    const anchor = window.__srcTutorialCurrentAnchor;
+    if(anchor) {
+        srcTutorialSetSpotlight(anchor);
+        srcTutorialPositionPanel(anchor);
+    }
+}
+
 function srcTutorialMountLayers() {
     const overlay = document.getElementById('src-tutorial-overlay');
     const panel = document.getElementById('src-tutorial-panel');
@@ -3094,22 +3141,8 @@ function srcTutorialMountLayers() {
 }
 
 function srcTutorialSetScrollLock(locked) {
-    if (locked) {
-        document.body.classList.add('src-tutorial-lockscroll');
-        if (!srcTutLockHandler) {
-            srcTutLockHandler = function(event) {
-                event.preventDefault();
-            };
-        }
-        window.addEventListener('wheel', srcTutLockHandler, { passive: false });
-        window.addEventListener('touchmove', srcTutLockHandler, { passive: false });
-        return;
-    }
+    if (locked) return;
     document.body.classList.remove('src-tutorial-lockscroll');
-    if (srcTutLockHandler) {
-        window.removeEventListener('wheel', srcTutLockHandler, { passive: false });
-        window.removeEventListener('touchmove', srcTutLockHandler, { passive: false });
-    }
 }
 
 function srcTutorialSetSpotlight(targetEl) {
@@ -3155,8 +3188,8 @@ function srcTutorialSetSpotlight(targetEl) {
 
 function srcBuildTutorialSteps() {
     const steps = [
-        { element: srcTutorialPickSelector(['.src-top-grid > div:nth-child(1)', '#src-genre']), title: '1. Projektart', desc: 'Wähle hier aus, welche Art von Projekt kalkuliert wird.' },
-        { element: srcTutorialPickSelector(['.src-top-grid > div:nth-child(2)', '#src-language']), title: '2. Sprache', desc: 'Hier legst Du die Sprachvariante fest, die in die Berechnung einfließt.' },
+        { element: '.src-top-grid > div:nth-child(1)', title: '1. Projektart', desc: 'Wähle hier aus, welche Art von Projekt kalkuliert wird.' },
+        { element: '.src-top-grid > div:nth-child(2)', title: '2. Sprache', desc: 'Hier legst Du die Sprachvariante fest, die in die Berechnung einfließt.' },
         { element: '.src-advanced', title: '3. Erweitert', desc: 'Zusätzliche Vertrags- und Leistungsparameter für eine präzisere Kalkulation.' },
         { element: '#src-group-text', title: '4. Skript / Länge', desc: 'Skript einfügen und die geschätzte Sprechdauer automatisch ermitteln lassen.' },
         { element: '.src-rights-card', title: '5. Nutzungsrechte', desc: 'Definiere Medium, Laufzeit und Gebiet der Verwertung.' },
@@ -3196,6 +3229,11 @@ window.srcStartTutorial = function() {
     document.body.classList.add('src-tutorial-active');
     document.body.classList.add('src-tutorial-mode');
     srcTutorialSetScrollLock(true);
+    if (!srcTutorialViewportHandler) {
+        srcTutorialViewportHandler = srcTutorialOnViewportChange;
+    }
+    window.addEventListener('scroll', srcTutorialViewportHandler, true);
+    window.addEventListener('resize', srcTutorialViewportHandler);
 
     const panel = document.getElementById('src-tutorial-panel');
     if (panel) {
@@ -3210,7 +3248,13 @@ window.srcStartTutorial = function() {
 };
 
 window.srcRenderTutStep = function() {
-    document.querySelectorAll('.src-is-highlighted').forEach(el => el.classList.remove('src-is-highlighted'));
+    srcTutorialClearLift();
+    srcTutorialClearSpotlight();
+    window.__srcTutorialCurrentAnchor = null;
+    document.querySelectorAll('.src-tutorial-lift, .src-is-highlighted').forEach(el => {
+        el.classList.remove('src-tutorial-lift');
+        el.classList.remove('src-is-highlighted');
+    });
     srcTutorialClearLift();
 
     const step = srcTutSteps[srcTutCurrentStep];
@@ -3219,55 +3263,52 @@ window.srcRenderTutStep = function() {
         return;
     }
 
-    const targetEl = document.querySelector(step.element);
+    const targetEl = srcTutorialGetAnchorForStep(step);
     if (!targetEl) {
-        srcTutorialSetSpotlight(null);
+        if (srcTutCurrentStep < srcTutSteps.length - 1) {
+            srcTutCurrentStep++;
+            srcRenderTutStep();
+            return;
+        }
+        srcEndTutorial();
         return;
     }
 
-    const collapseParent = targetEl.closest('.src-collapse');
-    if (collapseParent) {
-        srcToggleCollapse(collapseParent, true);
-    }
-
-    targetEl.scrollIntoView({ behavior: 'auto', block: 'center', inline: 'nearest' });
-
-    requestAnimationFrame(() => {
+    const renderWithAnchor = function(anchor) {
         if (!window.__srcTutorialActive) return;
-        const n = targetEl;
-        const anchor = n.closest('#src-kalkulation-section')
-            || n.closest('#src-license-section')
-            || n.closest('#src-pricedetails-section')
-            || n.closest('#src-notes-tips-section')
-            || n.closest('#src-packages-section')
-            || n.closest('#src-knowledge-section')
-            || n.closest('#src-save-section')
-            || n;
-        targetEl.classList.add('src-is-highlighted');
-        anchor.classList.add('src-tutorial-lift');
-        srcTutorialSetSpotlight(anchor);
 
-        const panel = document.getElementById('src-tutorial-panel');
-        if (panel) {
-            const rect = anchor.getBoundingClientRect();
-            const panelRect = panel.getBoundingClientRect();
-            const offset = 16;
-            let top = rect.bottom + offset;
-            const maxTop = Math.max(12, (window.innerHeight || 0) - panelRect.height - 12);
-            if (top > maxTop) {
-                top = Math.max(12, rect.top - panelRect.height - offset);
-            }
-            let left = rect.left;
-            left = Math.max(12, Math.min(left, (window.innerWidth || 0) - panelRect.width - 12));
-            panel.style.top = `${top}px`;
-            panel.style.left = `${left}px`;
-            panel.style.transform = 'none';
-        }
+        window.__srcTutorialCurrentAnchor = anchor;
+        anchor.classList.add('src-is-highlighted');
+        anchor.classList.add('src-tutorial-lift');
+
+        anchor.scrollIntoView({ behavior: 'auto', block: 'start', inline: 'nearest' });
+        window.scrollBy({ top: -12, behavior: 'auto' });
+
+        srcTutorialSetSpotlight(anchor);
+        srcTutorialPositionPanel(anchor);
+        requestAnimationFrame(() => {
+            if (!window.__srcTutorialActive || window.__srcTutorialCurrentAnchor !== anchor) return;
+            srcTutorialSetSpotlight(anchor);
+            srcTutorialPositionPanel(anchor);
+        });
+        setTimeout(() => {
+            if (!window.__srcTutorialActive || window.__srcTutorialCurrentAnchor !== anchor) return;
+            srcTutorialSetSpotlight(anchor);
+            srcTutorialPositionPanel(anchor);
+        }, 80);
 
         if (window.__srcTutorialActive && targetEl.closest('#src-packages-section')) {
             setTimeout(srcTutorialEnsurePackages, 50);
         }
-    });
+    };
+
+    const collapseParent = targetEl.closest('.src-collapse');
+    if (collapseParent && !collapseParent.classList.contains('is-open')) {
+        srcToggleCollapse(collapseParent, true);
+        requestAnimationFrame(() => renderWithAnchor(targetEl));
+    } else {
+        renderWithAnchor(targetEl);
+    }
 
     const badgeEl = document.getElementById('src-tut-badge');
     const titleEl = document.getElementById('src-tut-title');
@@ -3310,9 +3351,14 @@ window.srcTutPrev = function() {
 
 window.srcEndTutorial = function() {
     window.__srcTutorialActive = false;
+    window.__srcTutorialCurrentAnchor = null;
     srcTutorialClearLift();
-    srcTutorialSetSpotlight(null);
+    srcTutorialClearSpotlight();
     srcTutorialSetScrollLock(false);
+    if (srcTutorialViewportHandler) {
+        window.removeEventListener('scroll', srcTutorialViewportHandler, true);
+        window.removeEventListener('resize', srcTutorialViewportHandler);
+    }
     document.body.classList.remove('src-tutorial-active');
     document.body.classList.remove('src-tutorial-mode');
     const panel = document.getElementById('src-tutorial-panel');

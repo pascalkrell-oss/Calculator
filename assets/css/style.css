@@ -3091,6 +3091,10 @@ body.src-tutorial-active .src-collapse {
     transition: none !important;
 }
 
+body.src-tutorial-active .src-collapse * {
+    transition: none !important;
+}
+
 /* --- 2. TUTORIAL OVERLAY & HIGHLIGHT --- */
 #src-tutorial-overlay {
     position: fixed;
@@ -3123,7 +3127,7 @@ body.src-tutorial-active #src-tutorial-overlay {
     pointer-events: none;
     opacity: 0;
     visibility: hidden;
-    transition: top .28s ease, left .28s ease, width .28s ease, height .28s ease, border-radius .28s ease, opacity .2s ease;
+    transition: none !important;
 }
 
 body.src-tutorial-active #src-tutorial-spotlight {
