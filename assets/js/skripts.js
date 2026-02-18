@@ -17,13 +17,110 @@ let currentProjectTips = [];
 let stickyRaf = 0;
 let compareState = { enabled: false, A: null, B: null, activeTab: 'A' };
 let packagesState = null;
-let srcCurrency = 'EUR';
-const srcChfRate = 1.0; // Umrechnungsfaktor (kann bei Bedarf angepasst werden)
+let srcCurrencyCode = 'EUR';
+let srcFxRateEurChf = 1;
+const SRC_CURRENCY_STORAGE_KEY = 'src_currency';
+const SRC_FX_STORAGE_KEY = 'src_fx_eur_chf';
+const SRC_FX_TTL_MS = 24 * 60 * 60 * 1000;
+const SRC_CURRENCY_FORMAT_LOCALE = 'de-DE';
 
-window.srcSetCurrency = function(curr) {
-    srcCurrency = curr;
-    document.getElementById('btn-curr-eur')?.classList.toggle('is-active', curr === 'EUR');
-    document.getElementById('btn-curr-chf')?.classList.toggle('is-active', curr === 'CHF');
+const srcConvertFromEur = function(value) {
+    if(!Number.isFinite(value)) return value;
+    if(srcCurrencyCode !== 'CHF') return value;
+    return value * srcFxRateEurChf;
+}
+
+const srcConvertToEur = function(value) {
+    if(!Number.isFinite(value)) return value;
+    if(srcCurrencyCode !== 'CHF' || !Number.isFinite(srcFxRateEurChf) || srcFxRateEurChf <= 0) return value;
+    return value / srcFxRateEurChf;
+}
+
+const srcGetCurrencyFormatter = function() {
+    return new Intl.NumberFormat(SRC_CURRENCY_FORMAT_LOCALE, {
+        style: 'currency',
+        currency: srcCurrencyCode,
+        maximumFractionDigits: 0
+    });
+}
+
+const srcFormatRange = function(min, max) {
+    return `${srcFormatCurrency(min)}–${srcFormatCurrency(max)}`;
+}
+
+const srcSetCurrencyButtonsState = function(curr) {
+    document.querySelectorAll('.src-currency-btn[data-currency]').forEach(btn => {
+        btn.classList.toggle('is-active', btn.getAttribute('data-currency') === curr);
+    });
+}
+
+const srcRestoreCurrencyPreference = function() {
+    if(typeof localStorage === 'undefined') return;
+    const saved = localStorage.getItem(SRC_CURRENCY_STORAGE_KEY);
+    if(saved === 'EUR' || saved === 'CHF') {
+        srcCurrencyCode = saved;
+    }
+}
+
+const srcGetCachedFxRate = function() {
+    if(typeof localStorage === 'undefined') return null;
+    const raw = localStorage.getItem(SRC_FX_STORAGE_KEY);
+    if(!raw) return null;
+    try {
+        const parsed = JSON.parse(raw);
+        const rate = Number(parsed?.rate);
+        const ts = Number(parsed?.ts);
+        if(!Number.isFinite(rate) || rate <= 0 || !Number.isFinite(ts)) return null;
+        if((Date.now() - ts) > SRC_FX_TTL_MS) return null;
+        return rate;
+    } catch (error) {
+        return null;
+    }
+}
+
+const srcPersistFxRate = function(rate) {
+    if(typeof localStorage === 'undefined' || !Number.isFinite(rate) || rate <= 0) return;
+    localStorage.setItem(SRC_FX_STORAGE_KEY, JSON.stringify({ rate, ts: Date.now() }));
+}
+
+const srcEnsureRateLoaded = async function() {
+    if(srcCurrencyCode !== 'CHF') return srcFxRateEurChf;
+    const cachedRate = srcGetCachedFxRate();
+    if(Number.isFinite(cachedRate) && cachedRate > 0) {
+        srcFxRateEurChf = cachedRate;
+        return srcFxRateEurChf;
+    }
+    try {
+        const response = await fetch('https://api.frankfurter.app/latest?from=EUR&to=CHF');
+        if(!response.ok) throw new Error(`FX ${response.status}`);
+        const data = await response.json();
+        const fetchedRate = Number(data?.rates?.CHF);
+        if(Number.isFinite(fetchedRate) && fetchedRate > 0) {
+            srcFxRateEurChf = fetchedRate;
+            srcPersistFxRate(fetchedRate);
+            return srcFxRateEurChf;
+        }
+    } catch (error) {
+        const fallbackRate = srcGetCachedFxRate();
+        if(Number.isFinite(fallbackRate) && fallbackRate > 0) {
+            srcFxRateEurChf = fallbackRate;
+            return srcFxRateEurChf;
+        }
+    }
+    srcFxRateEurChf = 1;
+    return srcFxRateEurChf;
+}
+
+window.srcSetCurrency = async function(curr) {
+    const next = curr === 'CHF' ? 'CHF' : 'EUR';
+    srcCurrencyCode = next;
+    if(typeof localStorage !== 'undefined') {
+        localStorage.setItem(SRC_CURRENCY_STORAGE_KEY, srcCurrencyCode);
+    }
+    srcSetCurrencyButtonsState(srcCurrencyCode);
+    if(srcCurrencyCode === 'CHF') {
+        await srcEnsureRateLoaded();
+    }
     srcCalc();
     if(packagesState) srcRenderPackages();
 };
@@ -44,6 +141,18 @@ document.addEventListener('DOMContentLoaded', () => {
     if(iconUrl){
         document.documentElement.style.setProperty('--src-check-icon', `url("${iconUrl}")`);
     }
+    srcRestoreCurrencyPreference();
+    srcSetCurrencyButtonsState(srcCurrencyCode);
+    const currencyToggle = document.getElementById('src-currency-toggle');
+    if(currencyToggle) {
+        currencyToggle.querySelectorAll('.src-currency-btn[data-currency]').forEach(btn => {
+            btn.addEventListener('click', () => srcSetCurrency(btn.getAttribute('data-currency') || 'EUR'));
+        });
+    }
+    if(srcCurrencyCode === 'CHF') {
+        srcEnsureRateLoaded().then(() => srcCalc());
+    }
+
     // DATEN IMPORTIEREN (Vom PHP übergeben)
     if(typeof srcPluginData !== 'undefined' && srcPluginData.rates) {
         srcRatesData = srcPluginData.rates;
@@ -361,19 +470,18 @@ window.srcSyncOptionRowStates = function() {
 }
 
 const srcFormatCurrency = function(value) {
-    if(!Number.isFinite(value)) return "–";
-    let val = srcCurrency === 'CHF' ? value * srcChfRate : value;
-    return `${Math.round(val)} ${srcCurrency === 'CHF' ? 'CHF' : '€'}`;
+    if(!Number.isFinite(value)) return '–';
+    const converted = srcConvertFromEur(value);
+    return srcGetCurrencyFormatter().format(converted);
 }
 
 const srcFormatSignedCurrency = function(value) {
-    if(!Number.isFinite(value)) return "";
-    let val = srcCurrency === 'CHF' ? value * srcChfRate : value;
-    const rounded = Math.round(val);
-    const sym = srcCurrency === 'CHF' ? 'CHF' : '€';
-    if(rounded === 0) return `0 ${sym}`;
-    const sign = rounded > 0 ? "+" : "−";
-    return `${sign}${Math.abs(rounded)} ${sym}`;
+    if(!Number.isFinite(value)) return '';
+    const converted = srcConvertFromEur(value);
+    const rounded = Math.round(converted);
+    if(rounded === 0) return srcGetCurrencyFormatter().format(0);
+    const sign = rounded > 0 ? '+' : '−';
+    return `${sign}${srcGetCurrencyFormatter().format(Math.abs(rounded))}`;
 }
 
 const srcStripHTML = function(str) {
@@ -991,7 +1099,8 @@ const srcRenderPriceDetails = function(info, state, result) {
         const labelText = entry.label || '';
         const includedByDefault = /gebiet|verbreitungsgebiet|laufzeit|nutzungsdauer/i.test(labelText);
         const amountRaw = typeof entry.amount === 'number' ? String(entry.amount) : (entry.amount || '').toString().trim();
-        const shouldShowIncluded = includedByDefault && (!amountRaw || ['—', '0 €', '0€', '+0 €', '±0 €'].includes(amountRaw));
+        const zeroCurrencyValues = ['—', srcFormatCurrency(0), srcFormatSignedCurrency(0), `+${srcFormatCurrency(0)}`, '0€', '+0 €', '±0 €'];
+        const shouldShowIncluded = includedByDefault && (!amountRaw || zeroCurrencyValues.includes(amountRaw));
         const amountText = shouldShowIncluded ? 'inkl.' : (amountRaw || '—');
         const toneClass = entry.tone ? `is-${entry.tone}` : '';
         const lastNormalClass = idx === info.length - 1 ? 'is-last-normal' : '';
@@ -1379,16 +1488,16 @@ const srcBuildOfferEmailText = function({ lang, pricingMode, selectedPackage, in
     const linkedProjectNames = Array.from(new Set((state.linkedProjects || []).map(srcGetProjectName).filter(Boolean)));
     const projectLabel = linkedProjectNames.length ? `${projectName} (+ ${linkedProjectNames.join(', ')})` : projectName;
     const pricingLabel = pricingMode === 'mean' ? i18n.pricingMean : pricingMode === 'package' ? i18n.pricingPackage : i18n.pricingRange;
-    let priceText = `${result.final[0]} € – ${result.final[2]} €`;
+    let priceText = srcFormatRange(result.final[0], result.final[2]);
     if(pricingMode === 'mean') {
-        priceText = `${result.final[1]} €`;
+        priceText = srcFormatCurrency(result.final[1]);
     }
     if(pricingMode === 'package') {
         if(!packagesState) {
             packagesState = srcBuildPackages(state);
         }
         const pkg = packagesState[selectedPackage] || packagesState.standard;
-        priceText = `${pkg.price} € (${pkg.label})`;
+        priceText = `${srcFormatCurrency(parseFloat(pkg.price) || 0)} (${pkg.label})`;
     }
     const parts = [];
     parts.push(`${i18n.subjectLabel}: ${i18n.subject}`);
@@ -1902,7 +2011,7 @@ const srcApplyScriptEstimate = function() {
 window.srcValidateFinalFee = function() {
     const input = document.getElementById('src-final-fee-user');
     const msg = document.getElementById('src-final-fee-msg');
-    const val = parseFloat(input.value);
+    const val = parseFloat(String(input.value || '').replace(',', '.'));
     
     if(!val) {
         input.classList.remove('error');
@@ -1910,7 +2019,8 @@ window.srcValidateFinalFee = function() {
         return;
     }
     // Check range
-    if(val < currentResult.low || val > currentResult.high) {
+    const valEur = srcConvertToEur(val);
+    if(valEur < currentResult.low || valEur > currentResult.high) {
         input.classList.add('error');
         msg.style.display = 'block';
     } else {
@@ -1987,7 +2097,7 @@ const srcComputeGlobalAddons = function(state, projectKeys) {
             result.rangeAdd = result.rangeAdd.map((value, idx) => value + extraRates[idx]);
             result.breakdownSteps.push({
                 label: addon.label,
-                amountOrFactor: `+${extraRates[1]} €`,
+                amountOrFactor: srcFormatSignedCurrency(extraRates[1]),
                 effectOnRange: 'add'
             });
             const formulaSuffix = scopeNames.length
@@ -2189,8 +2299,8 @@ const srcComputeSingleProjectResult = function(state, projectKey, options = {}) 
                 final[2] += extraConfig.chunks * extraRates[2];
                 const unitSuffix = tierUnit === 'modules' ? 'Modul' : 'Min';
                 const unitCount = extraConfig.extraUnit || (tierUnit === 'modules' ? 1 : 5);
-                breakdownSteps.push({ label: `Überlänge ${extraConfig.chunks}x`, amountOrFactor: `+${extraCost} €`, effectOnRange: 'add' });
-                addInfo(`Überlänge (+${extraConfig.chunks}× ${unitCount} ${unitSuffix})`, srcFormatSignedCurrency(extraCost), `+${extraConfig.chunks} × ${extraRates[1]} €`);
+                breakdownSteps.push({ label: `Überlänge ${extraConfig.chunks}x`, amountOrFactor: srcFormatSignedCurrency(extraCost), effectOnRange: 'add' });
+                addInfo(`Überlänge (+${extraConfig.chunks}× ${unitCount} ${unitSuffix})`, srcFormatSignedCurrency(extraCost), `+${extraConfig.chunks} × ${srcFormatCurrency(extraRates[1])}`);
             }
 
             if(tierUnit === 'minutes' && state.hasScript && state.minutes > 0) {
@@ -2207,7 +2317,7 @@ const srcComputeSingleProjectResult = function(state, projectKey, options = {}) 
                 const extraRates = socialExtra || [150, 150, 150];
                 final = final.map((v, idx) => v + extraRates[idx]);
                 if(srcHasPositiveAddonAmount(extraRates)) {
-                    breakdownSteps.push({ label: "Social Media", amountOrFactor: `+${extraRates[1]} €`, effectOnRange: 'add' });
+                    breakdownSteps.push({ label: "Social Media", amountOrFactor: srcFormatSignedCurrency(extraRates[1]), effectOnRange: 'add' });
                     addInfo("Social Media", srcFormatSignedCurrency(extraRates[1]), "Zusatzlizenz");
                 }
                 licParts.push("+ Social Media");
@@ -2216,7 +2326,7 @@ const srcComputeSingleProjectResult = function(state, projectKey, options = {}) 
                 const extraRates = eventExtra || [150, 150, 150];
                 final = final.map((v, idx) => v + extraRates[idx]);
                 if(srcHasPositiveAddonAmount(extraRates)) {
-                    breakdownSteps.push({ label: "Event", amountOrFactor: `+${extraRates[1]} €`, effectOnRange: 'add' });
+                    breakdownSteps.push({ label: "Event", amountOrFactor: srcFormatSignedCurrency(extraRates[1]), effectOnRange: 'add' });
                     addInfo("Event / Messe / POS", srcFormatSignedCurrency(extraRates[1]), "Zusatzlizenz");
                 }
                 licParts.push("+ Event");
@@ -2225,7 +2335,7 @@ const srcComputeSingleProjectResult = function(state, projectKey, options = {}) 
                 const extraRates = internalExtra;
                 final = final.map((v, idx) => v + extraRates[idx]);
                 if(srcHasPositiveAddonAmount(extraRates)) {
-                    breakdownSteps.push({ label: "Interne Nutzung", amountOrFactor: `+${extraRates[1]} €`, effectOnRange: 'add' });
+                    breakdownSteps.push({ label: "Interne Nutzung", amountOrFactor: srcFormatSignedCurrency(extraRates[1]), effectOnRange: 'add' });
                     addInfo("Interne Nutzung (Intranet)", srcFormatSignedCurrency(extraRates[1]), "Zusatzlizenz");
                 }
                 licParts.push("+ Intern");
@@ -2270,7 +2380,7 @@ const srcComputeSingleProjectResult = function(state, projectKey, options = {}) 
 
     if(state.studioFee > 0) {
         final = final.map(v => v + state.studioFee);
-        breakdownSteps.push({ label: "Studiokosten", amountOrFactor: `+${state.studioFee} €`, effectOnRange: 'add' });
+        breakdownSteps.push({ label: "Studiokosten", amountOrFactor: srcFormatSignedCurrency(state.studioFee), effectOnRange: 'add' });
         addInfo("Studiokosten", srcFormatSignedCurrency(state.studioFee), "Fixbetrag");
     }
     if(state.expressToggle) {
@@ -2279,13 +2389,13 @@ const srcComputeSingleProjectResult = function(state, projectKey, options = {}) 
         let expressAmount = Math.round(final[1] * expressFactor);
         final = final.map(v => Math.round(v * (1 + expressFactor)));
         let eLabel = (expressType === '4h') ? "4h (+100%)" : "24h (+50%)";
-        breakdownSteps.push({ label: `Express ${eLabel}`, amountOrFactor: `+${expressAmount} €`, effectOnRange: 'multiply' });
+        breakdownSteps.push({ label: `Express ${eLabel}`, amountOrFactor: srcFormatSignedCurrency(expressAmount), effectOnRange: 'multiply' });
         addInfo(`Express ${eLabel}`, srcFormatSignedCurrency(expressAmount), `Zwischensumme × ${expressFactor + 1}`);
     }
     if(state.discountToggle && state.discountPct > 0) {
         let disc = Math.round(final[1] * (state.discountPct/100));
         final = final.map(v => Math.round(v * (1 - state.discountPct/100)));
-        breakdownSteps.push({ label: `Rabatt ${state.discountPct}%`, amountOrFactor: `-${disc} €`, effectOnRange: 'add' });
+        breakdownSteps.push({ label: `Rabatt ${state.discountPct}%`, amountOrFactor: srcFormatSignedCurrency(-disc), effectOnRange: 'add' });
         addInfo(`Rabatt (${state.discountPct}%)`, srcFormatSignedCurrency(-disc), `Zwischensumme × ${state.discountPct}%`, 'positive');
     }
 
@@ -2553,7 +2663,7 @@ window.srcCalc = function() {
     if(!genre) {
         const breakdownBox = document.getElementById('src-calc-breakdown');
         srcToggleCollapse(breakdownBox, false);
-        updateMainAmountAnimated("0 €");
+        updateMainAmountAnimated(srcFormatCurrency(0));
         srcUpdateMeanValue(
             document.getElementById('src-mean-fade'),
             document.getElementById('src-display-range'),
@@ -2598,11 +2708,11 @@ window.srcCalc = function() {
     srcUpdateDurationSliderFill();
     updateLicenseMetaText(state);
 
-    updateMainAmountAnimated(`${final[0]} - ${final[2]} €`);
+    updateMainAmountAnimated(srcFormatRange(final[0], final[2]));
     srcUpdateMeanValue(
         document.getElementById('src-mean-fade'),
         document.getElementById('src-display-range'),
-        `Ø Mittelwert: ${final[1]} €`
+        `Ø Mittelwert: ${srcFormatCurrency(final[1])}`
     );
     srcPulseTargets(['.src-result-card', '.src-price-main-box']);
     
@@ -2689,7 +2799,7 @@ window.srcGeneratePDFv6 = function(options = {}) {
 
     let priceLabel = i18n.pricingRange;
     let priceValue = result.final[1];
-    let rangeText = `${result.final[0]}–${result.final[2]} €`;
+    let rangeText = srcFormatRange(result.final[0], result.final[2]);
     let packageLabel = '';
     if(pricingMode === 'mean') {
         priceLabel = i18n.pricingMean;
@@ -2768,8 +2878,8 @@ window.srcGeneratePDFv6 = function(options = {}) {
             '1',
             pricingMode === 'range' ? `${descriptionLines}\nPreisrahmen: ${rangeText}` : descriptionLines,
             '1',
-            `${priceValue} €`,
-            pricingMode === 'range' ? rangeText : `${priceValue} €`
+            `${srcFormatCurrency(priceValue)}` ,
+            pricingMode === 'range' ? rangeText : srcFormatCurrency(priceValue)
         ]
     ];
 
@@ -2830,7 +2940,7 @@ window.srcGeneratePDFv6 = function(options = {}) {
     const discountPct = state.discountToggle ? state.discountPct : 0;
     const discountedFrom = discountPct > 0 ? Math.round(subtotal / (1 - (discountPct / 100))) : subtotal;
     const discountAmount = discountPct > 0 ? discountedFrom - subtotal : 0;
-    const totalLabel = pricingMode === 'range' ? rangeText : `${subtotal} €`;
+    const totalLabel = pricingMode === 'range' ? rangeText : srcFormatCurrency(subtotal);
 
     doc.setFontSize(10);
     doc.setTextColor(15, 23, 42);
@@ -2839,11 +2949,11 @@ window.srcGeneratePDFv6 = function(options = {}) {
     doc.setFontSize(9);
     doc.setTextColor(71, 85, 105);
     doc.text('Zwischensumme', summaryX, summaryY);
-    doc.text(pricingMode === 'range' ? rangeText : `${discountedFrom} €`, pageWidth - margin, summaryY, { align: 'right' });
+    doc.text(pricingMode === 'range' ? rangeText : srcFormatCurrency(discountedFrom), pageWidth - margin, summaryY, { align: 'right' });
     summaryY += 4.5;
     if(discountPct > 0) {
         doc.text(`Rabatt (${discountPct}%)`, summaryX, summaryY);
-        doc.text(`-${discountAmount} €`, pageWidth - margin, summaryY, { align: 'right' });
+        doc.text(srcFormatSignedCurrency(-discountAmount), pageWidth - margin, summaryY, { align: 'right' });
         summaryY += 4.5;
     }
     doc.setFontSize(10);
@@ -2865,7 +2975,7 @@ window.srcGeneratePDFv6 = function(options = {}) {
         doc.setFontSize(9);
         doc.setTextColor(71, 85, 105);
         const breakdownLines = [
-            `Basis: ${currentBreakdownData.base.mid} € (${currentBreakdownData.base.min}–${currentBreakdownData.base.max} €)`
+            `Basis: ${srcFormatCurrency(currentBreakdownData.base.mid)} (${srcFormatRange(currentBreakdownData.base.min, currentBreakdownData.base.max)})`
         ].concat(currentBreakdownData.steps.map(step => `${srcStripHTML(step.label)}: ${srcStripHTML(step.amountOrFactor)}`));
         doc.text(doc.splitTextToSize(breakdownLines.join('\n'), pageWidth - (margin * 2)), margin, currentY);
         currentY += breakdownLines.length * 4 + 6;

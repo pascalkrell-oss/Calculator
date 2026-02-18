@@ -2452,6 +2452,37 @@
     font-size: 14px;
 }
 
+@media (min-width: 769px) {
+    .src-action-link,
+    .src-divider,
+    .src-reset-btn {
+        color: rgba(255, 255, 255, 0.82);
+    }
+
+    .src-action-link:hover,
+    .src-reset-btn:hover {
+        color: #1a93ee;
+    }
+}
+
+@media (max-width: 768px) {
+    .src-action-link {
+        color: #64748b;
+    }
+
+    .src-divider {
+        color: #cbd5e1;
+    }
+
+    .src-reset-btn {
+        color: #999;
+    }
+
+    .src-reset-btn:hover {
+        color: #d63638;
+    }
+}
+
 /* --- 5. Dashicons in Sidebar Titeln --- */
 .src-title-icon .dashicons {
     font-size: 18px;
@@ -2957,14 +2988,50 @@
 @media (max-width: 768px) { .src-guide-toc { float: none; width: 100%; margin: 20px 0; } }
 
 /* --- 3. Währungs-Umschalter --- */
-.src-currency-switch {
-    display: inline-flex; background: #f1f5f9; border-radius: 999px; padding: 2px; border: 1px solid #e2e8f0; margin-left: 6px;
+.src-currency-toggle {
+    display: inline-flex;
+    border-radius: 999px;
+    padding: 2px;
+    margin-left: 6px;
+    border: 1px solid rgba(148, 163, 184, 0.55);
+    background: rgba(255, 255, 255, 0.1);
 }
-.src-curr-btn {
-    background: transparent; border: none; border-radius: 999px; padding: 4px 10px; font-size: 11px;
-    font-weight: 700; color: #64748b; cursor: pointer; transition: all 0.2s; line-height: 1;
+.src-currency-btn {
+    background: transparent;
+    border: none;
+    border-radius: 999px;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.85);
+    cursor: pointer;
+    transition: all 0.2s;
+    line-height: 1;
 }
-.src-curr-btn.is-active { background: #ffffff; color: var(--src-primary); box-shadow: 0 2px 6px rgba(15,23,42,0.08); }
+.src-currency-btn.is-active {
+    background: rgba(255, 255, 255, 0.92);
+    color: #0f172a;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12);
+}
+.src-currency-btn:hover {
+    color: #1a93ee;
+}
+
+@media (max-width: 768px) {
+    .src-currency-toggle {
+        border-color: #e2e8f0;
+        background: #f1f5f9;
+    }
+
+    .src-currency-btn {
+        color: #64748b;
+    }
+
+    .src-currency-btn.is-active {
+        background: #ffffff;
+        color: var(--src-primary);
+    }
+}
 
 /* --- 4. CSS Glossar-Tooltip (Hover) --- */
 .src-glossary-term {
