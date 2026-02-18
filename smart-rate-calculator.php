@@ -1019,10 +1019,6 @@ function src_shortcode_output_v7() {
                 <p class="src-guide-intro-text">
                     Willkommen im Leitfaden zur Gagenkalkulation! Die Honorierung von professionellen Sprecherleistungen basiert nicht auf Stundenlöhnen, sondern auf dem Prinzip der <strong>Nutzungsrechte</strong>. Grundlage für alle Berechnungen ist der offizielle <a href="https://www.sprecherverband.de/wp-content/uploads/2025/02/VDS_Gagenkompass_2025.pdf" target="_blank" rel="noopener" class="src-vds-link-inline">VDS Gagenkompass 2025</a>. Diese Anleitung beantwortet alle Fragen zur korrekten Einstellung und Nutzung.
                 </p>
-                <ul>
-                    <li><strong>Währungsumrechnung:</strong> Die empfohlenen deutschen Gagen werden ausschließlich zum aktuellen Wechselkurs in CHF bzw. $ umgerechnet. Es werden keine anderen (z.B. schweizerischen/amerikanischen) Preismodelle verwendet.</li>
-                </ul>
-
                 <h3 id="guide-1" class="src-guide-h3"><span class="dashicons dashicons-chart-pie src-guide-h3-icon"></span> 1. Das Verwertungsprinzip</h3>
                 <p>Man bezahlt primär für die Reichweite und die Zeit, in der eine Marke die Stimme nutzt. Ein Werbespot, der ein Jahr lang national im TV läuft, hat einen deutlich höheren Werbewert als ein reines internes Schulungsvideo. Daher steigen die Kosten exponentiell mit dem Medium, der Verbreitung (Gebiet) und der Laufzeit.</p>
 
@@ -1068,6 +1064,7 @@ function src_shortcode_output_v7() {
                     <li><strong>Produktion & Aufwand:</strong> Spezielles <span class="src-glossary-term" data-hover="Die exakte lippensynchrone Anpassung der Sprache an die Bewegungen im Video.">Lipsync</span>, technisches Vokabular oder mehrere Sprachversionen fließen hier als Komplexitätsfaktor ein.</li>
                     <li><strong>Studiokosten:</strong> Produziert und reinigt der Sprecher das Audio im eigenen Studio, greift die Technik-Pauschale.</li>
                     <li><strong>Express & Rabatte:</strong> Für schnelle Lieferungen (4h/24h) gibt es Express-Aufschläge. Rabatte können prozentual inkl. Begründung abgezogen werden.</li>
+                    <li><strong>Währungsumrechnung:</strong> Die empfohlenen deutschen Gagen werden ausschließlich zum aktuellen Wechselkurs in CHF bzw. $ umgerechnet. Es werden keine anderen (z.B. schweizerischen/amerikanischen) Preismodelle verwendet.</li>
                 </ul>
 
                 <h3 id="guide-8" class="src-guide-h3"><span class="dashicons dashicons-lock src-guide-h3-icon"></span> 8. Datenschutz & Sicherheit</h3>

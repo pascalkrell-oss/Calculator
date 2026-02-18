@@ -2843,10 +2843,10 @@
 
 
 /* --- 1. Neues Styling für den Einleitungstext --- */
-.src-guide-intro-text {
-    font-size: 15px;
+#src-guide-modal .src-guide-intro-text {
+    font-size: 14px;
     color: #0f172a;
-    line-height: 1.6;
+    line-height: 1.45;
     margin: 0 0 24px 0;
 }
 .src-vds-link-inline {
@@ -3170,13 +3170,14 @@ body.src-tutorial-mode .src-tutorial-lift{
 /* --- 3. HIGH-END TUTORIAL PANEL (FIXED BOTTOM) --- */
 #src-tutorial-panel {
     position: fixed;
-    top: 12px;
-    left: 12px;
-    width: min(500px, calc(100vw - 24px));
-    z-index: 99999;
+    left: 50%;
+    bottom: 22px;
+    transform: translateX(-50%);
+    width: min(680px, calc(100vw - 32px));
+    z-index: 999999999;
     opacity: 0;
     visibility: hidden;
-    transition: opacity 0.2s ease, top 0.2s ease, left 0.2s ease;
+    transition: opacity 0.2s ease;
 }
 body.src-tutorial-active #src-tutorial-panel:not(.src-tutorial-hidden) {
     opacity: 1;

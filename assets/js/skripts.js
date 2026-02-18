@@ -3090,28 +3090,16 @@ function srcTutorialGetAnchorForStep(step){
     return null;
 }
 
-function srcTutorialPositionPanel(anchor) {
-    const panel = document.getElementById('src-tutorial-panel');
-    if (!panel || !anchor || typeof anchor.getBoundingClientRect !== 'function') return;
-    const rect = anchor.getBoundingClientRect();
-    const panelRect = panel.getBoundingClientRect();
-    const viewportW = window.innerWidth || document.documentElement.clientWidth || 0;
+function srcTutorialCenterAnchorAbovePanel(anchor) {
+    if (!anchor || typeof anchor.getBoundingClientRect !== 'function') return;
+    const r = anchor.getBoundingClientRect();
     const viewportH = window.innerHeight || document.documentElement.clientHeight || 0;
-    const margin = 12;
-    const offset = 14;
-
-    let top = rect.bottom + offset;
-    if (top + panelRect.height > viewportH - margin) {
-        top = rect.top - panelRect.height - offset;
-    }
-    top = Math.max(margin, Math.min(top, viewportH - panelRect.height - margin));
-
-    let left = rect.left + ((rect.width - panelRect.width) / 2);
-    left = Math.max(margin, Math.min(left, viewportW - panelRect.width - margin));
-
-    panel.style.top = `${top}px`;
-    panel.style.left = `${left}px`;
-    panel.style.transform = 'none';
+    const panelH = document.getElementById('src-tutorial-panel')?.offsetHeight || 0;
+    const safeBottom = panelH + 40;
+    const targetCenterY = (viewportH - safeBottom) / 2;
+    const currentCenterY = r.top + (r.height / 2);
+    const delta = currentCenterY - targetCenterY;
+    window.scrollBy({ top: delta, left: 0, behavior: 'auto' });
 }
 
 function srcTutorialOnViewportChange(){
@@ -3119,7 +3107,6 @@ function srcTutorialOnViewportChange(){
     const anchor = window.__srcTutorialCurrentAnchor;
     if(anchor) {
         srcTutorialSetSpotlight(anchor);
-        srcTutorialPositionPanel(anchor);
     }
 }
 
@@ -3281,20 +3268,16 @@ window.srcRenderTutStep = function() {
         anchor.classList.add('src-is-highlighted');
         anchor.classList.add('src-tutorial-lift');
 
-        anchor.scrollIntoView({ behavior: 'auto', block: 'start', inline: 'nearest' });
-        window.scrollBy({ top: -12, behavior: 'auto' });
+        srcTutorialCenterAnchorAbovePanel(anchor);
 
         srcTutorialSetSpotlight(anchor);
-        srcTutorialPositionPanel(anchor);
         requestAnimationFrame(() => {
             if (!window.__srcTutorialActive || window.__srcTutorialCurrentAnchor !== anchor) return;
             srcTutorialSetSpotlight(anchor);
-            srcTutorialPositionPanel(anchor);
         });
         setTimeout(() => {
             if (!window.__srcTutorialActive || window.__srcTutorialCurrentAnchor !== anchor) return;
             srcTutorialSetSpotlight(anchor);
-            srcTutorialPositionPanel(anchor);
         }, 80);
 
         if (window.__srcTutorialActive && targetEl.closest('#src-packages-section')) {
