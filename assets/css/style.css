@@ -3114,6 +3114,16 @@ body.src-tutorial-mode .src-sidebar-section.src-is-highlighted {
     z-index: 10000000 !important;
 }
 
+body.src-tutorial-mode .src-tutorial-lift{
+    position: relative !important;
+    z-index: 99999999 !important;
+    background: #fff !important;
+    border-radius: 16px !important;
+    box-shadow: 0 18px 40px rgba(15,23,42,.22) !important;
+    outline: 2px solid rgba(26,147,238,.22) !important;
+    outline-offset: 2px !important;
+}
+
 /* --- 3. HIGH-END TUTORIAL PANEL (FIXED BOTTOM) --- */
 #src-tutorial-panel {
     position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(20px);
@@ -3159,6 +3169,7 @@ body.src-tutorial-active #src-tutorial-panel:not(.src-tutorial-hidden) {
   max-width: none !important;
   max-height: none !important;
   margin: 0 !important;
+  z-index: 999990 !important;
 }
 .driver-overlay svg,
 .driver-overlay > svg {
@@ -3168,5 +3179,9 @@ body.src-tutorial-active #src-tutorial-panel:not(.src-tutorial-hidden) {
 
 /* sicherstellen, dass Popover über allem liegt */
 .driver-popover.src-modern-theme {
-  z-index: 999999 !important;
+  z-index: 999999999 !important;
+}
+
+.driver-popover {
+  z-index: 999999999 !important;
 }
