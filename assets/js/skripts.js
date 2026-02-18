@@ -20,9 +20,6 @@ let packagesState = null;
 window.srcCurrencyCode = 'EUR';
 window.srcFxRates = { CHF: 1, USD: 1 };
 const SRC_CURRENCY_STORAGE_KEY = 'src_currency';
-const SRC_FX_RATES_STORAGE_KEY = 'src_fx_rates';
-const SRC_FX_TS_STORAGE_KEY = 'src_fx_ts';
-const SRC_FX_TTL_MS = 24 * 60 * 60 * 1000;
 const SRC_CURRENCY_FORMAT_LOCALE = 'de-DE';
 
 const srcGetCurrencyCode = function() {
@@ -89,59 +86,17 @@ const srcRestoreCurrencyPreference = function() {
     }
 }
 
-const srcGetCachedFxRates = function() {
-    if(typeof localStorage === 'undefined') return null;
-    const rawRates = localStorage.getItem(SRC_FX_RATES_STORAGE_KEY);
-    const rawTs = localStorage.getItem(SRC_FX_TS_STORAGE_KEY);
-    if(!rawRates || !rawTs) return null;
+async function srcLoadFxRates(){
     try {
-        const parsed = JSON.parse(rawRates);
-        const chf = Number(parsed?.CHF);
-        const usd = Number(parsed?.USD);
-        const ts = Number(rawTs);
-        if(!Number.isFinite(chf) || chf <= 0 || !Number.isFinite(usd) || usd <= 0 || !Number.isFinite(ts)) return null;
-        if((Date.now() - ts) > SRC_FX_TTL_MS) return null;
-        return { CHF: chf, USD: usd };
-    } catch (error) {
-        return null;
-    }
-}
+        if(!window.SRC_CALC || !SRC_CALC.rest_fx_url) return { CHF: 1, USD: 1 };
+        const res = await fetch(SRC_CALC.rest_fx_url, { credentials: 'same-origin' });
+        const data = await res.json();
 
-const srcPersistFxRates = function(rates) {
-    if(typeof localStorage === 'undefined') return;
-    const chf = Number(rates?.CHF);
-    const usd = Number(rates?.USD);
-    if(!Number.isFinite(chf) || chf <= 0 || !Number.isFinite(usd) || usd <= 0) return;
-    localStorage.setItem(SRC_FX_RATES_STORAGE_KEY, JSON.stringify({ CHF: chf, USD: usd }));
-    localStorage.setItem(SRC_FX_TS_STORAGE_KEY, String(Date.now()));
-}
-
-const srcEnsureRatesLoaded = async function() {
-    const cachedRates = srcGetCachedFxRates();
-    if(cachedRates) {
-        window.srcFxRates = cachedRates;
-        return window.srcFxRates;
-    }
-    try {
-        const response = await fetch('https://api.frankfurter.app/latest?from=EUR&to=CHF,USD');
-        if(!response.ok) throw new Error(`FX ${response.status}`);
-        const data = await response.json();
-        const fetchedRates = {
-            CHF: Number(data?.rates?.CHF),
-            USD: Number(data?.rates?.USD)
-        };
-        if(Number.isFinite(fetchedRates.CHF) && fetchedRates.CHF > 0 && Number.isFinite(fetchedRates.USD) && fetchedRates.USD > 0) {
-            window.srcFxRates = fetchedRates;
-            srcPersistFxRates(fetchedRates);
+        if(data && data.CHF && data.USD) {
+            window.srcFxRates = { CHF: Number(data.CHF), USD: Number(data.USD) };
             return window.srcFxRates;
         }
-    } catch (error) {
-        const fallbackRates = srcGetCachedFxRates();
-        if(fallbackRates) {
-            window.srcFxRates = fallbackRates;
-            return window.srcFxRates;
-        }
-    }
+    } catch (e) {}
     window.srcFxRates = { CHF: 1, USD: 1 };
     return window.srcFxRates;
 }
@@ -154,7 +109,7 @@ window.srcSetCurrency = async function(curr) {
     }
     srcSetCurrencyButtonsState(window.srcCurrencyCode);
     if(window.srcCurrencyCode !== 'EUR') {
-        await srcEnsureRatesLoaded();
+        await srcLoadFxRates();
     }
     srcCalc();
     if(packagesState) srcRenderPackages();
@@ -185,7 +140,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     if(srcGetCurrencyCode() !== 'EUR') {
-        srcEnsureRatesLoaded().then(() => srcCalc());
+        srcLoadFxRates().then(() => srcCalc());
     }
 
     // DATEN IMPORTIEREN (Vom PHP übergeben)
