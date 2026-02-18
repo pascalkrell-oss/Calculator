@@ -17,35 +17,62 @@ let currentProjectTips = [];
 let stickyRaf = 0;
 let compareState = { enabled: false, A: null, B: null, activeTab: 'A' };
 let packagesState = null;
-let srcCurrencyCode = 'EUR';
-let srcFxRateEurChf = 1;
+window.srcCurrencyCode = 'EUR';
+window.srcFxRates = { CHF: 1, USD: 1 };
 const SRC_CURRENCY_STORAGE_KEY = 'src_currency';
-const SRC_FX_STORAGE_KEY = 'src_fx_eur_chf';
+const SRC_FX_RATES_STORAGE_KEY = 'src_fx_rates';
+const SRC_FX_TS_STORAGE_KEY = 'src_fx_ts';
 const SRC_FX_TTL_MS = 24 * 60 * 60 * 1000;
 const SRC_CURRENCY_FORMAT_LOCALE = 'de-DE';
 
-const srcConvertFromEur = function(value) {
-    if(!Number.isFinite(value)) return value;
-    if(srcCurrencyCode !== 'CHF') return value;
-    return value * srcFxRateEurChf;
+const srcGetCurrencyCode = function() {
+    return (window.srcCurrencyCode === 'CHF' || window.srcCurrencyCode === 'USD') ? window.srcCurrencyCode : 'EUR';
 }
 
-const srcConvertToEur = function(value) {
-    if(!Number.isFinite(value)) return value;
-    if(srcCurrencyCode !== 'CHF' || !Number.isFinite(srcFxRateEurChf) || srcFxRateEurChf <= 0) return value;
-    return value / srcFxRateEurChf;
+const srcGetFxRate = function(currencyCode) {
+    if(currencyCode === 'EUR') return 1;
+    const rates = window.srcFxRates || {};
+    const rate = Number(rates[currencyCode]);
+    return (Number.isFinite(rate) && rate > 0) ? rate : 1;
 }
+
+const srcGetCurrencySuffix = function() {
+    return srcGetCurrencyCode() === 'EUR' ? '€' : srcGetCurrencyCode();
+}
+
+const srcConvertFromEUR = function(value) {
+    if(!Number.isFinite(value)) return value;
+    return value * srcGetFxRate(srcGetCurrencyCode());
+}
+
+const srcConvertToEUR = function(value) {
+    if(!Number.isFinite(value)) return value;
+    const rate = srcGetFxRate(srcGetCurrencyCode());
+    if(!Number.isFinite(rate) || rate <= 0) return value;
+    return value / rate;
+}
+
+const srcConvertFromEur = srcConvertFromEUR;
+const srcConvertToEur = srcConvertToEUR;
 
 const srcGetCurrencyFormatter = function() {
     return new Intl.NumberFormat(SRC_CURRENCY_FORMAT_LOCALE, {
         style: 'currency',
-        currency: srcCurrencyCode,
+        currency: srcGetCurrencyCode(),
         maximumFractionDigits: 0
     });
 }
 
+const srcGetNumberFormatter = function() {
+    return new Intl.NumberFormat(SRC_CURRENCY_FORMAT_LOCALE, { maximumFractionDigits: 0 });
+}
+
 const srcFormatRange = function(min, max) {
-    return `${srcFormatCurrency(min)}–${srcFormatCurrency(max)}`;
+    if(!Number.isFinite(min) || !Number.isFinite(max)) return '–';
+    const numberFormatter = srcGetNumberFormatter();
+    const convertedMin = Math.round(srcConvertFromEUR(min));
+    const convertedMax = Math.round(srcConvertFromEUR(max));
+    return `${numberFormatter.format(convertedMin)} – ${numberFormatter.format(convertedMax)} ${srcGetCurrencySuffix()}`;
 }
 
 const srcSetCurrencyButtonsState = function(curr) {
@@ -57,69 +84,77 @@ const srcSetCurrencyButtonsState = function(curr) {
 const srcRestoreCurrencyPreference = function() {
     if(typeof localStorage === 'undefined') return;
     const saved = localStorage.getItem(SRC_CURRENCY_STORAGE_KEY);
-    if(saved === 'EUR' || saved === 'CHF') {
-        srcCurrencyCode = saved;
+    if(saved === 'EUR' || saved === 'CHF' || saved === 'USD') {
+        window.srcCurrencyCode = saved;
     }
 }
 
-const srcGetCachedFxRate = function() {
+const srcGetCachedFxRates = function() {
     if(typeof localStorage === 'undefined') return null;
-    const raw = localStorage.getItem(SRC_FX_STORAGE_KEY);
-    if(!raw) return null;
+    const rawRates = localStorage.getItem(SRC_FX_RATES_STORAGE_KEY);
+    const rawTs = localStorage.getItem(SRC_FX_TS_STORAGE_KEY);
+    if(!rawRates || !rawTs) return null;
     try {
-        const parsed = JSON.parse(raw);
-        const rate = Number(parsed?.rate);
-        const ts = Number(parsed?.ts);
-        if(!Number.isFinite(rate) || rate <= 0 || !Number.isFinite(ts)) return null;
+        const parsed = JSON.parse(rawRates);
+        const chf = Number(parsed?.CHF);
+        const usd = Number(parsed?.USD);
+        const ts = Number(rawTs);
+        if(!Number.isFinite(chf) || chf <= 0 || !Number.isFinite(usd) || usd <= 0 || !Number.isFinite(ts)) return null;
         if((Date.now() - ts) > SRC_FX_TTL_MS) return null;
-        return rate;
+        return { CHF: chf, USD: usd };
     } catch (error) {
         return null;
     }
 }
 
-const srcPersistFxRate = function(rate) {
-    if(typeof localStorage === 'undefined' || !Number.isFinite(rate) || rate <= 0) return;
-    localStorage.setItem(SRC_FX_STORAGE_KEY, JSON.stringify({ rate, ts: Date.now() }));
+const srcPersistFxRates = function(rates) {
+    if(typeof localStorage === 'undefined') return;
+    const chf = Number(rates?.CHF);
+    const usd = Number(rates?.USD);
+    if(!Number.isFinite(chf) || chf <= 0 || !Number.isFinite(usd) || usd <= 0) return;
+    localStorage.setItem(SRC_FX_RATES_STORAGE_KEY, JSON.stringify({ CHF: chf, USD: usd }));
+    localStorage.setItem(SRC_FX_TS_STORAGE_KEY, String(Date.now()));
 }
 
-const srcEnsureRateLoaded = async function() {
-    if(srcCurrencyCode !== 'CHF') return srcFxRateEurChf;
-    const cachedRate = srcGetCachedFxRate();
-    if(Number.isFinite(cachedRate) && cachedRate > 0) {
-        srcFxRateEurChf = cachedRate;
-        return srcFxRateEurChf;
+const srcEnsureRatesLoaded = async function() {
+    const cachedRates = srcGetCachedFxRates();
+    if(cachedRates) {
+        window.srcFxRates = cachedRates;
+        return window.srcFxRates;
     }
     try {
-        const response = await fetch('https://api.frankfurter.app/latest?from=EUR&to=CHF');
+        const response = await fetch('https://api.frankfurter.app/latest?from=EUR&to=CHF,USD');
         if(!response.ok) throw new Error(`FX ${response.status}`);
         const data = await response.json();
-        const fetchedRate = Number(data?.rates?.CHF);
-        if(Number.isFinite(fetchedRate) && fetchedRate > 0) {
-            srcFxRateEurChf = fetchedRate;
-            srcPersistFxRate(fetchedRate);
-            return srcFxRateEurChf;
+        const fetchedRates = {
+            CHF: Number(data?.rates?.CHF),
+            USD: Number(data?.rates?.USD)
+        };
+        if(Number.isFinite(fetchedRates.CHF) && fetchedRates.CHF > 0 && Number.isFinite(fetchedRates.USD) && fetchedRates.USD > 0) {
+            window.srcFxRates = fetchedRates;
+            srcPersistFxRates(fetchedRates);
+            return window.srcFxRates;
         }
     } catch (error) {
-        const fallbackRate = srcGetCachedFxRate();
-        if(Number.isFinite(fallbackRate) && fallbackRate > 0) {
-            srcFxRateEurChf = fallbackRate;
-            return srcFxRateEurChf;
+        const fallbackRates = srcGetCachedFxRates();
+        if(fallbackRates) {
+            window.srcFxRates = fallbackRates;
+            return window.srcFxRates;
         }
     }
-    srcFxRateEurChf = 1;
-    return srcFxRateEurChf;
+    window.srcFxRates = { CHF: 1, USD: 1 };
+    return window.srcFxRates;
 }
 
 window.srcSetCurrency = async function(curr) {
-    const next = curr === 'CHF' ? 'CHF' : 'EUR';
-    srcCurrencyCode = next;
+    const next = (curr === 'CHF' || curr === 'USD') ? curr : 'EUR';
+    window.srcCurrencyCode = next;
     if(typeof localStorage !== 'undefined') {
-        localStorage.setItem(SRC_CURRENCY_STORAGE_KEY, srcCurrencyCode);
+        localStorage.setItem(SRC_CURRENCY_STORAGE_KEY, window.srcCurrencyCode);
     }
-    srcSetCurrencyButtonsState(srcCurrencyCode);
-    if(srcCurrencyCode === 'CHF') {
-        await srcEnsureRateLoaded();
+    srcSetCurrencyButtonsState(window.srcCurrencyCode);
+    if(window.srcCurrencyCode !== 'EUR') {
+        await srcEnsureRatesLoaded();
     }
     srcCalc();
     if(packagesState) srcRenderPackages();
@@ -142,15 +177,15 @@ document.addEventListener('DOMContentLoaded', () => {
         document.documentElement.style.setProperty('--src-check-icon', `url("${iconUrl}")`);
     }
     srcRestoreCurrencyPreference();
-    srcSetCurrencyButtonsState(srcCurrencyCode);
+    srcSetCurrencyButtonsState(window.srcCurrencyCode);
     const currencyToggle = document.getElementById('src-currency-toggle');
     if(currencyToggle) {
         currencyToggle.querySelectorAll('.src-currency-btn[data-currency]').forEach(btn => {
             btn.addEventListener('click', () => srcSetCurrency(btn.getAttribute('data-currency') || 'EUR'));
         });
     }
-    if(srcCurrencyCode === 'CHF') {
-        srcEnsureRateLoaded().then(() => srcCalc());
+    if(srcGetCurrencyCode() !== 'EUR') {
+        srcEnsureRatesLoaded().then(() => srcCalc());
     }
 
     // DATEN IMPORTIEREN (Vom PHP übergeben)
@@ -469,15 +504,17 @@ window.srcSyncOptionRowStates = function() {
     });
 }
 
-const srcFormatCurrency = function(value) {
-    if(!Number.isFinite(value)) return '–';
-    const converted = srcConvertFromEur(value);
+const srcFormatMoney = function(amountEur) {
+    if(!Number.isFinite(amountEur)) return '–';
+    const converted = srcConvertFromEUR(amountEur);
     return srcGetCurrencyFormatter().format(converted);
 }
 
+const srcFormatCurrency = srcFormatMoney;
+
 const srcFormatSignedCurrency = function(value) {
     if(!Number.isFinite(value)) return '';
-    const converted = srcConvertFromEur(value);
+    const converted = srcConvertFromEUR(value);
     const rounded = Math.round(converted);
     if(rounded === 0) return srcGetCurrencyFormatter().format(0);
     const sign = rounded > 0 ? '+' : '−';
@@ -1099,7 +1136,7 @@ const srcRenderPriceDetails = function(info, state, result) {
         const labelText = entry.label || '';
         const includedByDefault = /gebiet|verbreitungsgebiet|laufzeit|nutzungsdauer/i.test(labelText);
         const amountRaw = typeof entry.amount === 'number' ? String(entry.amount) : (entry.amount || '').toString().trim();
-        const zeroCurrencyValues = ['—', srcFormatCurrency(0), srcFormatSignedCurrency(0), `+${srcFormatCurrency(0)}`, '0€', '+0 €', '±0 €'];
+        const zeroCurrencyValues = ['—', srcFormatCurrency(0), srcFormatSignedCurrency(0), `+${srcFormatCurrency(0)}`];
         const shouldShowIncluded = includedByDefault && (!amountRaw || zeroCurrencyValues.includes(amountRaw));
         const amountText = shouldShowIncluded ? 'inkl.' : (amountRaw || '—');
         const toneClass = entry.tone ? `is-${entry.tone}` : '';
@@ -2180,7 +2217,7 @@ const srcComputeSingleProjectResult = function(state, projectKey, options = {}) 
                 adName = genre === 'radio' ? "Funk Spot (Lokal)" : "Online Video (Kleinräumig)";
                 licBaseText = genre === 'radio'
                     ? "Lizenzen: Lineares Radio-Programm (Lokal/Simulcast), bis zu 1 Jahr."
-                    : "Lizenzen: Kleine Online Paid Media (KMU, Media <5000€), max 3 Monate.";
+                    : `Lizenzen: Kleine Online Paid Media (KMU, Media <${srcFormatMoney(5000)}), max 3 Monate.`;
                 licMeta.push("Sonderformat: Kleinräumiges Segment");
             } else if(genre === 'pos') {
                 const variants = data.variants || {};
@@ -3035,13 +3072,13 @@ function srcBuildTutorialSteps() {
         { element: '.src-rights-card', title: '5. Nutzungsrechte', desc: 'Definiere Medium, Laufzeit und Gebiet der Verwertung.' },
         { element: '.src-complexity-group', title: '6. Produktion & Aufwand', desc: 'Produktionsanforderungen und Aufwand wirken sich direkt auf die Empfehlung aus.' },
         { element: '#src-global-settings', title: '7. Optionen', desc: 'Optionale Kostenblöcke wie Studio, Express oder Rabatt hinzufügen.' },
-        { element: '#src-kalkulation-section', title: '8. Kalkulation (Sidebar)', desc: 'Hier siehst Du die empfohlene Gage und die relevanten Richtwerte auf einen Blick.' },
+        { element: '#src-kalkulation-section', title: '8. Kalkulation (Sidebar)', desc: 'Hier siehst Du die empfohlene Gage und die relevanten Richtwerte auf einen Blick. Die empfohlenen deutschen Gagen werden ausschließlich zum aktuellen Wechselkurs in CHF/USD umgerechnet; es werden keine anderen (z.B. schweizerischen/amerikanischen) Preismodelle verwendet.' },
         { element: '#src-license-section', title: '9. Nutzungsrechte & Lizenzen', desc: 'Diese Box fasst die Lizenzparameter der aktuellen Kalkulation zusammen.' },
         { element: '#src-pricedetails-section', title: '10. Preis-Details', desc: 'Hier wird die Berechnung transparent und Schritt für Schritt aufgeschlüsselt.' },
         { element: '#src-notes-tips-section', title: '11. Hinweise & Tipps', desc: 'Kontextbezogene Hinweise helfen bei einer realistischen Angebotsgestaltung.' },
         { element: '#src-packages-section', title: '12. Pakete', desc: 'In diesem Bereich kannst Du direkt Paketvorschläge auf Basis der Kalkulation erzeugen.' },
         { element: '#src-knowledge-section', title: '13. Wissenswertes', desc: 'Zusätzliche Fachinformationen unterstützen Dich bei Einordnung und Kommunikation.' },
-        { element: '.src-footer-actions', title: '14. Angebot speichern', desc: 'Speichere Dein Angebot hier als PDF für Versand und Dokumentation.' }
+        { element: '#src-offer-save-btn', title: '14. Angebot speichern', desc: 'Speichere Dein Angebot hier als PDF für Versand und Dokumentation.' }
     ];
 
     return steps.filter(step => step.element && document.querySelector(step.element));
@@ -3071,11 +3108,17 @@ window.srcStartTutorial = function() {
 
     document.body.classList.add('src-tutorial-active');
     document.body.classList.add('src-tutorial-mode');
-    document.getElementById('src-tutorial-panel').classList.remove('src-tutorial-hidden');
+
+    const panel = document.getElementById('src-tutorial-panel');
+    if (panel) {
+        panel.classList.remove('src-tutorial-hidden');
+    }
 
     // Setup Dots
     const dotsContainer = document.getElementById('src-tut-dots');
-    dotsContainer.innerHTML = srcTutSteps.map((_, i) => `<div class="src-tutorial-dot ${i === 0 ? 'is-active' : ''}"></div>`).join('');
+    if (dotsContainer) {
+        dotsContainer.innerHTML = srcTutSteps.map((_, i) => `<div class="src-tutorial-dot ${i === 0 ? 'is-active' : ''}"></div>`).join('');
+    }
 
     setTimeout(() => srcRenderTutStep(), 300);
 };
@@ -3103,14 +3146,24 @@ window.srcRenderTutStep = function() {
     }
 
     // Panel updaten
-    document.getElementById('src-tut-badge').innerText = `${srcTutCurrentStep + 1} / ${srcTutSteps.length}`;
-    document.getElementById('src-tut-title').innerText = step.title;
-    document.getElementById('src-tut-desc').innerText = step.desc;
+    const badgeEl = document.getElementById('src-tut-badge');
+    const titleEl = document.getElementById('src-tut-title');
+    const descEl = document.getElementById('src-tut-desc');
+    if (badgeEl) badgeEl.innerText = `${srcTutCurrentStep + 1} / ${srcTutSteps.length}`;
+    if (titleEl) titleEl.innerText = step.title;
+    if (descEl) descEl.innerText = step.desc;
 
     // Buttons & Dots updaten
-    document.getElementById('src-tut-prev').style.display = srcTutCurrentStep === 0 ? 'none' : 'inline-flex';
+    const prevBtn = document.getElementById('src-tut-prev');
+    if (prevBtn) prevBtn.style.display = srcTutCurrentStep === 0 ? 'none' : 'inline-flex';
     const nextBtn = document.getElementById('src-tut-next');
-    nextBtn.innerHTML = srcTutCurrentStep === srcTutSteps.length - 1 ? 'Beenden <span class="dashicons dashicons-yes"></span>' : 'Weiter <span class="dashicons dashicons-arrow-right-alt"></span>';
+    if (nextBtn) {
+        nextBtn.innerHTML = srcTutCurrentStep === srcTutSteps.length - 1 ? 'Beenden <span class="dashicons dashicons-yes"></span>' : 'Weiter <span class="dashicons dashicons-arrow-right-alt"></span>';
+    }
+
+    if (window.__srcTutorialActive && step.element === '#src-packages-section') {
+        setTimeout(srcTutorialEnsurePackages, 50);
+    }
 
     document.querySelectorAll('.src-tutorial-dot').forEach((dot, i) => {
         dot.classList.toggle('is-active', i === srcTutCurrentStep);
@@ -3137,7 +3190,10 @@ window.srcEndTutorial = function() {
     window.__srcTutorialActive = false;
     document.body.classList.remove('src-tutorial-active');
     document.body.classList.remove('src-tutorial-mode');
-    document.getElementById('src-tutorial-panel').classList.add('src-tutorial-hidden');
+    const panel = document.getElementById('src-tutorial-panel');
+    if (panel) {
+        panel.classList.add('src-tutorial-hidden');
+    }
     document.querySelectorAll('.src-is-highlighted').forEach(el => el.classList.remove('src-is-highlighted'));
     srcReset();
 };

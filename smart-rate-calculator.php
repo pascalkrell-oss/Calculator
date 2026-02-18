@@ -96,9 +96,12 @@ function src_shortcode_output_v7() {
             <button class="src-action-link" onclick="srcOpenGuide()">
                 <span class="dashicons dashicons-book"></span> Anleitung
             </button>
+            <span class="src-divider">|</span>
+            <span class="src-currency-label">Währung wählen</span>
             <div class="src-currency-toggle" id="src-currency-toggle" role="group" aria-label="Währung">
                 <button type="button" class="src-currency-btn is-active" data-currency="EUR" onclick="srcSetCurrency('EUR')">EUR</button>
                 <button type="button" class="src-currency-btn" data-currency="CHF" onclick="srcSetCurrency('CHF')">CHF</button>
+                <button type="button" class="src-currency-btn" data-currency="USD" onclick="srcSetCurrency('USD')">USD</button>
             </div>
         </div>
         <button class="src-reset-btn" onclick="srcReset()">
@@ -544,7 +547,7 @@ function src_shortcode_output_v7() {
                         </div>
                     </div>
                     <div class="src-opt-body" data-opt-body>
-                        <div class="src-opt-body-text">Eigenständiger Markt für lokale Auswertungen (nur auf Anfrage). Begrenzt auf Radio (Lokal, bis 1 Jahr) oder Online Paid (KMU, max 5.000€ Media, max 3 Monate).</div>
+                        <div class="src-opt-body-text">Eigenständiger Markt für lokale Auswertungen (nur auf Anfrage). Begrenzt auf Radio (Lokal, bis 1 Jahr) oder Online Paid (KMU, max 5.000 Budget, max 3 Monate).</div>
                     </div>
                 </div>
 
@@ -588,7 +591,7 @@ function src_shortcode_output_v7() {
                     <div class="src-opt-body" data-opt-body>
                         <div class="src-opt-body-row">
                             <input type="number" id="src-studio-fee" value="150" class="src-input-compact" style="padding-right:10px;" oninput="srcCalc()">
-                            <div class="src-opt-body-help">Betrag in €</div>
+                            <div class="src-opt-body-help">Betrag in gewählter Währung</div>
                         </div>
                     </div>
                 </div>
@@ -658,14 +661,14 @@ function src_shortcode_output_v7() {
                             <div class="src-price-main-box">
                                 <div class="src-price-main">
                                     <div class="src-amount-anim">
-                                        <span class="src-amount-anim__value src-total" id="src-display-total">0 €</span>
+                                        <span class="src-amount-anim__value src-total" id="src-display-total">0 EUR</span>
                                     </div>
                                 </div>
                             </div>
                             <div class="src-price-meta-row">
                                 <div class="src-price-sub">
                                     <div class="src-mean-fade" id="src-mean-fade">
-                                        <span id="src-display-range">Ø Mittelwert: <span class="src-marker" id="src-mean-value">0 €</span></span>
+                                        <span id="src-display-range">Ø Mittelwert: <span class="src-marker" id="src-mean-value">0 EUR</span></span>
                                     </div>
                                 </div>
                                 <div class="src-price-note">Alle Preise zzgl. MwSt.</div>
@@ -945,6 +948,7 @@ function src_shortcode_output_v7() {
                 <p class="src-guide-intro-text">
                     Willkommen im Leitfaden zur Gagenkalkulation! Die Honorierung von professionellen Sprecherleistungen basiert nicht auf Stundenlöhnen, sondern auf dem Prinzip der <strong>Nutzungsrechte</strong>. Grundlage für alle Berechnungen ist der offizielle <a href="https://www.sprecherverband.de/wp-content/uploads/2025/02/VDS_Gagenkompass_2025.pdf" target="_blank" rel="noopener" class="src-vds-link-inline">VDS Gagenkompass 2025</a>. Diese Anleitung beantwortet alle Fragen zur korrekten Einstellung und Nutzung.
                 </p>
+                <p class="src-guide-currency-hint">Die empfohlenen deutschen Gagen werden ausschließlich zum aktuellen Wechselkurs in CHF/USD umgerechnet. Es werden keine anderen (z.B. schweizerischen/amerikanischen) Preismodelle verwendet.</p>
 
                 <h3 id="guide-1" class="src-guide-h3"><span class="dashicons dashicons-chart-pie src-guide-h3-icon"></span> 1. Das Verwertungsprinzip</h3>
                 <p>Man bezahlt primär für die Reichweite und die Zeit, in der eine Marke die Stimme nutzt. Ein Werbespot, der ein Jahr lang national im TV läuft, hat einen deutlich höheren Werbewert als ein reines internes Schulungsvideo. Daher steigen die Kosten exponentiell mit dem Medium, der Verbreitung (Gebiet) und der Laufzeit.</p>
