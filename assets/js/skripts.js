@@ -2925,13 +2925,13 @@ function srcBuildTutorialSteps() {
         { element: '.src-rights-card', title: '5. Nutzungsrechte', desc: 'Definiere Medium, Laufzeit und Gebiet der Verwertung.' },
         { element: '.src-complexity-group', title: '6. Produktion & Aufwand', desc: 'Produktionsanforderungen und Aufwand wirken sich direkt auf die Empfehlung aus.' },
         { element: '#src-global-settings', title: '7. Optionen', desc: 'Optionale Kostenblöcke wie Studio, Express oder Rabatt hinzufügen.' },
-        { element: srcTutorialPickSelector(['#src-sidebar-kalkulation', '.src-col-right .src-sidebar-section:first-child', '.src-result-card']), title: '8. Kalkulation (Sidebar)', desc: 'Hier siehst Du die empfohlene Gage und die relevanten Richtwerte auf einen Blick.' },
+        { element: '#src-kalkulation-section', title: '8. Kalkulation (Sidebar)', desc: 'Hier siehst Du die empfohlene Gage und die relevanten Richtwerte auf einen Blick.' },
         { element: '#src-license-section', title: '9. Nutzungsrechte & Lizenzen', desc: 'Diese Box fasst die Lizenzparameter der aktuellen Kalkulation zusammen.' },
         { element: '#src-pricedetails-section', title: '10. Preis-Details', desc: 'Hier wird die Berechnung transparent und Schritt für Schritt aufgeschlüsselt.' },
         { element: '#src-notes-tips-section', title: '11. Hinweise & Tipps', desc: 'Kontextbezogene Hinweise helfen bei einer realistischen Angebotsgestaltung.' },
         { element: '#src-packages-section', title: '12. Pakete', desc: 'In diesem Bereich kannst Du direkt Paketvorschläge auf Basis der Kalkulation erzeugen.' },
-        { element: srcTutorialPickSelector(['#src-knowledge-section', '.src-info-section']), title: '13. Wissenswertes', desc: 'Zusätzliche Fachinformationen unterstützen Dich bei Einordnung und Kommunikation.' },
-        { element: srcTutorialPickSelector(['#src-offer-save-btn', '.src-footer-actions .src-btn']), title: '14. Angebot speichern', desc: 'Speichere Dein Angebot hier als PDF für Versand und Dokumentation.' }
+        { element: '#src-knowledge-section', title: '13. Wissenswertes', desc: 'Zusätzliche Fachinformationen unterstützen Dich bei Einordnung und Kommunikation.' },
+        { element: '.src-footer-actions', title: '14. Angebot speichern', desc: 'Speichere Dein Angebot hier als PDF für Versand und Dokumentation.' }
     ];
 
     return steps.filter(step => step.element && document.querySelector(step.element));
@@ -2960,6 +2960,7 @@ window.srcStartTutorial = function() {
     }
 
     document.body.classList.add('src-tutorial-active');
+    document.body.classList.add('src-tutorial-mode');
     document.getElementById('src-tutorial-panel').classList.remove('src-tutorial-hidden');
 
     // Setup Dots
@@ -3025,6 +3026,7 @@ window.srcTutPrev = function() {
 window.srcEndTutorial = function() {
     window.__srcTutorialActive = false;
     document.body.classList.remove('src-tutorial-active');
+    document.body.classList.remove('src-tutorial-mode');
     document.getElementById('src-tutorial-panel').classList.add('src-tutorial-hidden');
     document.querySelectorAll('.src-is-highlighted').forEach(el => el.classList.remove('src-is-highlighted'));
     srcReset();

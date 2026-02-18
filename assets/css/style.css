@@ -3016,6 +3016,18 @@ body.src-tutorial-active #src-tutorial-overlay {
     transition: box-shadow 0.3s ease, background 0.3s ease !important;
 }
 
+body.src-tutorial-active .driver-highlighted-element,
+body.src-tutorial-active .driver-active-element,
+body.src-tutorial-active .driver-stage,
+body.src-tutorial-mode .driver-highlighted-element,
+body.src-tutorial-mode .driver-active-element,
+body.src-tutorial-mode .driver-stage {
+    border-radius: 12px !important;
+    box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.35), 0 20px 40px rgba(0, 0, 0, 0.25) !important;
+    outline: 2px solid rgba(255, 255, 255, 0.9) !important;
+    outline-offset: 2px !important;
+}
+
 /* --- 3. HIGH-END TUTORIAL PANEL (FIXED BOTTOM) --- */
 #src-tutorial-panel {
     position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(20px);
