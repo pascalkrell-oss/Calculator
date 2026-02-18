@@ -3083,10 +3083,27 @@ body.src-tutorial-active {
     overflow-x: hidden;
 }
 
+body.src-tutorial-lockscroll {
+    overflow: hidden;
+}
+
+body.src-tutorial-active .src-collapse {
+    transition: none !important;
+}
+
 /* --- 2. TUTORIAL OVERLAY & HIGHLIGHT --- */
 #src-tutorial-overlay {
-    position: fixed; inset: 0; background: transparent; backdrop-filter: none;
-    z-index: 99990; opacity: 0; visibility: hidden; transition: all 0.4s ease; pointer-events: none;
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    background: transparent;
+    backdrop-filter: none;
+    z-index: 99990;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.4s ease;
+    pointer-events: none;
 }
 body.src-tutorial-active #src-tutorial-overlay {
     opacity: 1; visibility: visible; pointer-events: auto;
@@ -3148,12 +3165,18 @@ body.src-tutorial-mode .src-tutorial-lift{
 
 /* --- 3. HIGH-END TUTORIAL PANEL (FIXED BOTTOM) --- */
 #src-tutorial-panel {
-    position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(20px);
-    width: 90%; max-width: 500px; z-index: 99999; opacity: 0; visibility: hidden;
-    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    width: min(500px, calc(100vw - 24px));
+    z-index: 99999;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, top 0.2s ease, left 0.2s ease;
 }
 body.src-tutorial-active #src-tutorial-panel:not(.src-tutorial-hidden) {
-    opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0);
+    opacity: 1;
+    visibility: visible;
 }
 
 .src-tutorial-panel-inner {

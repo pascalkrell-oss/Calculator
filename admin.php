@@ -107,7 +107,7 @@ function src_get_default_json() {
             "extra": [50, 100, 150],
             "extra_unit": 5,
             "extra_after": 5,
-            "license_extras": { "social_organic": 150, "event_pos": 150 },
+            "license_extras": { "social_organic": [50, 150, 250], "event_pos": 150 },
             "lic": "Lizenzen: Internet Basic (Website, YouTube etc.) - Unpaid Media. Zeitlich unbegrenzt."
         },
         "explainer": {

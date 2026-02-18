@@ -163,7 +163,7 @@ function src_shortcode_output_v7() {
             <div class="src-currency-toggle" id="src-currency-toggle" role="group" aria-label="Währung">
                 <button type="button" class="src-currency-btn is-active" data-currency="EUR" onclick="srcSetCurrency('EUR')">EUR</button>
                 <button type="button" class="src-currency-btn" data-currency="CHF" onclick="srcSetCurrency('CHF')">CHF</button>
-                <button type="button" class="src-currency-btn" data-currency="USD" onclick="srcSetCurrency('USD')">$</button>
+                <button type="button" class="src-currency-btn" data-currency="USD" onclick="srcSetCurrency('USD')">USD</button>
             </div>
         </div>
         <button class="src-reset-btn" onclick="srcReset()">
@@ -470,11 +470,18 @@ function src_shortcode_output_v7() {
                                 <div class="src-switch-row boxed">
                                     <span class="src-switch-content">
                                         <span class="dashicons dashicons-share src-switch-icon"></span>
-                                        <div><div class="src-switch-text">Social Media (Organisch)</div></div>
+                                        <div>
+                                            <div class="src-switch-text">Social Media (Organisch)</div>
+                                            <div class="src-switch-sub">Zusatzlizenz-Level auswählen</div>
+                                        </div>
                                     </span>
-                                    <div class="src-toggle-wrapper">
-                                        <input type="checkbox" id="src-lic-social">
-                                        <label class="src-toggle-slider" for="src-lic-social"></label>
+                                    <div class="src-field-inline" id="src-lic-social-level-wrap">
+                                        <select id="src-lic-social-level" class="src-select src-select--sm">
+                                            <option value="off" selected>AUS</option>
+                                            <option value="low">LOW</option>
+                                            <option value="mid">MID</option>
+                                            <option value="high">HIGH</option>
+                                        </select>
                                     </div>
                                 </div>
                                 <div class="src-switch-row boxed">
@@ -833,6 +840,7 @@ function src_shortcode_output_v7() {
                         </div>
                     </div>
 
+                    <div id="src-save-section">
                     <div class="src-footer-actions">
                         <button class="src-btn" id="src-offer-save-btn" onclick="srcOpenExportModal()">
                             <span class="dashicons dashicons-pdf"></span> Angebot speichern
@@ -840,6 +848,7 @@ function src_shortcode_output_v7() {
                         <div class="src-note-text">
                             <a class="src-vds-link" href="https://www.sprecherverband.de/wp-content/uploads/2025/02/VDS_Gagenkompass_2025.pdf" target="_blank" rel="noopener">Auf Basis VDS Gagenkompass 2025</a>. Alle Preise zzgl. MwSt.
                         </div>
+                    </div>
                     </div>
                 </div>
             </div>
