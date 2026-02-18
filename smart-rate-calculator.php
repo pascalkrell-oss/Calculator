@@ -96,9 +96,9 @@ function src_shortcode_output_v7() {
             <button class="src-action-link" onclick="srcOpenGuide()">
                 <span class="dashicons dashicons-book"></span> Anleitung
             </button>
-            <div class="src-currency-switch">
-                <button class="src-curr-btn is-active" id="btn-curr-eur" onclick="srcSetCurrency('EUR')">EUR</button>
-                <button class="src-curr-btn" id="btn-curr-chf" onclick="srcSetCurrency('CHF')">CHF</button>
+            <div class="src-currency-toggle" id="src-currency-toggle" role="group" aria-label="Währung">
+                <button type="button" class="src-currency-btn is-active" data-currency="EUR" onclick="srcSetCurrency('EUR')">EUR</button>
+                <button type="button" class="src-currency-btn" data-currency="CHF" onclick="srcSetCurrency('CHF')">CHF</button>
             </div>
         </div>
         <button class="src-reset-btn" onclick="srcReset()">
