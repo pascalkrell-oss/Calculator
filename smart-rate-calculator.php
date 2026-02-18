@@ -63,8 +63,70 @@ function src_enqueue_assets_v7() {
         'ajaxUrl' => admin_url('admin-ajax.php'),
         'checkIconUrl' => wp_get_attachment_url(407) ?: ''
     ));
+
+    $src_calc_data = array(
+        'rest_fx_url' => esc_url_raw( rest_url('src-calc/v1/fx') ),
+    );
+
+    wp_localize_script('src-script', 'SRC_CALC', $src_calc_data);
 }
 add_action('wp_enqueue_scripts', 'src_enqueue_assets_v7');
+
+add_action('rest_api_init', function () {
+    register_rest_route('src-calc/v1', '/fx', array(
+        'methods'  => 'GET',
+        'callback' => 'src_calc_get_fx_rates_rest',
+        'permission_callback' => '__return_true',
+    ));
+});
+
+function src_calc_get_fx_rates_rest(WP_REST_Request $request) {
+    $cache_key = 'src_fx_rates_eur_chf_usd_v1';
+    $cached = get_transient($cache_key);
+    if (is_array($cached) && isset($cached['CHF'], $cached['USD'], $cached['ts'])) {
+        return rest_ensure_response($cached);
+    }
+
+    $url = 'https://api.frankfurter.app/latest?from=EUR&to=CHF,USD';
+
+    $resp = wp_remote_get($url, array(
+        'timeout' => 8,
+        'redirection' => 2,
+        'headers' => array('Accept' => 'application/json'),
+    ));
+
+    if (is_wp_error($resp)) {
+        return rest_ensure_response(array('CHF' => 1, 'USD' => 1, 'ts' => time(), 'source' => 'fallback'));
+    }
+
+    $code = wp_remote_retrieve_response_code($resp);
+    $body = wp_remote_retrieve_body($resp);
+    if ($code !== 200 || empty($body)) {
+        return rest_ensure_response(array('CHF' => 1, 'USD' => 1, 'ts' => time(), 'source' => 'fallback'));
+    }
+
+    $json = json_decode($body, true);
+    $chf = isset($json['rates']['CHF']) ? floatval($json['rates']['CHF']) : 1;
+    $usd = isset($json['rates']['USD']) ? floatval($json['rates']['USD']) : 1;
+
+    if ($chf <= 0) {
+        $chf = 1;
+    }
+    if ($usd <= 0) {
+        $usd = 1;
+    }
+
+    $data = array(
+        'CHF' => $chf,
+        'USD' => $usd,
+        'ts'  => time(),
+        'source' => 'server',
+    );
+
+    set_transient($cache_key, $data, 24 * HOUR_IN_SECONDS);
+
+    return rest_ensure_response($data);
+}
 
 function src_is_calculator_page() {
     if ( is_admin() ) {
