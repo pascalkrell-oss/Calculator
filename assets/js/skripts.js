@@ -3016,6 +3016,82 @@ function srcTutorialClearLift(){
     document.querySelectorAll('.src-tutorial-lift').forEach(el => el.classList.remove('src-tutorial-lift'));
 }
 
+/**
+ * Mount tutorial layers directly under <body>, so fixed positioning is never trapped
+ * in transformed wrappers/stacking contexts. Also ensures spotlight layer exists.
+ */
+function srcTutorialMountLayers() {
+    const overlay = document.getElementById('src-tutorial-overlay');
+    const panel = document.getElementById('src-tutorial-panel');
+
+    if (overlay && overlay.parentElement !== document.body) {
+        document.body.appendChild(overlay);
+    }
+
+    if (panel && panel.parentElement !== document.body) {
+        document.body.appendChild(panel);
+    }
+
+    let spotlight = document.getElementById('src-tutorial-spotlight');
+    if (!spotlight) {
+        spotlight = document.createElement('div');
+        spotlight.id = 'src-tutorial-spotlight';
+        document.body.appendChild(spotlight);
+    }
+}
+
+/**
+ * Positions the cut-out spotlight over the current tutorial anchor.
+ * Falls back safely when no element is available.
+ */
+function srcTutorialSetSpotlight(targetEl) {
+    const spotlight = document.getElementById('src-tutorial-spotlight');
+    if (!spotlight) return;
+
+    if (!targetEl || typeof targetEl.getBoundingClientRect !== 'function') {
+        spotlight.style.top = '0px';
+        spotlight.style.left = '0px';
+        spotlight.style.width = '0px';
+        spotlight.style.height = '0px';
+        spotlight.style.borderRadius = '16px';
+        return;
+    }
+
+    const rect = targetEl.getBoundingClientRect();
+    if (!rect || rect.width <= 0 || rect.height <= 0) {
+        spotlight.style.top = '0px';
+        spotlight.style.left = '0px';
+        spotlight.style.width = '0px';
+        spotlight.style.height = '0px';
+        spotlight.style.borderRadius = '16px';
+        return;
+    }
+
+    const pad = 10;
+    const edge = 8;
+    const vw = window.innerWidth || document.documentElement.clientWidth || 0;
+    const vh = window.innerHeight || document.documentElement.clientHeight || 0;
+
+    let left = rect.left - pad;
+    let top = rect.top - pad;
+    let right = rect.right + pad;
+    let bottom = rect.bottom + pad;
+
+    left = Math.max(edge, left);
+    top = Math.max(edge, top);
+    right = Math.min(Math.max(edge, vw - edge), right);
+    bottom = Math.min(Math.max(edge, vh - edge), bottom);
+
+    const width = Math.max(0, right - left);
+    const height = Math.max(0, bottom - top);
+
+    spotlight.style.top = `${top}px`;
+    spotlight.style.left = `${left}px`;
+    spotlight.style.width = `${width}px`;
+    spotlight.style.height = `${height}px`;
+    spotlight.style.borderRadius = '16px';
+}
+
 function srcBuildTutorialSteps() {
     const steps = [
         { element: srcTutorialPickSelector(['.src-top-grid > div:nth-child(1)', '#src-genre']), title: '1. Projektart', desc: 'Wähle hier aus, welche Art von Projekt kalkuliert wird.' },
@@ -3038,6 +3114,8 @@ function srcBuildTutorialSteps() {
 }
 
 window.srcStartTutorial = function() {
+    srcTutorialMountLayers();
+
     // 1. UI Vorbereiten
     const genreSelect = document.getElementById('src-genre');
     if (genreSelect) {
@@ -3101,12 +3179,17 @@ window.srcRenderTutStep = function() {
             || n.closest('.src-footer-actions')
             || n;
         anchor.classList.add('src-tutorial-lift');
+        srcTutorialSetSpotlight(anchor);
         // Weich zum Element scrollen, so dass es mittig im Bildschirm ist
         targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        requestAnimationFrame(() => srcTutorialSetSpotlight(anchor));
+        setTimeout(() => srcTutorialSetSpotlight(anchor), 350);
 
         if (window.__srcTutorialActive && targetEl.closest('#src-packages-section')) {
             setTimeout(srcTutorialEnsurePackages, 50);
         }
+    } else {
+        srcTutorialSetSpotlight(null);
     }
 
     // Panel updaten
@@ -3153,6 +3236,7 @@ window.srcTutPrev = function() {
 window.srcEndTutorial = function() {
     window.__srcTutorialActive = false;
     srcTutorialClearLift();
+    srcTutorialSetSpotlight(null);
     document.body.classList.remove('src-tutorial-active');
     document.body.classList.remove('src-tutorial-mode');
     const panel = document.getElementById('src-tutorial-panel');

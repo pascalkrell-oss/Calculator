@@ -3085,11 +3085,33 @@ body.src-tutorial-active {
 
 /* --- 2. TUTORIAL OVERLAY & HIGHLIGHT --- */
 #src-tutorial-overlay {
-    position: fixed; inset: 0; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(5px);
+    position: fixed; inset: 0; background: transparent; backdrop-filter: none;
     z-index: 99990; opacity: 0; visibility: hidden; transition: all 0.4s ease; pointer-events: none;
 }
 body.src-tutorial-active #src-tutorial-overlay {
     opacity: 1; visibility: visible; pointer-events: auto;
+}
+
+#src-tutorial-spotlight {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 0;
+    border-radius: 16px;
+    box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.75);
+    outline: 2px solid rgba(26,147,238,.22);
+    outline-offset: 2px;
+    z-index: 99991;
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    transition: top .28s ease, left .28s ease, width .28s ease, height .28s ease, border-radius .28s ease, opacity .2s ease;
+}
+
+body.src-tutorial-active #src-tutorial-spotlight {
+    opacity: 1;
+    visibility: visible;
 }
 
 /* Das hervorgehobene Element */
