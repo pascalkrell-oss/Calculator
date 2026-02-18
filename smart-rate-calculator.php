@@ -651,7 +651,7 @@ function src_shortcode_output_v7() {
         <div class="src-col-right">
             <div class="src-sidebar">
                 <div class="src-sidebar-sticky" id="srcSidebarSticky">
-                    <div class="src-sidebar-section" id="src-sidebar-kalkulation">
+                    <div class="src-sidebar-section" id="src-kalkulation-section">
                         <div class="src-sidebar-title"><span class="src-title-main"><span class="src-title-icon" aria-hidden="true"><span class="dashicons dashicons-calculator"></span></span><span class="src-title-text">Kalkulation</span></span><span class="src-live-badge">Live-Rechnung</span></div>
                         <div class="src-result-card">
                             <div class="src-price-label">Empfohlene Gage (Netto)</div>
