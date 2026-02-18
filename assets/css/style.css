@@ -2374,6 +2374,15 @@
 .src-guide-body p {
     margin: 0 0 16px 0;
 }
+.src-guide-currency-hint {
+    margin: 0 0 18px 0 !important;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: rgba(26,147,238,0.08);
+    color: #0f172a;
+    font-weight: 600;
+    line-height: 1.5;
+}
 .src-guide-tip {
     background: #ffffff;
     border: 1px solid #cbd5e1;
@@ -2451,10 +2460,17 @@
     color: #cbd5e1;
     font-size: 14px;
 }
+.src-currency-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #64748b;
+    letter-spacing: 0.01em;
+}
 
 @media (min-width: 769px) {
     .src-action-link,
     .src-divider,
+    .src-currency-label,
     .src-reset-btn {
         color: rgba(255, 255, 255, 0.82);
     }
@@ -2472,6 +2488,10 @@
 
     .src-divider {
         color: #cbd5e1;
+    }
+
+    .src-currency-label {
+        color: #334155;
     }
 
     .src-reset-btn {
@@ -2992,7 +3012,7 @@
     display: inline-flex;
     border-radius: 999px;
     padding: 2px;
-    margin-left: 6px;
+    margin-left: 2px;
     border: 1px solid rgba(148, 163, 184, 0.55);
     background: rgba(255, 255, 255, 0.1);
 }
@@ -3073,26 +3093,25 @@ body.src-tutorial-active #src-tutorial-overlay {
 }
 
 /* Das hervorgehobene Element */
-.src-is-highlighted {
-    position: relative !important;
-    z-index: 99995 !important;
-    background: #ffffff !important;
-    border-radius: 12px !important;
-    box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.2), 0 20px 40px rgba(0, 0, 0, 0.3) !important;
-    pointer-events: none !important;
-    transition: box-shadow 0.3s ease, background 0.3s ease !important;
-}
-
-body.src-tutorial-active .driver-highlighted-element,
-body.src-tutorial-active .driver-active-element,
-body.src-tutorial-active .driver-stage,
+body.src-tutorial-mode .src-is-highlighted,
 body.src-tutorial-mode .driver-highlighted-element,
 body.src-tutorial-mode .driver-active-element,
-body.src-tutorial-mode .driver-stage {
-    border-radius: 12px !important;
-    box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.35), 0 20px 40px rgba(0, 0, 0, 0.25) !important;
-    outline: 2px solid rgba(255, 255, 255, 0.9) !important;
+body.src-tutorial-mode .driver-stage,
+body.src-tutorial-active .driver-highlighted-element,
+body.src-tutorial-active .driver-active-element,
+body.src-tutorial-active .driver-stage {
+    position: relative !important;
+    z-index: 9999999 !important;
+    background: #fff !important;
+    border-radius: 16px !important;
+    box-shadow: 0 18px 40px rgba(15, 23, 42, .22) !important;
+    outline: 2px solid rgba(26, 147, 238, .22) !important;
     outline-offset: 2px !important;
+    isolation: isolate !important;
+}
+
+body.src-tutorial-mode .src-sidebar-section.src-is-highlighted {
+    z-index: 10000000 !important;
 }
 
 /* --- 3. HIGH-END TUTORIAL PANEL (FIXED BOTTOM) --- */
