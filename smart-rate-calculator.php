@@ -651,7 +651,7 @@ function src_shortcode_output_v7() {
         <div class="src-col-right">
             <div class="src-sidebar">
                 <div class="src-sidebar-sticky" id="srcSidebarSticky">
-                    <div class="src-sidebar-section">
+                    <div class="src-sidebar-section" id="src-sidebar-kalkulation">
                         <div class="src-sidebar-title"><span class="src-title-main"><span class="src-title-icon" aria-hidden="true"><span class="dashicons dashicons-calculator"></span></span><span class="src-title-text">Kalkulation</span></span><span class="src-live-badge">Live-Rechnung</span></div>
                         <div class="src-result-card">
                             <div class="src-price-label">Empfohlene Gage (Netto)</div>
@@ -721,7 +721,7 @@ function src_shortcode_output_v7() {
                         </div>
                     </div>
 
-                    <div class="src-sidebar-section src-info-section">
+                    <div class="src-sidebar-section src-info-section" id="src-knowledge-section">
                         <div class="src-sidebar-title src-sidebar-title--knowledge"><span class="src-title-main"><span class="src-title-icon" aria-hidden="true"><span class="dashicons dashicons-welcome-learn-more"></span></span><span class="src-title-text">Wissenswertes</span></span></div>
                         <div class="src-info-box">
                             <div class="src-acc-item">
@@ -769,7 +769,7 @@ function src_shortcode_output_v7() {
                     </div>
 
                     <div class="src-footer-actions">
-                        <button class="src-btn" onclick="srcOpenExportModal()">
+                        <button class="src-btn" id="src-offer-save-btn" onclick="srcOpenExportModal()">
                             <span class="dashicons dashicons-pdf"></span> Angebot speichern
                         </button>
                         <div class="src-note-text">
