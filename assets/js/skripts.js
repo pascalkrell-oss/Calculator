@@ -177,7 +177,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 'src-local-mode',
                 'src-pkg-online',
                 'src-pkg-atv',
-                'src-lic-social',
+                'src-lic-social-level',
                 'src-lic-event',
                 'src-lic-internal',
                 'src-express-toggle',
@@ -281,9 +281,14 @@ document.addEventListener('DOMContentLoaded', () => {
         durationSlider.addEventListener('input', srcUpdateDurationSliderFill);
         durationSlider.addEventListener('change', srcUpdateDurationSliderFill);
     }
+    const socialLevelSelect = document.getElementById('src-lic-social-level');
+    if(socialLevelSelect) {
+        socialLevelSelect.addEventListener('change', () => srcCalc());
+    }
     const genreSelect = document.getElementById('src-genre');
     if(genreSelect) {
         genreSelect.addEventListener('change', () => {
+            srcUpdateSocialLevelAvailability(genreSelect.value);
             srcUpdateInternalUseToggleAvailability(genreSelect.value);
             srcCalc();
         });
@@ -603,7 +608,7 @@ const srcGetStateFromUI = function() {
         duration: parseInt(document.getElementById('src-time-slider').value, 10) || 1,
         packageOnline: document.getElementById('src-pkg-online') ? document.getElementById('src-pkg-online').checked : false,
         packageAtv: document.getElementById('src-pkg-atv') ? document.getElementById('src-pkg-atv').checked : false,
-        licenseSocial: document.getElementById('src-lic-social') ? document.getElementById('src-lic-social').checked : false,
+        licenseSocialLevel: document.getElementById('src-lic-social-level') ? document.getElementById('src-lic-social-level').value : 'off',
         licenseEvent: document.getElementById('src-lic-event') ? document.getElementById('src-lic-event').checked : false,
         licenseInternal: srcProjectSupportsInternalUse(genre) && (document.getElementById('src-lic-internal') ? document.getElementById('src-lic-internal').checked : false),
         cutdown: document.getElementById('src-cutdown') ? document.getElementById('src-cutdown').checked : false,
@@ -644,7 +649,14 @@ const updateLicenseMetaText = function(state = null) {
     const target = document.getElementById('src-license-meta-text');
     if(!target) return;
     const sourceState = state || srcGetStateFromUI();
-    target.textContent = `Gebiet: ${srcGetRegionLabel(sourceState.region)} · Laufzeit: ${srcGetDurationLabel(sourceState.duration)}`;
+    let durationText = srcGetDurationLabel(sourceState.duration);
+    const rightsGuidance = srcRatesData.rights_guidance || {};
+    const projectGuidance = rightsGuidance[sourceState.projectKey] || {};
+    const guidanceDuration = String(projectGuidance.duration || '').trim();
+    if(guidanceDuration && /unbegr/i.test(guidanceDuration)) {
+        durationText = guidanceDuration || 'zeitlich unbegrenzt';
+    }
+    target.textContent = `Gebiet: ${srcGetRegionLabel(sourceState.region)} · Laufzeit: ${durationText}`;
 }
 
 const srcUpdateAnimatedValue = function(target, nextText) {
@@ -872,6 +884,43 @@ const srcProjectSupportsInternalUse = function(projectKey) {
 
 const srcGetInternalUseToggle = function() {
     return document.querySelector('#src-lic-internal');
+}
+
+const srcGetSocialLevelField = function() {
+    return document.querySelector('#src-lic-social-level');
+}
+
+const srcGetSocialLevelRow = function(fieldEl) {
+    if(!fieldEl) return null;
+    return fieldEl.closest('.src-option-row')
+        || fieldEl.closest('.src-checkbox-row')
+        || fieldEl.closest('.src-switch-row')
+        || fieldEl.closest('label')?.parentElement
+        || fieldEl.parentElement;
+}
+
+const srcProjectSupportsSocialOrganic = function(projectKey) {
+    if(!projectKey || !srcRatesData || !srcRatesData[projectKey]) return false;
+    const extras = (srcRatesData[projectKey] || {}).license_extras || {};
+    return Object.prototype.hasOwnProperty.call(extras, 'social_organic');
+}
+
+const srcUpdateSocialLevelAvailability = function(projectKey) {
+    const field = srcGetSocialLevelField();
+    if(!field) return { supported: false, wasReset: false };
+    const row = srcGetSocialLevelRow(field);
+    const supportsSocial = srcProjectSupportsSocialOrganic(projectKey);
+    let wasReset = false;
+    if(!supportsSocial) {
+        if(field.value !== 'off') {
+            field.value = 'off';
+            wasReset = true;
+        }
+        if(row) row.style.display = 'none';
+    } else {
+        if(row) row.style.display = '';
+    }
+    return { supported: supportsSocial, wasReset };
 }
 
 const srcGetInternalUseRow = function(toggleEl) {
@@ -1119,11 +1168,12 @@ const srcBuildRiskChecks = function(state) {
             checks.push({ severity: 'info', text: 'Lange Laufzeit + großes Gebiet: ggf. alternative Lizenzstaffel prüfen.' });
         }
     }
-    const mediaChannels = [state.packageOnline, state.packageAtv, state.licenseSocial, state.licenseEvent].filter(Boolean).length;
+    const hasSocialAddon = state.licenseSocialLevel && state.licenseSocialLevel !== 'off';
+    const mediaChannels = [state.packageOnline, state.packageAtv, hasSocialAddon, state.licenseEvent].filter(Boolean).length;
     if(mediaChannels >= 2 && ['tv','online_paid','radio','cinema','pos'].includes(state.projectKey)) {
         checks.push({ severity: 'info', text: 'Mehrkanal-Nutzung aktiv. Prüfen, ob Paket-/Buyout-Logik sauber passt.' });
     }
-    if(state.licenseSocial && state.projectKey === 'imagefilm') {
+    if(hasSocialAddon && state.projectKey === 'imagefilm') {
         checks.push({ severity: 'info', text: 'Social Media Zusatzlizenz aktiv. Bitte Scope (organisch vs. paid) im Angebot klar benennen.' });
     }
     if(state.packageAtv && state.projectKey !== 'online_paid') {
@@ -1181,7 +1231,7 @@ const srcCompareDiffList = function(aState, bState) {
     if(aState.language !== bState.language) diffs.push(`Sprache: ${aState.language} → ${bState.language}`);
     if(aState.projectKey === 'phone' && aState.phoneCount !== bState.phoneCount) diffs.push(`Module: ${aState.phoneCount} → ${bState.phoneCount}`);
     if(aState.projectKey !== 'phone' && aState.minutes !== bState.minutes) diffs.push(`Länge: ${aState.minutes.toFixed(2)} → ${bState.minutes.toFixed(2)} Min`);
-    if(aState.licenseSocial !== bState.licenseSocial) diffs.push(`Social License: ${aState.licenseSocial ? 'ja' : 'nein'} → ${bState.licenseSocial ? 'ja' : 'nein'}`);
+    if(aState.licenseSocialLevel !== bState.licenseSocialLevel) diffs.push(`Social License: ${aState.licenseSocialLevel || 'off'} → ${bState.licenseSocialLevel || 'off'}`);
     if(aState.licenseEvent !== bState.licenseEvent) diffs.push(`Event License: ${aState.licenseEvent ? 'ja' : 'nein'} → ${bState.licenseEvent ? 'ja' : 'nein'}`);
     if(aState.licenseInternal !== bState.licenseInternal) diffs.push(`Interne Nutzung: ${aState.licenseInternal ? 'ja' : 'nein'} → ${bState.licenseInternal ? 'ja' : 'nein'}`);
     if(aState.packageOnline !== bState.packageOnline) diffs.push(`Online Audio: ${aState.packageOnline ? 'ja' : 'nein'} → ${bState.packageOnline ? 'ja' : 'nein'}`);
@@ -1250,7 +1300,7 @@ const srcBuildPackages = function(currentState) {
         premium: ['Max-Preis', hasDurationControl ? 'Dauer: Unlimited' : 'Dauer: Standard', 'inkl. Social/Extras']
     };
     const disableExtras = {
-        licenseSocial: false,
+        licenseSocialLevel: 'off',
         licenseEvent: false,
         licenseInternal: false,
         packageOnline: false,
@@ -1269,7 +1319,7 @@ const srcBuildPackages = function(currentState) {
         if(config.extras === 'full') {
             state = {
                 ...state,
-                licenseSocial: Boolean(data.license_extras && data.license_extras.social_organic),
+                licenseSocialLevel: (data.license_extras && data.license_extras.social_organic) ? 'mid' : 'off',
                 licenseEvent: Boolean(data.license_extras && data.license_extras.event_pos),
                 licenseInternal: Boolean(data.license_extras && data.license_extras.internal_use),
                 packageAtv: baseState.projectKey === 'online_paid',
@@ -1516,7 +1566,7 @@ const srcBuildOfferEmailText = function({ lang, pricingMode, selectedPackage, in
     const addons = [];
     if(state.packageOnline) addons.push('Online Audio');
     if(state.packageAtv) addons.push('ATV/CTV');
-    if(state.licenseSocial) addons.push('Social Media');
+    if(state.licenseSocialLevel && state.licenseSocialLevel !== 'off') addons.push(`Social Media (${(state.licenseSocialLevel || 'mid').toUpperCase()})`);
     if(state.licenseEvent) addons.push('Event / Messe / POS');
     if(state.licenseInternal) addons.push('Interne Nutzung (Intranet)');
     if(state.cutdown) addons.push('Cut-down');
@@ -1756,8 +1806,11 @@ window.srcReset = function() {
     }
     srcValidateFinalFee(); 
     
-    const toggles = ['src-layout-mode', 'src-own-studio', 'src-express-toggle', 'src-discount-toggle', 'src-cutdown', 'src-lic-social', 'src-lic-event', 'src-lic-internal', 'src-pkg-online', 'src-pkg-atv'];
+    const toggles = ['src-layout-mode', 'src-own-studio', 'src-express-toggle', 'src-discount-toggle', 'src-cutdown', 'src-lic-event', 'src-lic-internal', 'src-pkg-online', 'src-pkg-atv'];
     toggles.forEach(id => { const el = document.getElementById(id); if(el) el.checked = false; });
+
+    const socialLevel = document.getElementById('src-lic-social-level');
+    if(socialLevel) socialLevel.value = 'off';
     document.querySelectorAll('.src-linked-project').forEach(el => {
         el.checked = false;
     });
@@ -1919,8 +1972,9 @@ window.srcUIUpdate = function() {
     }
     srcUpdateSidebarCollapse();
 
+    const socialLevelState = srcUpdateSocialLevelAvailability(genre);
     const internalToggleState = srcUpdateInternalUseToggleAvailability(genre);
-    if(internalToggleState.wasReset) {
+    if(socialLevelState.wasReset || internalToggleState.wasReset) {
         srcCalc();
     }
 }
@@ -2019,13 +2073,13 @@ const srcComputeGlobalAddons = function(state, projectKeys) {
     const keys = Array.from(new Set((projectKeys || []).filter(Boolean)));
     const projectNames = keys.map(srcGetProjectName).filter(Boolean);
     const addonDefaults = {
-        social_organic: [150, 150, 150],
+        social_organic: [50, 150, 250],
         event_pos: [150, 150, 150]
     };
     const addons = [
         {
             key: 'social_organic',
-            stateKey: 'licenseSocial',
+            stateKey: 'licenseSocialLevel',
             label: 'Zusatzlizenz: Social Media (organisch)'
         },
         {
@@ -2048,7 +2102,7 @@ const srcComputeGlobalAddons = function(state, projectKeys) {
     };
     if(!state) return result;
     addons.forEach(addon => {
-        if(!state[addon.stateKey]) return;
+        if(addon.key === 'social_organic' ? (state.licenseSocialLevel === 'off') : !state[addon.stateKey]) return;
         const eligibleProjects = keys.filter(key => {
             const data = srcRatesData[key] || {};
             const hasExtra = data.license_extras && data.license_extras[addon.key] !== undefined;
@@ -2079,10 +2133,11 @@ const srcComputeGlobalAddons = function(state, projectKeys) {
             if(!srcHasPositiveAddonAmount(extraRates)) {
                 return;
             }
-            result.licenseLines.push(`${addon.label}${scopeSuffix}`);
+            const addonLabel = addon.key === 'social_organic' ? `${addon.label} – ${(state.licenseSocialLevel || 'mid').toUpperCase()}` : addon.label;
+            result.licenseLines.push(`${addonLabel}${scopeSuffix}`);
             result.rangeAdd = result.rangeAdd.map((value, idx) => value + extraRates[idx]);
             result.breakdownSteps.push({
-                label: addon.label,
+                label: addon.key === 'social_organic' ? `${addon.label} – ${(state.licenseSocialLevel || 'mid').toUpperCase()}` : addon.label,
                 amountOrFactor: srcFormatSignedCurrency(extraRates[1]),
                 effectOnRange: 'add'
             });
@@ -2090,7 +2145,7 @@ const srcComputeGlobalAddons = function(state, projectKeys) {
                 ? `Zusatzlizenz (gilt für: ${scopeNames.join(', ')})`
                 : 'Zusatzlizenz (global)';
             result.info.push({
-                label: addon.label,
+                label: addon.key === 'social_organic' ? `${addon.label} – ${(state.licenseSocialLevel || 'mid').toUpperCase()}` : addon.label,
                 amount: srcFormatSignedCurrency(extraRates[1]),
                 formula: formulaSuffix
             });
@@ -2103,7 +2158,7 @@ const srcComputeGlobalAddons = function(state, projectKeys) {
     keys.forEach(key => {
         const guidanceEntry = rightsGuidance[state.layoutMode ? 'default' : key] || defaultGuidance;
         const extras = Object.assign({}, defaultGuidance.extras || {}, guidanceEntry.extras || {});
-        if(state.licenseSocial && extras.social_organic) {
+        if(state.licenseSocialLevel && state.licenseSocialLevel !== 'off' && extras.social_organic) {
             extrasText.push(extras.social_organic);
         }
         if(state.licenseEvent && extras.event_pos) {
@@ -2299,12 +2354,17 @@ const srcComputeSingleProjectResult = function(state, projectKey, options = {}) 
             const socialExtra = srcGetLicenseExtraAmount(licenseExtras, 'social_organic');
             const eventExtra = srcGetLicenseExtraAmount(licenseExtras, 'event_pos');
             const internalExtra = srcGetLicenseExtraAmount(licenseExtras, 'internal_use');
-            if(state.licenseSocial && applyAddons) {
-                const extraRates = socialExtra || [150, 150, 150];
+            if(state.licenseSocialLevel && state.licenseSocialLevel !== 'off' && applyAddons) {
+                const socialTrip = srcEnsurePriceTriple(socialExtra, [0, 0, 0]);
+                const socialLevelMap = { low: 0, mid: 1, high: 2 };
+                const socialIdx = socialLevelMap[state.licenseSocialLevel] !== undefined ? socialLevelMap[state.licenseSocialLevel] : 1;
+                const socialValue = socialTrip[socialIdx] || 0;
+                const extraRates = [socialValue, socialValue, socialValue];
                 final = final.map((v, idx) => v + extraRates[idx]);
                 if(srcHasPositiveAddonAmount(extraRates)) {
-                    breakdownSteps.push({ label: "Social Media", amountOrFactor: srcFormatSignedCurrency(extraRates[1]), effectOnRange: 'add' });
-                    addInfo("Social Media", srcFormatSignedCurrency(extraRates[1]), "Zusatzlizenz");
+                    const socialLevelLabel = (state.licenseSocialLevel || 'mid').toUpperCase();
+                    breakdownSteps.push({ label: `Social Media (organisch) – ${socialLevelLabel}`, amountOrFactor: srcFormatSignedCurrency(extraRates[1]), effectOnRange: 'add' });
+                    addInfo(`Social Media (organisch) – ${socialLevelLabel}`, srcFormatSignedCurrency(extraRates[1]), "Zusatzlizenz");
                 }
                 licParts.push("+ Social Media");
             }
@@ -2354,7 +2414,7 @@ const srcComputeSingleProjectResult = function(state, projectKey, options = {}) 
     }
 
     if(applyAddons) {
-        if(state.licenseSocial) { licMeta.push("Zusatzlizenz: Social Media (organisch)"); }
+        if(state.licenseSocialLevel && state.licenseSocialLevel !== 'off') { licMeta.push(`Zusatzlizenz: Social Media (organisch) – ${(state.licenseSocialLevel || 'mid').toUpperCase()}`); }
         if(state.licenseEvent) { licMeta.push("Zusatzlizenz: Event / Messe / POS"); }
         if(state.licenseInternal && srcProjectSupportsInternalUse(genre)) {
             const internalAmount = srcGetLicenseExtraAmount((data.license_extras || {}), 'internal_use');
@@ -2415,7 +2475,7 @@ const srcComputeSingleProjectResult = function(state, projectKey, options = {}) 
     const extras = Object.assign({}, defaultGuidance.extras || {}, guidanceEntry.extras || {});
     const extrasText = [];
     if(applyAddons) {
-        if(state.licenseSocial && extras.social_organic) {
+        if(state.licenseSocialLevel && state.licenseSocialLevel !== 'off' && extras.social_organic) {
             extrasText.push(extras.social_organic);
         }
         if(state.licenseEvent && extras.event_pos) {
@@ -2908,7 +2968,7 @@ window.srcGeneratePDFv6 = function(options = {}) {
     const addons = [];
     if(state.packageOnline) addons.push('Online Audio');
     if(state.packageAtv) addons.push('ATV/CTV');
-    if(state.licenseSocial) addons.push('Social Media');
+    if(state.licenseSocialLevel && state.licenseSocialLevel !== 'off') addons.push(`Social Media (${(state.licenseSocialLevel || 'mid').toUpperCase()})`);
     if(state.licenseEvent) addons.push('Event / Messe / POS');
     if(state.licenseInternal) addons.push('Interne Nutzung (Intranet)');
     if(addons.length) rightsLines.push(`Zusatz: ${addons.join(', ')}`);
@@ -2989,6 +3049,7 @@ window.srcGeneratePDFv6 = function(options = {}) {
 let srcTutCurrentStep = 0;
 let srcTutSteps = [];
 let srcTutPackagesTriggered = false;
+let srcTutLockHandler = null;
 window.__srcTutorialActive = false;
 
 function srcTutorialPickSelector(selectors) {
@@ -3004,7 +3065,6 @@ function srcTutorialEnsurePackages() {
     const list = document.getElementById('src-packages-list');
     const btn = document.getElementById('src-build-packages');
     if (!btn || !list || !window.__srcTutorialActive) return;
-
     const empty = !list.children || list.children.length === 0;
     if (empty && !srcTutPackagesTriggered) {
         srcTutPackagesTriggered = true;
@@ -3016,22 +3076,15 @@ function srcTutorialClearLift(){
     document.querySelectorAll('.src-tutorial-lift').forEach(el => el.classList.remove('src-tutorial-lift'));
 }
 
-/**
- * Mount tutorial layers directly under <body>, so fixed positioning is never trapped
- * in transformed wrappers/stacking contexts. Also ensures spotlight layer exists.
- */
 function srcTutorialMountLayers() {
     const overlay = document.getElementById('src-tutorial-overlay');
     const panel = document.getElementById('src-tutorial-panel');
-
     if (overlay && overlay.parentElement !== document.body) {
         document.body.appendChild(overlay);
     }
-
     if (panel && panel.parentElement !== document.body) {
         document.body.appendChild(panel);
     }
-
     let spotlight = document.getElementById('src-tutorial-spotlight');
     if (!spotlight) {
         spotlight = document.createElement('div');
@@ -3040,14 +3093,28 @@ function srcTutorialMountLayers() {
     }
 }
 
-/**
- * Positions the cut-out spotlight over the current tutorial anchor.
- * Falls back safely when no element is available.
- */
+function srcTutorialSetScrollLock(locked) {
+    if (locked) {
+        document.body.classList.add('src-tutorial-lockscroll');
+        if (!srcTutLockHandler) {
+            srcTutLockHandler = function(event) {
+                event.preventDefault();
+            };
+        }
+        window.addEventListener('wheel', srcTutLockHandler, { passive: false });
+        window.addEventListener('touchmove', srcTutLockHandler, { passive: false });
+        return;
+    }
+    document.body.classList.remove('src-tutorial-lockscroll');
+    if (srcTutLockHandler) {
+        window.removeEventListener('wheel', srcTutLockHandler, { passive: false });
+        window.removeEventListener('touchmove', srcTutLockHandler, { passive: false });
+    }
+}
+
 function srcTutorialSetSpotlight(targetEl) {
     const spotlight = document.getElementById('src-tutorial-spotlight');
     if (!spotlight) return;
-
     if (!targetEl || typeof targetEl.getBoundingClientRect !== 'function') {
         spotlight.style.top = '0px';
         spotlight.style.left = '0px';
@@ -3056,7 +3123,6 @@ function srcTutorialSetSpotlight(targetEl) {
         spotlight.style.borderRadius = '16px';
         return;
     }
-
     const rect = targetEl.getBoundingClientRect();
     if (!rect || rect.width <= 0 || rect.height <= 0) {
         spotlight.style.top = '0px';
@@ -3066,25 +3132,20 @@ function srcTutorialSetSpotlight(targetEl) {
         spotlight.style.borderRadius = '16px';
         return;
     }
-
     const pad = 10;
     const edge = 8;
     const vw = window.innerWidth || document.documentElement.clientWidth || 0;
     const vh = window.innerHeight || document.documentElement.clientHeight || 0;
-
     let left = rect.left - pad;
     let top = rect.top - pad;
     let right = rect.right + pad;
     let bottom = rect.bottom + pad;
-
     left = Math.max(edge, left);
     top = Math.max(edge, top);
     right = Math.min(Math.max(edge, vw - edge), right);
     bottom = Math.min(Math.max(edge, vh - edge), bottom);
-
     const width = Math.max(0, right - left);
     const height = Math.max(0, bottom - top);
-
     spotlight.style.top = `${top}px`;
     spotlight.style.left = `${left}px`;
     spotlight.style.width = `${width}px`;
@@ -3107,16 +3168,13 @@ function srcBuildTutorialSteps() {
         { element: '#src-notes-tips-section', title: '11. Hinweise & Tipps', desc: 'Kontextbezogene Hinweise helfen bei einer realistischen Angebotsgestaltung.' },
         { element: '#src-packages-section', title: '12. Pakete', desc: 'In diesem Bereich kannst Du direkt Paketvorschläge auf Basis der Kalkulation erzeugen.' },
         { element: '#src-knowledge-section', title: '13. Wissenswertes', desc: 'Zusätzliche Fachinformationen unterstützen Dich bei Einordnung und Kommunikation.' },
-        { element: '#src-offer-save-btn', title: '14. Angebot speichern', desc: 'Speichere Dein Angebot hier als PDF für Versand und Dokumentation.' }
+        { element: '#src-save-section', title: '14. Angebot speichern', desc: 'Speichere Dein Angebot hier als PDF für Versand und Dokumentation.' }
     ];
-
     return steps.filter(step => step.element && document.querySelector(step.element));
 }
 
 window.srcStartTutorial = function() {
     srcTutorialMountLayers();
-
-    // 1. UI Vorbereiten
     const genreSelect = document.getElementById('src-genre');
     if (genreSelect) {
         genreSelect.value = 'tv';
@@ -3126,12 +3184,10 @@ window.srcStartTutorial = function() {
     const advAcc = document.getElementById('src-advanced-accordion');
     if (advAcc) advAcc.open = true;
 
-    // 2. Tutorial Starten
     srcTutCurrentStep = 0;
     srcTutPackagesTriggered = false;
     window.__srcTutorialActive = true;
     srcTutSteps = srcBuildTutorialSteps();
-
     if (!srcTutSteps.length) {
         window.__srcTutorialActive = false;
         return;
@@ -3139,23 +3195,21 @@ window.srcStartTutorial = function() {
 
     document.body.classList.add('src-tutorial-active');
     document.body.classList.add('src-tutorial-mode');
+    srcTutorialSetScrollLock(true);
 
     const panel = document.getElementById('src-tutorial-panel');
     if (panel) {
         panel.classList.remove('src-tutorial-hidden');
     }
 
-    // Setup Dots
     const dotsContainer = document.getElementById('src-tut-dots');
     if (dotsContainer) {
         dotsContainer.innerHTML = srcTutSteps.map((_, i) => `<div class="src-tutorial-dot ${i === 0 ? 'is-active' : ''}"></div>`).join('');
     }
-
-    setTimeout(() => srcRenderTutStep(), 300);
+    srcRenderTutStep();
 };
 
 window.srcRenderTutStep = function() {
-    // Altes Highlight entfernen
     document.querySelectorAll('.src-is-highlighted').forEach(el => el.classList.remove('src-is-highlighted'));
     srcTutorialClearLift();
 
@@ -3166,9 +3220,20 @@ window.srcRenderTutStep = function() {
     }
 
     const targetEl = document.querySelector(step.element);
+    if (!targetEl) {
+        srcTutorialSetSpotlight(null);
+        return;
+    }
 
-    if (targetEl) {
-        targetEl.classList.add('src-is-highlighted');
+    const collapseParent = targetEl.closest('.src-collapse');
+    if (collapseParent) {
+        srcToggleCollapse(collapseParent, true);
+    }
+
+    targetEl.scrollIntoView({ behavior: 'auto', block: 'center', inline: 'nearest' });
+
+    requestAnimationFrame(() => {
+        if (!window.__srcTutorialActive) return;
         const n = targetEl;
         const anchor = n.closest('#src-kalkulation-section')
             || n.closest('#src-license-section')
@@ -3176,23 +3241,34 @@ window.srcRenderTutStep = function() {
             || n.closest('#src-notes-tips-section')
             || n.closest('#src-packages-section')
             || n.closest('#src-knowledge-section')
-            || n.closest('.src-footer-actions')
+            || n.closest('#src-save-section')
             || n;
+        targetEl.classList.add('src-is-highlighted');
         anchor.classList.add('src-tutorial-lift');
         srcTutorialSetSpotlight(anchor);
-        // Weich zum Element scrollen, so dass es mittig im Bildschirm ist
-        targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        requestAnimationFrame(() => srcTutorialSetSpotlight(anchor));
-        setTimeout(() => srcTutorialSetSpotlight(anchor), 350);
+
+        const panel = document.getElementById('src-tutorial-panel');
+        if (panel) {
+            const rect = anchor.getBoundingClientRect();
+            const panelRect = panel.getBoundingClientRect();
+            const offset = 16;
+            let top = rect.bottom + offset;
+            const maxTop = Math.max(12, (window.innerHeight || 0) - panelRect.height - 12);
+            if (top > maxTop) {
+                top = Math.max(12, rect.top - panelRect.height - offset);
+            }
+            let left = rect.left;
+            left = Math.max(12, Math.min(left, (window.innerWidth || 0) - panelRect.width - 12));
+            panel.style.top = `${top}px`;
+            panel.style.left = `${left}px`;
+            panel.style.transform = 'none';
+        }
 
         if (window.__srcTutorialActive && targetEl.closest('#src-packages-section')) {
             setTimeout(srcTutorialEnsurePackages, 50);
         }
-    } else {
-        srcTutorialSetSpotlight(null);
-    }
+    });
 
-    // Panel updaten
     const badgeEl = document.getElementById('src-tut-badge');
     const titleEl = document.getElementById('src-tut-title');
     const descEl = document.getElementById('src-tut-desc');
@@ -3200,7 +3276,6 @@ window.srcRenderTutStep = function() {
     if (titleEl) titleEl.innerText = step.title;
     if (descEl) descEl.innerText = step.desc;
 
-    // Buttons & Dots updaten
     const prevBtn = document.getElementById('src-tut-prev');
     if (prevBtn) prevBtn.style.display = srcTutCurrentStep === 0 ? 'none' : 'inline-flex';
     const nextBtn = document.getElementById('src-tut-next');
@@ -3237,12 +3312,19 @@ window.srcEndTutorial = function() {
     window.__srcTutorialActive = false;
     srcTutorialClearLift();
     srcTutorialSetSpotlight(null);
+    srcTutorialSetScrollLock(false);
     document.body.classList.remove('src-tutorial-active');
     document.body.classList.remove('src-tutorial-mode');
     const panel = document.getElementById('src-tutorial-panel');
     if (panel) {
         panel.classList.add('src-tutorial-hidden');
+        panel.style.top = '';
+        panel.style.left = '';
+        panel.style.transform = '';
     }
     document.querySelectorAll('.src-is-highlighted').forEach(el => el.classList.remove('src-is-highlighted'));
-    srcReset();
+    const calcHeader = document.getElementById('src-calc-v6');
+    if (calcHeader) {
+        calcHeader.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
 };
