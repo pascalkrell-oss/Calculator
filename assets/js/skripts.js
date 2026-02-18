@@ -34,7 +34,9 @@ const srcGetFxRate = function(currencyCode) {
 }
 
 const srcGetCurrencySuffix = function() {
-    return srcGetCurrencyCode() === 'EUR' ? '€' : srcGetCurrencyCode();
+    if(window.srcCurrencyCode === 'USD') return ' $';
+    if(window.srcCurrencyCode === 'CHF') return ' CHF';
+    return ' €';
 }
 
 const srcConvertFromEUR = function(value) {
@@ -52,14 +54,6 @@ const srcConvertToEUR = function(value) {
 const srcConvertFromEur = srcConvertFromEUR;
 const srcConvertToEur = srcConvertToEUR;
 
-const srcGetCurrencyFormatter = function() {
-    return new Intl.NumberFormat(SRC_CURRENCY_FORMAT_LOCALE, {
-        style: 'currency',
-        currency: srcGetCurrencyCode(),
-        maximumFractionDigits: 0
-    });
-}
-
 const srcGetNumberFormatter = function() {
     return new Intl.NumberFormat(SRC_CURRENCY_FORMAT_LOCALE, { maximumFractionDigits: 0 });
 }
@@ -69,7 +63,7 @@ const srcFormatRange = function(min, max) {
     const numberFormatter = srcGetNumberFormatter();
     const convertedMin = Math.round(srcConvertFromEUR(min));
     const convertedMax = Math.round(srcConvertFromEUR(max));
-    return `${numberFormatter.format(convertedMin)} – ${numberFormatter.format(convertedMax)} ${srcGetCurrencySuffix()}`;
+    return `${numberFormatter.format(convertedMin)} – ${numberFormatter.format(convertedMax)}${srcGetCurrencySuffix()}`;
 }
 
 const srcSetCurrencyButtonsState = function(curr) {
@@ -462,7 +456,7 @@ window.srcSyncOptionRowStates = function() {
 const srcFormatMoney = function(amountEur) {
     if(!Number.isFinite(amountEur)) return '–';
     const converted = srcConvertFromEUR(amountEur);
-    return srcGetCurrencyFormatter().format(converted);
+    return `${srcGetNumberFormatter().format(Math.round(converted))}${srcGetCurrencySuffix()}`;
 }
 
 const srcFormatCurrency = srcFormatMoney;
@@ -471,9 +465,9 @@ const srcFormatSignedCurrency = function(value) {
     if(!Number.isFinite(value)) return '';
     const converted = srcConvertFromEUR(value);
     const rounded = Math.round(converted);
-    if(rounded === 0) return srcGetCurrencyFormatter().format(0);
+    if(rounded === 0) return `${srcGetNumberFormatter().format(0)}${srcGetCurrencySuffix()}`;
     const sign = rounded > 0 ? '+' : '−';
-    return `${sign}${srcGetCurrencyFormatter().format(Math.abs(rounded))}`;
+    return `${sign}${srcGetNumberFormatter().format(Math.abs(rounded))}${srcGetCurrencySuffix()}`;
 }
 
 const srcStripHTML = function(str) {
@@ -3018,6 +3012,10 @@ function srcTutorialEnsurePackages() {
     }
 }
 
+function srcTutorialClearLift(){
+    document.querySelectorAll('.src-tutorial-lift').forEach(el => el.classList.remove('src-tutorial-lift'));
+}
+
 function srcBuildTutorialSteps() {
     const steps = [
         { element: srcTutorialPickSelector(['.src-top-grid > div:nth-child(1)', '#src-genre']), title: '1. Projektart', desc: 'Wähle hier aus, welche Art von Projekt kalkuliert wird.' },
@@ -3027,7 +3025,7 @@ function srcBuildTutorialSteps() {
         { element: '.src-rights-card', title: '5. Nutzungsrechte', desc: 'Definiere Medium, Laufzeit und Gebiet der Verwertung.' },
         { element: '.src-complexity-group', title: '6. Produktion & Aufwand', desc: 'Produktionsanforderungen und Aufwand wirken sich direkt auf die Empfehlung aus.' },
         { element: '#src-global-settings', title: '7. Optionen', desc: 'Optionale Kostenblöcke wie Studio, Express oder Rabatt hinzufügen.' },
-        { element: '#src-kalkulation-section', title: '8. Kalkulation (Sidebar)', desc: 'Hier siehst Du die empfohlene Gage und die relevanten Richtwerte auf einen Blick. Die empfohlenen deutschen Gagen werden ausschließlich zum aktuellen Wechselkurs in CHF/USD umgerechnet; es werden keine anderen (z.B. schweizerischen/amerikanischen) Preismodelle verwendet.' },
+        { element: '#src-kalkulation-section', title: '8. Kalkulation (Sidebar)', desc: 'Hier siehst Du die empfohlene Gage und die relevanten Richtwerte auf einen Blick. Die empfohlenen deutschen Gagen werden ausschließlich zum aktuellen Wechselkurs in CHF/$ umgerechnet; es werden keine anderen (z.B. schweizerischen/amerikanischen) Preismodelle verwendet.' },
         { element: '#src-license-section', title: '9. Nutzungsrechte & Lizenzen', desc: 'Diese Box fasst die Lizenzparameter der aktuellen Kalkulation zusammen.' },
         { element: '#src-pricedetails-section', title: '10. Preis-Details', desc: 'Hier wird die Berechnung transparent und Schritt für Schritt aufgeschlüsselt.' },
         { element: '#src-notes-tips-section', title: '11. Hinweise & Tipps', desc: 'Kontextbezogene Hinweise helfen bei einer realistischen Angebotsgestaltung.' },
@@ -3081,6 +3079,7 @@ window.srcStartTutorial = function() {
 window.srcRenderTutStep = function() {
     // Altes Highlight entfernen
     document.querySelectorAll('.src-is-highlighted').forEach(el => el.classList.remove('src-is-highlighted'));
+    srcTutorialClearLift();
 
     const step = srcTutSteps[srcTutCurrentStep];
     if (!step) {
@@ -3092,6 +3091,16 @@ window.srcRenderTutStep = function() {
 
     if (targetEl) {
         targetEl.classList.add('src-is-highlighted');
+        const n = targetEl;
+        const anchor = n.closest('#src-kalkulation-section')
+            || n.closest('#src-license-section')
+            || n.closest('#src-pricedetails-section')
+            || n.closest('#src-notes-tips-section')
+            || n.closest('#src-packages-section')
+            || n.closest('#src-knowledge-section')
+            || n.closest('.src-footer-actions')
+            || n;
+        anchor.classList.add('src-tutorial-lift');
         // Weich zum Element scrollen, so dass es mittig im Bildschirm ist
         targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
@@ -3143,6 +3152,7 @@ window.srcTutPrev = function() {
 
 window.srcEndTutorial = function() {
     window.__srcTutorialActive = false;
+    srcTutorialClearLift();
     document.body.classList.remove('src-tutorial-active');
     document.body.classList.remove('src-tutorial-mode');
     const panel = document.getElementById('src-tutorial-panel');
