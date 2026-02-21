@@ -3140,6 +3140,9 @@ let srcTutSteps = [];
 let srcTutPackagesTriggered = false;
 let srcTutLockHandler = null;
 let srcTutorialViewportHandler = null;
+let srcTutorialLiftTransitionHandler = null;
+let srcTutorialLiftTransitionNode = null;
+let srcTutorialLiftTimer = null;
 window.__srcTutorialActive = false;
 window.__srcTutorialCurrentAnchor = null;
 
@@ -3164,7 +3167,83 @@ function srcTutorialEnsurePackages() {
 }
 
 function srcTutorialClearLift(){
-    document.querySelectorAll('.src-tutorial-lift').forEach(el => el.classList.remove('src-tutorial-lift'));
+    document.querySelectorAll('.src-tutorial-lift, .src-is-highlighted').forEach(el => {
+        el.classList.remove('src-tutorial-lift');
+        el.classList.remove('src-is-highlighted');
+    });
+}
+
+function srcTutorialClearPendingLift() {
+    if (srcTutorialLiftTransitionNode && srcTutorialLiftTransitionHandler) {
+        srcTutorialLiftTransitionNode.removeEventListener('transitionend', srcTutorialLiftTransitionHandler);
+    }
+    srcTutorialLiftTransitionNode = null;
+    srcTutorialLiftTransitionHandler = null;
+    if (srcTutorialLiftTimer) {
+        clearTimeout(srcTutorialLiftTimer);
+    }
+    srcTutorialLiftTimer = null;
+}
+
+function srcTutorialLiftAfterSpotlight(anchor) {
+    if (!anchor) return;
+
+    const applyLift = () => {
+        if (!window.__srcTutorialActive || window.__srcTutorialCurrentAnchor !== anchor) return;
+        anchor.classList.add('src-tutorial-lift');
+        anchor.classList.add('src-is-highlighted');
+        srcTutorialClearPendingLift();
+    };
+
+    const spotlight = document.getElementById('src-tutorial-spotlight');
+    if (!spotlight) {
+        applyLift();
+        return;
+    }
+
+    srcTutorialClearPendingLift();
+    srcTutorialLiftTransitionNode = spotlight;
+    srcTutorialLiftTransitionHandler = (event) => {
+        if (!event || event.target !== spotlight) return;
+        if (!['top', 'left', 'width', 'height'].includes(event.propertyName)) return;
+        applyLift();
+    };
+    spotlight.addEventListener('transitionend', srcTutorialLiftTransitionHandler);
+    srcTutorialLiftTimer = setTimeout(applyLift, 260);
+}
+
+function srcTutorialApplyStep(step) {
+    srcTutorialClearLift();
+    srcTutorialClearSpotlight();
+    srcTutorialClearPendingLift();
+    window.__srcTutorialCurrentAnchor = null;
+
+    const anchor = srcTutorialGetAnchorForStep(step);
+    if (!anchor) return null;
+
+    window.__srcTutorialCurrentAnchor = anchor;
+    srcTutorialCenterAnchorAbovePanel(anchor);
+
+    requestAnimationFrame(() => {
+        if (!window.__srcTutorialActive || window.__srcTutorialCurrentAnchor !== anchor) return;
+        srcTutorialSetSpotlight(anchor);
+        srcTutorialLiftAfterSpotlight(anchor);
+
+        const firstRect = anchor.getBoundingClientRect();
+        setTimeout(() => {
+            if (!window.__srcTutorialActive || window.__srcTutorialCurrentAnchor !== anchor) return;
+            const nextRect = anchor.getBoundingClientRect();
+            const rectChanged = Math.abs(firstRect.top - nextRect.top) > 6
+                || Math.abs(firstRect.left - nextRect.left) > 6
+                || Math.abs(firstRect.width - nextRect.width) > 6
+                || Math.abs(firstRect.height - nextRect.height) > 6;
+            if (rectChanged) {
+                srcTutorialSetSpotlight(anchor);
+            }
+        }, 120);
+    });
+
+    return anchor;
 }
 
 function srcTutorialClearSpotlight() {
@@ -3326,12 +3405,8 @@ window.srcStartTutorial = function() {
 window.srcRenderTutStep = function() {
     srcTutorialClearLift();
     srcTutorialClearSpotlight();
+    srcTutorialClearPendingLift();
     window.__srcTutorialCurrentAnchor = null;
-    document.querySelectorAll('.src-tutorial-lift, .src-is-highlighted').forEach(el => {
-        el.classList.remove('src-tutorial-lift');
-        el.classList.remove('src-is-highlighted');
-    });
-    srcTutorialClearLift();
 
     const step = srcTutSteps[srcTutCurrentStep];
     if (!step) {
@@ -3350,33 +3425,10 @@ window.srcRenderTutStep = function() {
         return;
     }
 
-    const renderWithAnchor = function(anchor) {
-        if (!window.__srcTutorialActive) return;
-
-        window.__srcTutorialCurrentAnchor = anchor;
-        anchor.classList.add('src-is-highlighted');
-        anchor.classList.add('src-tutorial-lift');
-
-        srcTutorialCenterAnchorAbovePanel(anchor);
-
-        requestAnimationFrame(() => {
-            if (!window.__srcTutorialActive || window.__srcTutorialCurrentAnchor !== anchor) return;
-            srcTutorialSetSpotlight(anchor);
-            const firstRect = anchor.getBoundingClientRect();
-            setTimeout(() => {
-                if (!window.__srcTutorialActive || window.__srcTutorialCurrentAnchor !== anchor) return;
-                const nextRect = anchor.getBoundingClientRect();
-                const rectChanged = Math.abs(firstRect.top - nextRect.top) > 6
-                    || Math.abs(firstRect.left - nextRect.left) > 6
-                    || Math.abs(firstRect.width - nextRect.width) > 6
-                    || Math.abs(firstRect.height - nextRect.height) > 6;
-                if (rectChanged) {
-                    srcTutorialSetSpotlight(anchor);
-                }
-            }, 120);
-        });
-
-        if (window.__srcTutorialActive && targetEl.closest('#src-packages-section')) {
+    const renderWithStep = function() {
+        const anchor = srcTutorialApplyStep(step);
+        if (!anchor) return;
+        if (window.__srcTutorialActive && anchor.closest('#src-packages-section')) {
             setTimeout(srcTutorialEnsurePackages, 50);
         }
     };
@@ -3384,9 +3436,9 @@ window.srcRenderTutStep = function() {
     const collapseParent = targetEl.closest('.src-collapse');
     if (collapseParent && !collapseParent.classList.contains('is-open')) {
         srcToggleCollapse(collapseParent, true);
-        requestAnimationFrame(() => renderWithAnchor(targetEl));
+        requestAnimationFrame(() => renderWithStep());
     } else {
-        renderWithAnchor(targetEl);
+        renderWithStep();
     }
 
     const badgeEl = document.getElementById('src-tut-badge');
@@ -3433,6 +3485,7 @@ window.srcEndTutorial = function() {
     window.__srcTutorialCurrentAnchor = null;
     srcTutorialClearLift();
     srcTutorialClearSpotlight();
+    srcTutorialClearPendingLift();
     srcTutorialSetScrollLock(false);
     if (srcTutorialViewportHandler) {
         window.removeEventListener('scroll', srcTutorialViewportHandler, true);

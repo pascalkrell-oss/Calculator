@@ -3179,7 +3179,6 @@ body.src-tutorial-active #src-tutorial-spotlight {
 }
 
 /* Das hervorgehobene Element */
-body.src-tutorial-mode .src-is-highlighted,
 body.src-tutorial-mode .driver-highlighted-element,
 body.src-tutorial-mode .driver-active-element,
 body.src-tutorial-mode .driver-stage,
