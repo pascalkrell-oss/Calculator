@@ -3187,11 +3187,6 @@ body.src-tutorial-active .driver-active-element,
 body.src-tutorial-active .driver-stage {
     position: relative !important;
     z-index: 9999999 !important;
-    background: #fff !important;
-    border-radius: 16px !important;
-    box-shadow: 0 18px 40px rgba(15, 23, 42, .22) !important;
-    outline: 2px solid rgba(26, 147, 238, .22) !important;
-    outline-offset: 2px !important;
     isolation: isolate !important;
 }
 
