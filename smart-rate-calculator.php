@@ -913,20 +913,6 @@ function src_shortcode_output_v7() {
                             <span class="src-opt-tile__sub">Internationales Angebot</span>
                         </span>
                     </button>
-                    <button type="button" class="src-opt-tile is-on" data-opt-group="pricing" data-value="range" aria-pressed="true">
-                        <span class="src-opt-tile__check" aria-hidden="true"></span>
-                        <span class="src-opt-tile__text">
-                            <span class="src-opt-tile__title">Preisstrategie: Range</span>
-                            <span class="src-opt-tile__sub">Min–Max Spanne</span>
-                        </span>
-                    </button>
-                    <button type="button" class="src-opt-tile" data-opt-group="pricing" data-value="mean" aria-pressed="false">
-                        <span class="src-opt-tile__check" aria-hidden="true"></span>
-                        <span class="src-opt-tile__text">
-                            <span class="src-opt-tile__title">Preisstrategie: Mittelwert</span>
-                            <span class="src-opt-tile__sub">Fester Durchschnittspreis</span>
-                        </span>
-                    </button>
                     <button type="button" class="src-opt-tile" data-opt-group="pricing" data-value="package" aria-pressed="false">
                         <span class="src-opt-tile__check" aria-hidden="true"></span>
                         <span class="src-opt-tile__text">
@@ -984,9 +970,17 @@ function src_shortcode_output_v7() {
                                         <option value="light">Hell</option>
                                     </select>
                                 </label>
-                                                                <label class="src-export-inline-field" for="src-export-payment">Zahlungsfrist
+                                <label class="src-export-inline-field" for="src-export-payment">Zahlungsfrist
                                     <input type="text" id="src-export-payment" class="src-input-text" placeholder="Zahlungsfrist (z.B. 14 Tage)">
                                     <small class="src-export-helper">Zahlungsfrist: Anzahl Tage bis Zahlung fällig.</small>
+                                </label>
+                                <div class="src-export-inline-field src-export-range-field">
+                                    <span>Ermittelte Range</span>
+                                    <div id="src-export-range-display" class="src-export-range-display">Von — bis —</div>
+                                </div>
+                                <label class="src-export-inline-field" for="src-export-custom-fee">Deine Gage (innerhalb der Range)
+                                    <input type="text" id="src-export-custom-fee" class="src-input-text" placeholder="z.B. 1.250,00">
+                                    <small id="src-export-custom-fee-hint" class="src-export-helper"></small>
                                 </label>
                                 <input type="text" id="src-export-disclaimer" class="src-input-text" placeholder="Rechtlicher Hinweis (optional)">
                                 <label class="src-export-logo-field">PDF Ausgabe
