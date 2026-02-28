@@ -126,6 +126,7 @@ window.srcSetCurrency = async function(curr) {
     if(packagesState) srcRenderPackages();
 };
 let exportModalKeyHandler = null;
+window.srcOfferLogoFile = null;
 let exportModalState = {
     pdf: true,
     email: true,
@@ -1703,8 +1704,7 @@ window.srcOpenExportModal = function(options = {}) {
     if(dateField && !dateField.value) {
         dateField.value = new Date().toLocaleDateString('de-DE');
     }
-    const logoInput = document.getElementById('src-export-logo');
-    srcSyncExportLogoSelectText(logoInput && logoInput.files && logoInput.files[0] ? logoInput.files[0].name : '');
+    srcSyncExportLogoSelectText(window.srcOfferLogoFile ? (window.srcOfferLogoFile.name || '') : '');
     srcSetExportLogoError('');
     if(!exportModalKeyHandler) {
         exportModalKeyHandler = (event) => {
@@ -1786,6 +1786,7 @@ const srcSetExportLogoError = function(message = '') {
 const srcResetExportLogoInput = function() {
     const logoInput = document.getElementById('src-export-logo');
     if(logoInput) logoInput.value = '';
+    window.srcOfferLogoFile = null;
     srcSyncExportLogoSelectText('');
 }
 
@@ -1801,35 +1802,41 @@ const srcValidateExportLogoFile = function(file) {
     return { valid: true, message: '' };
 }
 
-const srcSetExportLogoFile = function(file) {
-    const logoInput = document.getElementById('src-export-logo');
-    if(!logoInput || !file) return false;
-    try {
-        if(typeof DataTransfer !== 'function') return false;
-        const transfer = new DataTransfer();
-        transfer.items.add(file);
-        logoInput.files = transfer.files;
-        return true;
-    } catch (e) {
-        return false;
-    }
-}
-
 const srcInitExportLogoSelect = function() {
     const logoInput = document.getElementById('src-export-logo');
     const zone = document.getElementById('src-export-logo-dropzone');
     const removeBtn = document.getElementById('src-export-logo-remove');
     if(!logoInput || !zone) return;
+    if(logoInput.dataset.bound === '1') return;
+    logoInput.dataset.bound = '1';
 
-    const pickFile = () => logoInput.click();
+    const pickFile = (event) => {
+        if(event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        if(logoInput.dataset.dialogOpen === '1') return;
+        logoInput.dataset.dialogOpen = '1';
+        const resetDialogLock = () => {
+            logoInput.dataset.dialogOpen = '0';
+        };
+        window.addEventListener('focus', resetDialogLock, { once: true });
+        setTimeout(resetDialogLock, 800);
+        try {
+            logoInput.click();
+        } catch (error) {
+            resetDialogLock();
+            srcSetExportLogoError('Dateidialog konnte nicht geöffnet werden. Bitte erneut versuchen.');
+        }
+    };
+
     zone.addEventListener('click', (event) => {
         if(event.target && event.target.closest('#src-export-logo-remove')) return;
-        pickFile();
+        pickFile(event);
     });
     zone.addEventListener('keydown', (event) => {
         if(event.key === 'Enter' || event.key === ' ') {
-            event.preventDefault();
-            pickFile();
+            pickFile(event);
         }
     });
 
@@ -1848,52 +1855,57 @@ const srcInitExportLogoSelect = function() {
         });
     });
     zone.addEventListener('drop', (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        const files = event.dataTransfer && event.dataTransfer.files ? event.dataTransfer.files : null;
-        if(!files || !files.length) return;
-        const file = files[0];
-        const validation = srcValidateExportLogoFile(file);
-        if(!validation.valid) {
-            srcSetExportLogoError(validation.message);
-            srcResetExportLogoInput();
-            return;
+        try {
+            event.preventDefault();
+            event.stopPropagation();
+            const files = event.dataTransfer && event.dataTransfer.files ? event.dataTransfer.files : null;
+            if(!files || !files.length) return;
+            const file = files[0];
+            const validation = srcValidateExportLogoFile(file);
+            if(!validation.valid) {
+                srcSetExportLogoError(validation.message);
+                srcResetExportLogoInput();
+                return;
+            }
+            srcSetExportLogoError('');
+            window.srcOfferLogoFile = file;
+            srcSyncExportLogoSelectText(file.name || '');
+        } catch (error) {
+            srcSetExportLogoError('Logo konnte nicht verarbeitet werden. Bitte erneut versuchen.');
         }
-        srcSetExportLogoError('');
-        if(!srcSetExportLogoFile(file)) {
-            srcSetExportLogoError('Datei konnte nicht geladen werden. Bitte per Klick auswählen.');
-            srcResetExportLogoInput();
-            return;
-        }
-        srcSyncExportLogoSelectText(file.name || '');
     });
 
     logoInput.addEventListener('change', () => {
-        const selectedFile = logoInput.files && logoInput.files[0] ? logoInput.files[0] : null;
-        if(!selectedFile) {
+        try {
+            const selectedFile = logoInput.files && logoInput.files[0] ? logoInput.files[0] : null;
+            if(!selectedFile) {
+                srcSetExportLogoError('');
+                srcResetExportLogoInput();
+                return;
+            }
+            const validation = srcValidateExportLogoFile(selectedFile);
+            if(!validation.valid) {
+                srcSetExportLogoError(validation.message);
+                srcResetExportLogoInput();
+                return;
+            }
             srcSetExportLogoError('');
-            srcSyncExportLogoSelectText('');
-            return;
-        }
-        const validation = srcValidateExportLogoFile(selectedFile);
-        if(!validation.valid) {
-            srcSetExportLogoError(validation.message);
+            window.srcOfferLogoFile = selectedFile;
+            srcSyncExportLogoSelectText(selectedFile.name || '');
+        } catch (error) {
+            srcSetExportLogoError('Logo konnte nicht verarbeitet werden. Bitte erneut versuchen.');
             srcResetExportLogoInput();
-            return;
         }
-        srcSetExportLogoError('');
-        srcSyncExportLogoSelectText(selectedFile.name || '');
     });
 
     if(removeBtn) {
         removeBtn.addEventListener('click', (event) => {
             event.preventDefault();
-            srcSetExportLogoError('');
             srcResetExportLogoInput();
+            srcSetExportLogoError('');
         });
     }
 }
-
 const srcBuildOfferEmailText = function({ lang, pricingMode, selectedPackage, includeBreakdown, includeRisk, extraSettings }) {
     const i18n = SRC_I18N[lang] || SRC_I18N.de;
     const state = srcGetStateFromUI();
@@ -2013,7 +2025,7 @@ const srcHandleExportStart = async function() {
     const offerTheme = exportModalState.offerTheme === 'light' ? 'light' : 'dark';
     const disclaimer = document.getElementById('src-export-disclaimer')?.value || '';
     const scope = Array.from(document.querySelectorAll('.src-export-scope:checked')).map(el => el.value);
-    const logoFile = document.getElementById('src-export-logo')?.files?.[0] || null;
+    const logoFile = window.srcOfferLogoFile || document.getElementById('src-export-logo')?.files?.[0] || null;
     const maxLogoSize = 10 * 1024 * 1024;
     const allowedLogoTypes = ['image/png', 'image/jpeg'];
     if(logoFile && !allowedLogoTypes.includes((logoFile.type || '').toLowerCase())) {
@@ -2044,7 +2056,6 @@ const srcHandleExportStart = async function() {
         const emailText = srcBuildOfferEmailText({ lang, pricingMode, selectedPackage, includeBreakdown, includeRisk, extraSettings });
         await srcCopyToClipboard(emailText);
     }
-    const logoInput = document.getElementById('src-export-logo');
     srcResetExportLogoInput();
     srcSetExportLogoError('');
     srcCloseExportModal();
