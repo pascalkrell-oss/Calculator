@@ -587,12 +587,25 @@ const srcDedupeAddonLines = function(lines = []) {
 
 const SRC_ADDON_LEVEL_INDEX = { low: 0, mid: 1, high: 2 };
 
+const srcGetAddonDefaultTriple = function(addonKey) {
+    if(addonKey === 'social_organic' || addonKey === 'event_pos') return [50, 150, 250];
+    return [0, 0, 0];
+}
+
+const srcNormalizeAddonPriceTriple = function(value, addonKey) {
+    const fallback = srcGetAddonDefaultTriple(addonKey);
+    if(Array.isArray(value) && value.length >= 3) {
+        return srcEnsurePriceTriple(value, fallback);
+    }
+    return fallback;
+}
+
 const srcGetAddonPriceConfig = function(projectKey) {
     const projectData = (projectKey && srcRatesData && srcRatesData[projectKey]) ? srcRatesData[projectKey] : {};
     const extras = projectData.license_extras || {};
     return {
-        social_organic: srcEnsurePriceTriple(extras.social_organic, [50, 150, 250]),
-        event_pos: srcEnsurePriceTriple(extras.event_pos, [50, 150, 250])
+        social_organic: srcNormalizeAddonPriceTriple(extras.social_organic, 'social_organic'),
+        event_pos: srcNormalizeAddonPriceTriple(extras.event_pos, 'event_pos')
     };
 }
 
@@ -994,15 +1007,9 @@ const srcGetExtraChunks = function(data, units, fallbackLimit, fallbackUnit) {
 
 const srcGetLicenseExtraAmount = function(data, key) {
     if(!data || !key) return null;
-    let value = data[key];
+    const value = data[key];
     if(value === undefined || value === null) return null;
-    if(key === 'event_pos') {
-        const socialValue = data.social_organic;
-        if(socialValue !== undefined && socialValue !== null) {
-            value = socialValue;
-        }
-    }
-    return srcEnsurePriceTriple(value, null);
+    return srcNormalizeAddonPriceTriple(value, key);
 }
 
 const srcProjectSupportsInternalUse = function(projectKey) {
@@ -1698,6 +1705,7 @@ window.srcOpenExportModal = function(options = {}) {
     }
     const logoInput = document.getElementById('src-export-logo');
     srcSyncExportLogoSelectText(logoInput && logoInput.files && logoInput.files[0] ? logoInput.files[0].name : '');
+    srcSetExportLogoError('');
     if(!exportModalKeyHandler) {
         exportModalKeyHandler = (event) => {
             if(event.key === 'Escape') {
@@ -1734,36 +1742,15 @@ const srcCopyToClipboard = async function(text) {
 
 const srcReadLogoAsDataUrl = async function(file) {
     if(!file) return '';
-    if((file.type || '').toLowerCase() === 'image/webp') {
-        return new Promise((resolve) => {
+    return new Promise((resolve) => {
+        try {
             const reader = new FileReader();
-            reader.onload = () => {
-                const img = new Image();
-                img.onload = () => {
-                    try {
-                        const canvas = document.createElement('canvas');
-                        canvas.width = img.width;
-                        canvas.height = img.height;
-                        const ctx = canvas.getContext('2d');
-                        if(!ctx) return resolve('');
-                        ctx.drawImage(img, 0, 0);
-                        resolve(canvas.toDataURL('image/png'));
-                    } catch (e) {
-                        resolve('');
-                    }
-                };
-                img.onerror = () => resolve('');
-                img.src = typeof reader.result === 'string' ? reader.result : '';
-            };
+            reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '');
             reader.onerror = () => resolve('');
             reader.readAsDataURL(file);
-        });
-    }
-    return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '');
-        reader.onerror = () => resolve('');
-        reader.readAsDataURL(file);
+        } catch (error) {
+            resolve('');
+        }
     });
 }
 
@@ -1774,6 +1761,58 @@ const srcSyncExportLogoSelectText = function(fileName = '') {
     const hasFile = Boolean(fileName);
     zone.classList.toggle('is-selected', hasFile);
     nameEl.textContent = hasFile ? fileName : 'Logo hochladen (klicken oder Datei hierher ziehen)';
+}
+
+const srcGetExportLogoErrorElement = function() {
+    const logoInput = document.getElementById('src-export-logo');
+    if(!logoInput || !logoInput.parentElement) return null;
+    let errorEl = document.getElementById('src-export-logo-error');
+    if(errorEl) return errorEl;
+    errorEl = document.createElement('div');
+    errorEl.id = 'src-export-logo-error';
+    errorEl.className = 'src-export-logo-error';
+    errorEl.setAttribute('aria-live', 'polite');
+    logoInput.parentElement.appendChild(errorEl);
+    return errorEl;
+}
+
+const srcSetExportLogoError = function(message = '') {
+    const errorEl = srcGetExportLogoErrorElement();
+    if(!errorEl) return;
+    errorEl.textContent = message || '';
+    errorEl.classList.toggle('is-visible', Boolean(message));
+}
+
+const srcResetExportLogoInput = function() {
+    const logoInput = document.getElementById('src-export-logo');
+    if(logoInput) logoInput.value = '';
+    srcSyncExportLogoSelectText('');
+}
+
+const srcValidateExportLogoFile = function(file) {
+    if(!file) return { valid: false, message: 'Keine Datei ausgewählt.' };
+    const fileType = String(file.type || '').toLowerCase();
+    const fileName = String(file.name || '').toLowerCase();
+    const mimeOk = ['image/png', 'image/jpeg'].includes(fileType);
+    const extOk = ['.png', '.jpg', '.jpeg'].some(ext => fileName.endsWith(ext));
+    if(!mimeOk || !extOk) {
+        return { valid: false, message: 'Bitte nur PNG- oder JPG-Logos verwenden.' };
+    }
+    return { valid: true, message: '' };
+}
+
+const srcSetExportLogoFile = function(file) {
+    const logoInput = document.getElementById('src-export-logo');
+    if(!logoInput || !file) return false;
+    try {
+        if(typeof DataTransfer !== 'function') return false;
+        const transfer = new DataTransfer();
+        transfer.items.add(file);
+        logoInput.files = transfer.files;
+        return true;
+    } catch (e) {
+        return false;
+    }
 }
 
 const srcInitExportLogoSelect = function() {
@@ -1797,37 +1836,60 @@ const srcInitExportLogoSelect = function() {
     ['dragenter','dragover'].forEach(evt => {
         zone.addEventListener(evt, (event) => {
             event.preventDefault();
+            event.stopPropagation();
             zone.classList.add('is-dragover');
         });
     });
     ['dragleave','drop'].forEach(evt => {
         zone.addEventListener(evt, (event) => {
             event.preventDefault();
+            event.stopPropagation();
             zone.classList.remove('is-dragover');
         });
     });
     zone.addEventListener('drop', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
         const files = event.dataTransfer && event.dataTransfer.files ? event.dataTransfer.files : null;
         if(!files || !files.length) return;
-        try {
-            const transfer = new DataTransfer();
-            transfer.items.add(files[0]);
-            logoInput.files = transfer.files;
-        } catch (e) {}
-        const selectedFile = files[0] ? files[0].name : '';
-        srcSyncExportLogoSelectText(selectedFile);
+        const file = files[0];
+        const validation = srcValidateExportLogoFile(file);
+        if(!validation.valid) {
+            srcSetExportLogoError(validation.message);
+            srcResetExportLogoInput();
+            return;
+        }
+        srcSetExportLogoError('');
+        if(!srcSetExportLogoFile(file)) {
+            srcSetExportLogoError('Datei konnte nicht geladen werden. Bitte per Klick auswählen.');
+            srcResetExportLogoInput();
+            return;
+        }
+        srcSyncExportLogoSelectText(file.name || '');
     });
 
     logoInput.addEventListener('change', () => {
-        const selectedFile = logoInput.files && logoInput.files[0] ? logoInput.files[0].name : '';
-        srcSyncExportLogoSelectText(selectedFile);
+        const selectedFile = logoInput.files && logoInput.files[0] ? logoInput.files[0] : null;
+        if(!selectedFile) {
+            srcSetExportLogoError('');
+            srcSyncExportLogoSelectText('');
+            return;
+        }
+        const validation = srcValidateExportLogoFile(selectedFile);
+        if(!validation.valid) {
+            srcSetExportLogoError(validation.message);
+            srcResetExportLogoInput();
+            return;
+        }
+        srcSetExportLogoError('');
+        srcSyncExportLogoSelectText(selectedFile.name || '');
     });
 
     if(removeBtn) {
         removeBtn.addEventListener('click', (event) => {
             event.preventDefault();
-            logoInput.value = '';
-            srcSyncExportLogoSelectText('');
+            srcSetExportLogoError('');
+            srcResetExportLogoInput();
         });
     }
 }
@@ -1895,7 +1957,7 @@ const srcBuildOfferEmailText = function({ lang, pricingMode, selectedPackage, in
             const amount = Number.isFinite(entry.amount) ? ` (${srcFormatCurrency(entry.amount)})` : '';
             parts.push(`- ${entry.name}${amount}`);
         });
-        parts.push('Zusatzlizenzen gemäß VDS/Gagenkompass.');
+        parts.push('Zusatzlizenzen.');
     }
     parts.push(`${pricingLabel}: ${priceText}`);
     if(extraSettings.scope.length) {
@@ -1953,16 +2015,26 @@ const srcHandleExportStart = async function() {
     const scope = Array.from(document.querySelectorAll('.src-export-scope:checked')).map(el => el.value);
     const logoFile = document.getElementById('src-export-logo')?.files?.[0] || null;
     const maxLogoSize = 10 * 1024 * 1024;
-    const allowedLogoTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
+    const allowedLogoTypes = ['image/png', 'image/jpeg'];
     if(logoFile && !allowedLogoTypes.includes((logoFile.type || '').toLowerCase())) {
-        alert('Bitte nur PNG-, JPG- oder WEBP-Logos verwenden.');
+        srcSetExportLogoError('Bitte nur PNG- oder JPG-Logos verwenden.');
+        srcResetExportLogoInput();
         return;
     }
     if(logoFile && logoFile.size > maxLogoSize) {
-        alert('Logo ist zu groß. Bitte maximal 10 MB verwenden.');
+        srcSetExportLogoError('Logo ist zu groß. Bitte maximal 10 MB verwenden.');
+        srcResetExportLogoInput();
         return;
     }
-    const logoDataUrl = await srcReadLogoAsDataUrl(logoFile);
+    srcSetExportLogoError('');
+    let logoDataUrl = '';
+    try {
+        logoDataUrl = await srcReadLogoAsDataUrl(logoFile);
+    } catch (error) {
+        srcSetExportLogoError('Logo konnte nicht verarbeitet werden. Bitte erneut versuchen.');
+        srcResetExportLogoInput();
+        return;
+    }
     const customerType = exportModalState.client || 'direct';
     const extraSettings = { projectName, scope, customerType, offerId, offerSubject, customerName, customerAddress, providerName, providerAddress, providerContact, offerDate, paymentTerms, disclaimer, logoDataUrl, offerTheme };
     if(includePdf) {
@@ -1973,8 +2045,8 @@ const srcHandleExportStart = async function() {
         await srcCopyToClipboard(emailText);
     }
     const logoInput = document.getElementById('src-export-logo');
-    if(logoInput) logoInput.value = '';
-    srcSyncExportLogoSelectText('');
+    srcResetExportLogoInput();
+    srcSetExportLogoError('');
     srcCloseExportModal();
 }
 
@@ -2870,7 +2942,7 @@ const srcComputeSingleProjectResult = function(state, projectKey, options = {}) 
         }
     }
     const dedupedExtras = srcDedupeAddonLines(extrasText);
-    const extraBlock = dedupedExtras.length ? `<div class="src-license-extras">Zusatzlizenzen gemäß VDS/Gagenkompass.</div>` : "";
+    const extraBlock = dedupedExtras.length ? `<div class="src-license-extras">Zusatzlizenzen.</div>` : "";
     const licMetaText = srcBuildLicenseMetaMarkup(licMeta);
     const licenseText = `${guidanceText || ""}${extraBlock}${licMetaText}`;
     return {
@@ -3368,7 +3440,7 @@ Preisrahmen: ${rangeText}` : description,
             const amount = Number.isFinite(entry.amount) ? ` (${srcFormatCurrency(entry.amount)})` : '';
             rightsLines.push(`- ${entry.name}${amount}`);
         });
-        rightsLines.push('Zusatzlizenzen gemäß VDS/Gagenkompass.');
+        rightsLines.push('Zusatzlizenzen.');
     }
     const cleanLicenseText = srcStripAddonLevelLabel(srcStripHTML(dynamicLicenseText))
         .replace(/Zusatzlizenz(en)?\s*:/gi, '')
@@ -3439,6 +3511,7 @@ Preisrahmen: ${rangeText}` : description,
     const footerLeftWidth = pageWidth - (margin * 2) - 48;
     doc.text(doc.splitTextToSize(paymentText, footerLeftWidth), margin, legalStartY);
     doc.text(doc.splitTextToSize(disclaimerText, footerLeftWidth), margin, legalStartY + 5);
+    doc.text(doc.splitTextToSize('Sprecherpreise kalkuliert auf Grundlage des VDS Gagenkompass 2025.', footerLeftWidth), margin, legalStartY + 10);
     doc.text(`Seite ${doc.internal.getNumberOfPages()} von ${totalPagesExp}`, pageWidth - margin, pageHeight - 8, { align: 'right' });
     if(typeof doc.putTotalPages === 'function') {
         doc.putTotalPages(totalPagesExp);
