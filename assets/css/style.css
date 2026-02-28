@@ -2596,7 +2596,7 @@
     border: 1px solid rgba(15,20,26,.08) !important;
     border-radius: 16px !important;
     background: #fff !important;
-    border-bottom: none !important;
+    border-bottom: 1px solid rgba(15,20,26,.08) !important;
 }
 
 #src-calc-v6 .src-col-left .src-layout-block::before {
@@ -2628,7 +2628,7 @@
 #src-calc-v6 .src-col-left .src-layout-block:last-child {
     padding-bottom: 18px !important;
     margin-bottom: 0 !important;
-    border-bottom: none !important;
+    border-bottom: 1px solid rgba(15,20,26,.08) !important;
 }
 
 /* Wenn ein Block unsichtbare Elemente enthält, verstecke den gesamten Block (inkl. Strich) */
@@ -2642,7 +2642,7 @@
 #src-calc-v6:not(.src-has-project) .src-col-left .src-layout-block:has(#src-group-text) {
     padding-bottom: 18px !important;
     margin-bottom: 18px !important;
-    border-bottom: none !important;
+    border-bottom: 1px solid rgba(15,20,26,.08) !important;
 }
 
 /* ==========================================================================
@@ -3289,4 +3289,54 @@ body.src-tutorial-active #src-tutorial-panel:not(.src-tutorial-hidden) {
 
 .driver-popover {
   z-index: 999999999 !important;
+}
+
+
+#src-calc-v6 .src-col-right #src-license-section .src-license-sidebar__head,
+#src-calc-v6 .src-col-right .src-license-sidebar .src-license-sidebar__head {
+    display: flex !important;
+    align-items: center !important;
+    min-height: 50px !important;
+    padding-top: 12px !important;
+    padding-bottom: 12px !important;
+}
+
+#src-calc-v6 .src-col-right #src-license-section .src-license-sidebar__head .src-sidebar-title,
+#src-calc-v6 .src-col-right .src-license-sidebar .src-license-sidebar__head .src-sidebar-title {
+    display: flex !important;
+    align-items: center !important;
+    min-height: 24px;
+}
+
+.src-export-modal__head {
+    background: linear-gradient(180deg, #0f141a 0%, #151c24 100%);
+    color: #fff;
+    align-items: center;
+    padding: 18px 26px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.src-export-modal__head .src-modal__title,
+.src-export-modal__head .src-modal__subtitle {
+    color: #fff;
+}
+
+.src-export-modal__head .src-modal__subtitle {
+    opacity: 0.9;
+}
+
+.src-export-modal__head .src-modal__close {
+    color: rgba(255,255,255,.82);
+}
+
+.src-export-modal__head .src-modal__close:hover {
+    color: #fff;
+}
+
+.src-export-logo-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 12px;
+    color: #475569;
 }
