@@ -134,6 +134,7 @@ let exportModalState = {
     lang: 'de',
     pricing: 'range',
     client: 'direct',
+    offerTheme: 'dark',
     selectedPackage: 'standard'
 };
 
@@ -351,6 +352,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if(outputMode) {
         outputMode.addEventListener('change', () => srcSyncOutputModeToTiles());
     }
+    const exportTheme = document.getElementById('src-export-theme');
+    if(exportTheme) {
+        exportTheme.addEventListener('change', () => {
+            exportModalState.offerTheme = exportTheme.value === 'light' ? 'light' : 'dark';
+        });
+    }
     srcEnforceProjectTypeDropdownDownward();
     const genreSelect = document.getElementById('src-genre');
     if(genreSelect) {
@@ -364,6 +371,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     srcSyncExportTiles();
     srcSyncOutputModeFromState();
+    const exportThemeField = document.getElementById('src-export-theme');
+    if(exportThemeField) exportThemeField.value = exportModalState.offerTheme === 'light' ? 'light' : 'dark';
     srcUpdateExportPackageVisibility();
     updateStickyOffset();
     const scheduleStickyOffsetUpdate = () => {
@@ -574,6 +583,42 @@ const srcDedupeAddonLines = function(lines = []) {
         seen.add(key);
         return true;
     });
+}
+
+const SRC_ADDON_LEVEL_INDEX = { low: 0, mid: 1, high: 2 };
+
+const srcGetAddonPriceConfig = function(projectKey) {
+    const projectData = (projectKey && srcRatesData && srcRatesData[projectKey]) ? srcRatesData[projectKey] : {};
+    const extras = projectData.license_extras || {};
+    return {
+        social_organic: srcEnsurePriceTriple(extras.social_organic, [50, 150, 250]),
+        event_pos: srcEnsurePriceTriple(extras.event_pos, [50, 150, 250])
+    };
+}
+
+const srcGetSelectedAddonPrice = function(addonKey, level, projectKey) {
+    const config = srcGetAddonPriceConfig(projectKey);
+    const list = config[addonKey] || [0, 0, 0];
+    const idx = Object.prototype.hasOwnProperty.call(SRC_ADDON_LEVEL_INDEX, level) ? SRC_ADDON_LEVEL_INDEX[level] : 1;
+    return Number(list[idx]) || 0;
+}
+
+const srcBuildAddonSummaryEntries = function(state, projectKey) {
+    const entries = [];
+    if(state.licenseSocialEnabled && state.licenseSocialLevel && state.licenseSocialLevel !== 'off') {
+        entries.push({ key: 'social_organic', name: 'Social Media (organisch)', amount: srcGetSelectedAddonPrice('social_organic', state.licenseSocialLevel, projectKey) });
+    }
+    if(state.licenseEvent) {
+        entries.push({ key: 'event_pos', name: 'Event / Messe / POS', amount: srcGetSelectedAddonPrice('event_pos', state.licenseEventLevel || 'mid', projectKey) });
+    }
+    if(state.licenseInternal) {
+        entries.push({ key: 'internal_use', name: 'Interne Nutzung (Intranet)', amount: null });
+    }
+    return entries;
+}
+
+const srcStripAddonLevelLabel = function(text) {
+    return String(text || '').replace(/\s*[–-]\s*(LOW|MID|HIGH)\b/gi, '').trim();
 }
 
 const srcGetProjectName = function(projectKey) {
@@ -999,8 +1044,8 @@ const srcRenderSocialBadges = function() {
         return;
     }
     const state = srcGetStateFromUI();
-    const currentData = (srcRatesData && srcRatesData[state.projectKey]) ? srcRatesData[state.projectKey] : null;
-    const trip = srcEnsurePriceTriple(currentData?.license_extras?.social_organic, [50, 150, 250]);
+    const config = srcGetAddonPriceConfig(state.projectKey);
+    const trip = config.social_organic;
     const items = [
         { k: 'low', v: trip[0] },
         { k: 'mid', v: trip[1] },
@@ -1024,9 +1069,8 @@ const srcRenderEventBadges = function() {
         return;
     }
     const state = srcGetStateFromUI();
-    const currentData = (srcRatesData && srcRatesData[state.projectKey]) ? srcRatesData[state.projectKey] : null;
-    const socialTrip = srcEnsurePriceTriple(currentData?.license_extras?.social_organic, [50, 150, 250]);
-    const eventTrip = srcEnsurePriceTriple(currentData?.license_extras?.event_pos, socialTrip);
+    const config = srcGetAddonPriceConfig(state.projectKey);
+    const eventTrip = config.event_pos;
     const items = [
         { k: 'low', v: eventTrip[0] },
         { k: 'mid', v: eventTrip[1] },
@@ -1646,13 +1690,11 @@ window.srcOpenExportModal = function(options = {}) {
     srcSyncExportPackageCards();
     srcSyncExportTiles();
     srcSyncOutputModeFromState();
+    const exportTheme = document.getElementById('src-export-theme');
+    if(exportTheme) exportTheme.value = exportModalState.offerTheme === 'light' ? 'light' : 'dark';
     const dateField = document.getElementById('src-export-date');
     if(dateField && !dateField.value) {
         dateField.value = new Date().toLocaleDateString('de-DE');
-    }
-    const validityField = document.getElementById('src-export-validity');
-    if(validityField && !validityField.value) {
-        validityField.value = '14 Tage';
     }
     const logoInput = document.getElementById('src-export-logo');
     srcSyncExportLogoSelectText(logoInput && logoInput.files && logoInput.files[0] ? logoInput.files[0].name : '');
@@ -1692,6 +1734,31 @@ const srcCopyToClipboard = async function(text) {
 
 const srcReadLogoAsDataUrl = async function(file) {
     if(!file) return '';
+    if((file.type || '').toLowerCase() === 'image/webp') {
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+                const img = new Image();
+                img.onload = () => {
+                    try {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        const ctx = canvas.getContext('2d');
+                        if(!ctx) return resolve('');
+                        ctx.drawImage(img, 0, 0);
+                        resolve(canvas.toDataURL('image/png'));
+                    } catch (e) {
+                        resolve('');
+                    }
+                };
+                img.onerror = () => resolve('');
+                img.src = typeof reader.result === 'string' ? reader.result : '';
+            };
+            reader.onerror = () => resolve('');
+            reader.readAsDataURL(file);
+        });
+    }
     return new Promise((resolve) => {
         const reader = new FileReader();
         reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '');
@@ -1701,20 +1768,68 @@ const srcReadLogoAsDataUrl = async function(file) {
 }
 
 const srcSyncExportLogoSelectText = function(fileName = '') {
+    const zone = document.getElementById('src-export-logo-dropzone');
     const nameEl = document.getElementById('src-export-logo-name');
-    if(!nameEl) return;
-    nameEl.textContent = fileName || 'Logo auswählen…';
+    if(!zone || !nameEl) return;
+    const hasFile = Boolean(fileName);
+    zone.classList.toggle('is-selected', hasFile);
+    nameEl.textContent = hasFile ? fileName : 'Logo hochladen (klicken oder Datei hierher ziehen)';
 }
 
 const srcInitExportLogoSelect = function() {
     const logoInput = document.getElementById('src-export-logo');
-    const logoSelect = document.getElementById('src-export-logo-select');
-    if(!logoInput || !logoSelect) return;
-    logoSelect.addEventListener('click', () => logoInput.click());
+    const zone = document.getElementById('src-export-logo-dropzone');
+    const removeBtn = document.getElementById('src-export-logo-remove');
+    if(!logoInput || !zone) return;
+
+    const pickFile = () => logoInput.click();
+    zone.addEventListener('click', (event) => {
+        if(event.target && event.target.closest('#src-export-logo-remove')) return;
+        pickFile();
+    });
+    zone.addEventListener('keydown', (event) => {
+        if(event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            pickFile();
+        }
+    });
+
+    ['dragenter','dragover'].forEach(evt => {
+        zone.addEventListener(evt, (event) => {
+            event.preventDefault();
+            zone.classList.add('is-dragover');
+        });
+    });
+    ['dragleave','drop'].forEach(evt => {
+        zone.addEventListener(evt, (event) => {
+            event.preventDefault();
+            zone.classList.remove('is-dragover');
+        });
+    });
+    zone.addEventListener('drop', (event) => {
+        const files = event.dataTransfer && event.dataTransfer.files ? event.dataTransfer.files : null;
+        if(!files || !files.length) return;
+        try {
+            const transfer = new DataTransfer();
+            transfer.items.add(files[0]);
+            logoInput.files = transfer.files;
+        } catch (e) {}
+        const selectedFile = files[0] ? files[0].name : '';
+        srcSyncExportLogoSelectText(selectedFile);
+    });
+
     logoInput.addEventListener('change', () => {
         const selectedFile = logoInput.files && logoInput.files[0] ? logoInput.files[0].name : '';
         srcSyncExportLogoSelectText(selectedFile);
     });
+
+    if(removeBtn) {
+        removeBtn.addEventListener('click', (event) => {
+            event.preventDefault();
+            logoInput.value = '';
+            srcSyncExportLogoSelectText('');
+        });
+    }
 }
 
 const srcBuildOfferEmailText = function({ lang, pricingMode, selectedPackage, includeBreakdown, includeRisk, extraSettings }) {
@@ -1767,17 +1882,20 @@ const srcBuildOfferEmailText = function({ lang, pricingMode, selectedPackage, in
     const addons = [];
     if(state.packageOnline) addons.push('Online Audio');
     if(state.packageAtv) addons.push('ATV/CTV');
-    if(state.licenseSocialEnabled && state.licenseSocialLevel && state.licenseSocialLevel !== 'off') addons.push(`Social Media (${(state.licenseSocialLevel || 'mid').toUpperCase()})`);
-    if(state.licenseEvent) addons.push(`Event / Messe / POS (${(state.licenseEventLevel || 'mid').toUpperCase()})`);
-    if(state.licenseInternal) addons.push('Interne Nutzung (Intranet)');
     if(state.cutdown) addons.push('Cut-down');
     if(state.expressToggle) addons.push('Express');
     if(state.studioFee > 0) addons.push('Studio');
+    const addonEntries = srcBuildAddonSummaryEntries(state, state.projectKey);
     if(addons.length) {
         parts.push(`${i18n.addOns}: ${addons.join(', ')}`);
     }
-    if(extraSettings.validity) {
-        parts.push(`${i18n.validity}: ${extraSettings.validity}`);
+    if(addonEntries.length) {
+        parts.push('Zusatzlizenzen:');
+        addonEntries.forEach(entry => {
+            const amount = Number.isFinite(entry.amount) ? ` (${srcFormatCurrency(entry.amount)})` : '';
+            parts.push(`- ${entry.name}${amount}`);
+        });
+        parts.push('Zusatzlizenzen gemäß VDS/Gagenkompass.');
     }
     parts.push(`${pricingLabel}: ${priceText}`);
     if(extraSettings.scope.length) {
@@ -1829,18 +1947,24 @@ const srcHandleExportStart = async function() {
     const providerAddress = document.getElementById('src-export-provider-address')?.value || '';
     const providerContact = document.getElementById('src-export-provider-contact')?.value || '';
     const offerDate = document.getElementById('src-export-date')?.value || '';
-    const validity = document.getElementById('src-export-validity')?.value || '';
     const paymentTerms = document.getElementById('src-export-payment')?.value || '';
+    const offerTheme = exportModalState.offerTheme === 'light' ? 'light' : 'dark';
     const disclaimer = document.getElementById('src-export-disclaimer')?.value || '';
     const scope = Array.from(document.querySelectorAll('.src-export-scope:checked')).map(el => el.value);
     const logoFile = document.getElementById('src-export-logo')?.files?.[0] || null;
-    if(logoFile && !['image/png', 'image/jpeg'].includes((logoFile.type || '').toLowerCase())) {
-        alert('Bitte nur PNG- oder JPG-Logos verwenden.');
+    const maxLogoSize = 10 * 1024 * 1024;
+    const allowedLogoTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
+    if(logoFile && !allowedLogoTypes.includes((logoFile.type || '').toLowerCase())) {
+        alert('Bitte nur PNG-, JPG- oder WEBP-Logos verwenden.');
+        return;
+    }
+    if(logoFile && logoFile.size > maxLogoSize) {
+        alert('Logo ist zu groß. Bitte maximal 10 MB verwenden.');
         return;
     }
     const logoDataUrl = await srcReadLogoAsDataUrl(logoFile);
     const customerType = exportModalState.client || 'direct';
-    const extraSettings = { projectName, validity, scope, customerType, offerId, offerSubject, customerName, customerAddress, providerName, providerAddress, providerContact, offerDate, paymentTerms, disclaimer, logoDataUrl };
+    const extraSettings = { projectName, scope, customerType, offerId, offerSubject, customerName, customerAddress, providerName, providerAddress, providerContact, offerDate, paymentTerms, disclaimer, logoDataUrl, offerTheme };
     if(includePdf) {
         srcGeneratePDFv6({ lang, pricingMode, selectedPackage, includeBreakdown, includeRisk, extraSettings });
     }
@@ -2329,17 +2453,17 @@ const srcComputeGlobalAddons = function(state, projectKeys) {
         {
             key: 'social_organic',
             stateKey: 'licenseSocialLevel',
-            label: 'Zusatzlizenz: Social Media (organisch)'
+            label: 'Social Media (organisch)'
         },
         {
             key: 'event_pos',
             stateKey: 'licenseEvent',
-            label: 'Zusatzlizenz: Event / Messe / POS'
+            label: 'Event / Messe / POS'
         },
         {
             key: 'internal_use',
             stateKey: 'licenseInternal',
-            label: 'Zusatzlizenz: Interne Nutzung (Mitarbeiterschulung / Intranet)'
+            label: 'Interne Nutzung (Mitarbeiterschulung / Intranet)'
         }
     ];
     const result = {
@@ -2389,11 +2513,7 @@ const srcComputeGlobalAddons = function(state, projectKeys) {
             if(!srcHasPositiveAddonAmount(extraRates)) {
                 return;
             }
-            const addonLabel = addon.key === 'social_organic'
-                ? `${addon.label} – ${(state.licenseSocialLevel || 'mid').toUpperCase()}`
-                : addon.key === 'event_pos'
-                    ? `${addon.label} – ${(state.licenseEventLevel || 'mid').toUpperCase()}`
-                    : addon.label;
+            const addonLabel = addon.label;
             result.licenseLines.push(`${addonLabel}${scopeSuffix}`);
             result.rangeAdd = result.rangeAdd.map((value, idx) => value + extraRates[idx]);
             result.breakdownSteps.push({
@@ -2611,34 +2731,33 @@ const srcComputeSingleProjectResult = function(state, projectKey, options = {}) 
             }
 
             const licenseExtras = data.license_extras || {};
-            const socialExtra = srcGetLicenseExtraAmount(licenseExtras, 'social_organic');
-            const eventExtra = srcGetLicenseExtraAmount(licenseExtras, 'event_pos');
+            const addonPriceConfig = srcGetAddonPriceConfig(genre);
+            const socialExtra = srcGetLicenseExtraAmount(licenseExtras, 'social_organic') || addonPriceConfig.social_organic;
+            const eventExtra = srcGetLicenseExtraAmount(licenseExtras, 'event_pos') || addonPriceConfig.event_pos;
             const internalExtra = srcGetLicenseExtraAmount(licenseExtras, 'internal_use');
             if(state.licenseSocialEnabled && state.licenseSocialLevel && state.licenseSocialLevel !== 'off' && applyAddons) {
-                const socialTrip = srcEnsurePriceTriple(socialExtra, [0, 0, 0]);
+                const socialTrip = srcEnsurePriceTriple(socialExtra, addonPriceConfig.social_organic);
                 const socialLevelMap = { low: 0, mid: 1, high: 2 };
                 const socialIdx = socialLevelMap[state.licenseSocialLevel] !== undefined ? socialLevelMap[state.licenseSocialLevel] : 1;
                 const socialValue = socialTrip[socialIdx] || 0;
                 const extraRates = [socialValue, socialValue, socialValue];
                 final = final.map((v, idx) => v + extraRates[idx]);
                 if(srcHasPositiveAddonAmount(extraRates)) {
-                    const socialLevelLabel = (state.licenseSocialLevel || 'mid').toUpperCase();
-                    breakdownSteps.push({ label: `Social Media (organisch) – ${socialLevelLabel}`, amountOrFactor: srcFormatSignedCurrency(extraRates[1]), effectOnRange: 'add' });
-                    addInfo(`Social Media (organisch) – ${socialLevelLabel}`, srcFormatSignedCurrency(extraRates[1]), "Zusatzlizenz");
+                    breakdownSteps.push({ label: 'Social Media (organisch)', amountOrFactor: srcFormatSignedCurrency(extraRates[1]), effectOnRange: 'add' });
+                    addInfo('Social Media (organisch)', srcFormatSignedCurrency(extraRates[1]), "Zusatzlizenz");
                 }
                 licParts.push("+ Social Media");
             }
             if(state.licenseEvent && applyAddons) {
-                const eventTrip = srcEnsurePriceTriple(eventExtra, [50, 150, 250]);
+                const eventTrip = srcEnsurePriceTriple(eventExtra, addonPriceConfig.event_pos);
                 const eventLevelMap = { low: 0, mid: 1, high: 2 };
                 const eventIdx = eventLevelMap[state.licenseEventLevel] !== undefined ? eventLevelMap[state.licenseEventLevel] : 1;
                 const eventValue = eventTrip[eventIdx] || 0;
                 const extraRates = [eventValue, eventValue, eventValue];
                 final = final.map((v, idx) => v + extraRates[idx]);
                 if(srcHasPositiveAddonAmount(extraRates)) {
-                    const eventLevelLabel = (state.licenseEventLevel || 'mid').toUpperCase();
-                    breakdownSteps.push({ label: `Event / Messe / POS – ${eventLevelLabel}`, amountOrFactor: srcFormatSignedCurrency(extraRates[1]), effectOnRange: 'add' });
-                    addInfo(`Event / Messe / POS – ${eventLevelLabel}`, srcFormatSignedCurrency(extraRates[1]), "Zusatzlizenz");
+                    breakdownSteps.push({ label: 'Event / Messe / POS', amountOrFactor: srcFormatSignedCurrency(extraRates[1]), effectOnRange: 'add' });
+                    addInfo('Event / Messe / POS', srcFormatSignedCurrency(extraRates[1]), "Zusatzlizenz");
                 }
                 licParts.push("+ Event");
             }
@@ -2679,12 +2798,12 @@ const srcComputeSingleProjectResult = function(state, projectKey, options = {}) 
     }
 
     if(applyAddons) {
-        if(state.licenseSocialEnabled && state.licenseSocialLevel && state.licenseSocialLevel !== 'off') { licMeta.push(`Zusatzlizenz: Social Media (organisch) – ${(state.licenseSocialLevel || 'mid').toUpperCase()}`); }
-        if(state.licenseEvent) { licMeta.push(`Zusatzlizenz: Event / Messe / POS – ${(state.licenseEventLevel || 'mid').toUpperCase()}`); }
+        if(state.licenseSocialEnabled && state.licenseSocialLevel && state.licenseSocialLevel !== 'off') { licMeta.push('Social Media (organisch)'); }
+        if(state.licenseEvent) { licMeta.push('Event / Messe / POS'); }
         if(state.licenseInternal && srcProjectSupportsInternalUse(genre)) {
             const internalAmount = srcGetLicenseExtraAmount((data.license_extras || {}), 'internal_use');
             if(srcHasPositiveAddonAmount(internalAmount)) {
-                licMeta.push("Zusatzlizenz: Interne Nutzung (Mitarbeiterschulung / Intranet)");
+                licMeta.push("Interne Nutzung (Mitarbeiterschulung / Intranet)");
             }
         }
     }
@@ -2750,7 +2869,8 @@ const srcComputeSingleProjectResult = function(state, projectKey, options = {}) 
             extrasText.push(extras.internal_use);
         }
     }
-    const extraBlock = extrasText.length ? `<div class="src-license-extras">${extrasText.join(' ')}</div>` : "";
+    const dedupedExtras = srcDedupeAddonLines(extrasText);
+    const extraBlock = dedupedExtras.length ? `<div class="src-license-extras">Zusatzlizenzen gemäß VDS/Gagenkompass.</div>` : "";
     const licMetaText = srcBuildLicenseMetaMarkup(licMeta);
     const licenseText = `${guidanceText || ""}${extraBlock}${licMetaText}`;
     return {
@@ -2819,6 +2939,7 @@ const srcBuildAdvancedSummary = function(state) {
         `Sprachversionen: ${config.versions}`
     ];
     const rightsLines = [];
+    const addonEntries = srcBuildAddonSummaryEntries(state, state.projectKey);
     if(config.exclusivityPct > 0) {
         rightsLines.push(`Exklusivität: ${exclusivityLabels[advanced.exclusivity] || exclusivityLabels.none}`);
     }
@@ -3101,6 +3222,7 @@ window.srcGeneratePDFv6 = function(options = {}) {
     const includeBreakdown = Boolean(options.includeBreakdown);
     const includeRisk = Boolean(options.includeRisk);
     const extraSettings = options.extraSettings || {};
+    const offerTheme = extraSettings.offerTheme === 'light' ? 'light' : 'dark';
 
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
@@ -3127,8 +3249,14 @@ window.srcGeneratePDFv6 = function(options = {}) {
         packageLabel = pkg.label;
     }
 
-    doc.setFillColor(15, 20, 26);
-    doc.roundedRect(margin, 12, pageWidth - (margin * 2), 26, 3, 3, 'F');
+    const isLightTheme = offerTheme === 'light';
+    const headerBg = isLightTheme ? [255, 255, 255] : [15, 20, 26];
+    const headerBorder = isLightTheme ? [203, 213, 225] : [15, 20, 26];
+    const headerText = isLightTheme ? [15, 23, 42] : [255, 255, 255];
+    const summaryBg = isLightTheme ? [255, 255, 255] : [241, 245, 249];
+    doc.setFillColor(...headerBg);
+    doc.setDrawColor(...headerBorder);
+    doc.roundedRect(margin, 12, pageWidth - (margin * 2), 26, 3, 3, isLightTheme ? 'FD' : 'F');
     if(extraSettings.logoDataUrl) {
         try {
             const mimeMatch = String(extraSettings.logoDataUrl).match(/^data:(image\/(png|jpeg|jpg));/i);
@@ -3152,7 +3280,7 @@ window.srcGeneratePDFv6 = function(options = {}) {
         } catch (e) {}
     }
     doc.setFontSize(16);
-    doc.setTextColor(255, 255, 255);
+    doc.setTextColor(...headerText);
     doc.text(lang === 'en' ? 'Offer' : 'Angebot', pageWidth - margin - 2, 22, { align: 'right' });
     doc.setFontSize(9);
     doc.text(`${i18n.dateLabel}: ${offerDate}`, pageWidth - margin - 2, 28, { align: 'right' });
@@ -3227,16 +3355,25 @@ Preisrahmen: ${rangeText}` : description,
     doc.text(lang === 'en' ? 'Rights & Licenses' : 'Nutzungsrechte & Lizenzen', margin, currentY);
     currentY += 5;
     const rightsLines = [];
+    const addonEntries = srcBuildAddonSummaryEntries(state, state.projectKey);
     if(['tv','online_paid','radio','cinema','pos'].includes(state.projectKey)) {
         const regionLabel = state.region === 'regional' ? 'Regional' : state.region === 'national' ? 'National' : state.region === 'dach' ? 'DACH' : 'Weltweit';
         rightsLines.push(`Gebiet: ${regionLabel}`);
         rightsLines.push(`Laufzeit: ${state.duration === 4 ? 'Unlimited' : `${state.duration} ${state.duration === 1 ? 'Jahr' : 'Jahre'}`}`);
     }
     rightsLines.push(`Medium/Lizenz: ${projectLabel}`);
-    if(state.licenseSocialEnabled && state.licenseSocialLevel && state.licenseSocialLevel !== 'off') rightsLines.push(`Zusatzlizenz: Social Media (${(state.licenseSocialLevel || 'mid').toUpperCase()})`);
-    if(state.licenseEvent) rightsLines.push(`Zusatzlizenz: Event / Messe / POS (${(state.licenseEventLevel || 'mid').toUpperCase()})`);
-    if(state.licenseInternal) rightsLines.push('Zusatzlizenz: Interne Nutzung (Intranet)');
-    const cleanLicenseText = srcStripHTML(dynamicLicenseText);
+    if(addonEntries.length) {
+        rightsLines.push('Zusatzlizenzen:');
+        addonEntries.forEach(entry => {
+            const amount = Number.isFinite(entry.amount) ? ` (${srcFormatCurrency(entry.amount)})` : '';
+            rightsLines.push(`- ${entry.name}${amount}`);
+        });
+        rightsLines.push('Zusatzlizenzen gemäß VDS/Gagenkompass.');
+    }
+    const cleanLicenseText = srcStripAddonLevelLabel(srcStripHTML(dynamicLicenseText))
+        .replace(/Zusatzlizenz(en)?\s*:/gi, '')
+        .replace(/\s+/g, ' ')
+        .trim();
     if(cleanLicenseText) rightsLines.push(cleanLicenseText);
     doc.setFontSize(8.5);
     doc.setTextColor(71, 85, 105);
@@ -3251,7 +3388,7 @@ Preisrahmen: ${rangeText}` : description,
     let summaryY = currentY + 4;
     const subtotal = pricingMode === 'package' ? priceValue : result.final[1];
     const totalLabel = pricingMode === 'range' ? rangeText : srcFormatCurrency(subtotal);
-    doc.setFillColor(248, 250, 252);
+    doc.setFillColor(...summaryBg);
     doc.setDrawColor(203, 213, 225);
     doc.roundedRect(summaryX, currentY, summaryWidth, summaryHeight, 3, 3, 'FD');
     doc.setFontSize(10);
@@ -3277,7 +3414,7 @@ Preisrahmen: ${rangeText}` : description,
         currentY += 4.5;
         doc.setFontSize(8.5);
         doc.setTextColor(71, 85, 105);
-        const breakdownLines = [`Basis: ${srcFormatCurrency(currentBreakdownData.base.mid)}`].concat(currentBreakdownData.steps.map(step => `${srcStripHTML(step.label)}: ${srcStripHTML(step.amountOrFactor)}`));
+        const breakdownLines = [`Basis: ${srcFormatCurrency(currentBreakdownData.base.mid)}`].concat(currentBreakdownData.steps.map(step => `${srcStripAddonLevelLabel(srcStripHTML(step.label))}: ${srcStripHTML(step.amountOrFactor)}`));
         doc.text(doc.splitTextToSize(breakdownLines.join('\n'), pageWidth - (margin * 2)), margin, currentY);
         currentY += breakdownLines.length * 3.8 + 4;
     }
@@ -3293,14 +3430,15 @@ Preisrahmen: ${rangeText}` : description,
         currentY += currentRiskChecks.length * 3.8 + 4;
     }
 
-    const paymentText = extraSettings.paymentTerms || (lang === 'en' ? 'Payment terms: 14 days net.' : 'Zahlungsbedingungen: 14 Tage netto.');
+    const paymentText = extraSettings.paymentTerms || (lang === 'en' ? 'Payment terms as agreed.' : 'Zahlungsbedingungen gemäß Vereinbarung.');
     const disclaimerText = extraSettings.disclaimer || (lang === 'en' ? 'This offer is non-binding until written acceptance.' : 'Dieses Angebot ist freibleibend bis zur schriftlichen Beauftragung.');
     const totalPagesExp = '{total_pages_count_string}';
     const legalStartY = Math.min(pageHeight - 24, currentY + 20);
     doc.setFontSize(8);
     doc.setTextColor(71, 85, 105);
-    doc.text(doc.splitTextToSize(paymentText, pageWidth - (margin * 2)), margin, legalStartY);
-    doc.text(doc.splitTextToSize(disclaimerText, pageWidth - (margin * 2)), margin, legalStartY + 5);
+    const footerLeftWidth = pageWidth - (margin * 2) - 48;
+    doc.text(doc.splitTextToSize(paymentText, footerLeftWidth), margin, legalStartY);
+    doc.text(doc.splitTextToSize(disclaimerText, footerLeftWidth), margin, legalStartY + 5);
     doc.text(`Seite ${doc.internal.getNumberOfPages()} von ${totalPagesExp}`, pageWidth - margin, pageHeight - 8, { align: 'right' });
     if(typeof doc.putTotalPages === 'function') {
         doc.putTotalPages(totalPagesExp);
