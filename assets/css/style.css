@@ -29,6 +29,7 @@
     --src-header-panel: #0f141a;
     --src-sticky-offset: 90px;
     --src-check-icon: none;
+    --src-sidebar-radius: 12px;
 }
 
 .src-reset-header { max-width: 1100px; margin: 0 auto 10px; text-align: right; font-family: "Rubik", sans-serif; }
@@ -821,12 +822,12 @@
     color: #fff;
     background: var(--src-header-bg);
     padding: 9px 14px;
-    border-radius: 12px 12px 0 0;
+    border-radius: var(--src-sidebar-radius) var(--src-sidebar-radius) 0 0;
     border-bottom: 1px solid rgba(148, 163, 184, 0.3);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    min-height: 44px;
+    min-height: 46px;
     line-height: 1.2;
     position: relative;
     overflow: hidden;
@@ -858,6 +859,11 @@
     justify-content: center;
     color: rgba(255, 255, 255, 0.86);
     flex: 0 0 auto;
+}
+.src-title-text {
+    display: inline-flex;
+    align-items: center;
+    line-height: 1.2;
 }
 .src-title-icon svg {
     width: 100%;
@@ -915,7 +921,7 @@
 
 .src-info-section .src-sidebar-title {
     background: var(--src-header-bg);
-    border-radius: 12px 12px 0 0;
+    border-radius: var(--src-sidebar-radius) var(--src-sidebar-radius) 0 0;
     border-bottom: 1px solid var(--src-border-light);
 }
 
@@ -1233,7 +1239,7 @@
 .src-packages-box {
     background: #ffffff;
     border: 1px solid var(--src-border-light);
-    border-radius: 0 0 12px 12px;
+    border-radius: 0 0 var(--src-sidebar-radius) var(--src-sidebar-radius);
     padding: 14px;
 }
 .src-notes-tips-box {
@@ -1304,8 +1310,20 @@
 }
 
 .src-packages-box {
-    display: grid;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     gap: 12px;
+}
+#src-packages-section .src-packages-box #src-packages-list {
+    width: 100%;
+}
+#src-packages-section #src-build-packages {
+    display: block;
+    width: 100%;
+    max-width: 420px;
+    margin-left: auto;
+    margin-right: auto;
 }
 .src-package-card {
     border: 1px solid var(--src-border-light);
@@ -1480,7 +1498,7 @@
 }
 .src-sidebar .src-license-sidebar {
     border: 1px solid rgba(15, 23, 42, .10);
-    border-radius: 16px;
+    border-radius: var(--src-sidebar-radius);
     background: #ffffff;
     overflow: hidden;
     box-shadow: 0 10px 24px rgba(15, 23, 42, .08);
@@ -1495,7 +1513,8 @@
     justify-content: space-between;
     gap: 10px;
     position: relative;
-    min-height: 44px;
+    min-height: 46px;
+    border-radius: var(--src-sidebar-radius) var(--src-sidebar-radius) 0 0;
 }
 
 .src-sidebar .src-license-sidebar__head::after {
@@ -1520,7 +1539,7 @@
 .src-sidebar .src-card-header {
     display: flex;
     align-items: center;
-    min-height: 44px;
+    min-height: 46px;
 }
 
 .src-sidebar .src-sidebar-head .src-sidebar-title,
@@ -1555,6 +1574,7 @@
 
 .src-sidebar .src-license-sidebar__body {
     padding: 12px 14px 14px;
+    border-radius: 0 0 var(--src-sidebar-radius) var(--src-sidebar-radius);
 }
 
 .src-sidebar .src-license-sidebar__text {
@@ -1879,7 +1899,8 @@
 }
 
 .src-footer-actions { margin-top: auto; padding-top: 20px; }
-.src-note-text { text-align: center; margin-top: 8px; font-size: 12px; color: rgba(15, 23, 42, 0.55); }
+.src-note-text { text-align: center; margin-top: 8px; font-size: 11px; font-weight: 400; color: rgba(15, 23, 42, 0.44); }
+.src-vds-link { color: rgba(15, 23, 42, 0.56); font-weight: 400; }
 
 .src-mini-btn {
     background: #ffffff;
@@ -3164,8 +3185,6 @@ body.src-tutorial-active #src-tutorial-overlay {
     height: 0;
     border-radius: 16px;
     box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.75);
-    outline: 2px solid rgba(26,147,238,.22);
-    outline-offset: 2px;
     z-index: 99991;
     pointer-events: none;
     opacity: 0;
@@ -3200,8 +3219,7 @@ body.src-tutorial-mode .src-tutorial-lift{
     background: #fff !important;
     border-radius: 16px !important;
     box-shadow: 0 18px 40px rgba(15,23,42,.22) !important;
-    outline: 2px solid rgba(26,147,238,.22) !important;
-    outline-offset: 2px !important;
+    outline: none !important;
 }
 
 /* --- 3. HIGH-END TUTORIAL PANEL (FIXED BOTTOM) --- */
