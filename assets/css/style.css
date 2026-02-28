@@ -3344,6 +3344,62 @@ body.src-tutorial-active #src-tutorial-panel:not(.src-tutorial-hidden) {
     color: #475569;
     margin-top: 8px;
 }
+
+.src-export-inline-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 12px;
+    color: #475569;
+}
+
+.src-export-helper {
+    font-size: 11px;
+    line-height: 1.4;
+    color: #64748b;
+}
+
+.src-export-logo-input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+    width: 1px;
+    height: 1px;
+}
+
+.src-export-logo-select {
+    height: 46px;
+    border-radius: 12px;
+    border: 1px solid var(--src-border-light);
+    background: #fff;
+    font-size: 14px;
+    font-weight: 500;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 0 14px;
+    cursor: pointer;
+    text-align: left;
+}
+
+.src-export-logo-select i {
+    color: #64748b;
+    font-size: 12px;
+}
+
+.src-export-logo-select span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.src-export-logo-select:focus {
+    border-color: var(--src-primary);
+    outline: none;
+    box-shadow: 0 0 0 4px var(--src-focus);
+}
 .src-export-select {
     height: 46px;
     border-radius: 12px;

@@ -251,6 +251,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if(exportStartBtn) {
         exportStartBtn.addEventListener('click', () => srcHandleExportStart());
     }
+    srcInitExportLogoSelect();
 
     const applyEstimateBtn = document.getElementById('src-apply-estimate');
     if(applyEstimateBtn) {
@@ -1653,6 +1654,8 @@ window.srcOpenExportModal = function(options = {}) {
     if(validityField && !validityField.value) {
         validityField.value = '14 Tage';
     }
+    const logoInput = document.getElementById('src-export-logo');
+    srcSyncExportLogoSelectText(logoInput && logoInput.files && logoInput.files[0] ? logoInput.files[0].name : '');
     if(!exportModalKeyHandler) {
         exportModalKeyHandler = (event) => {
             if(event.key === 'Escape') {
@@ -1694,6 +1697,23 @@ const srcReadLogoAsDataUrl = async function(file) {
         reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '');
         reader.onerror = () => resolve('');
         reader.readAsDataURL(file);
+    });
+}
+
+const srcSyncExportLogoSelectText = function(fileName = '') {
+    const nameEl = document.getElementById('src-export-logo-name');
+    if(!nameEl) return;
+    nameEl.textContent = fileName || 'Logo auswählen…';
+}
+
+const srcInitExportLogoSelect = function() {
+    const logoInput = document.getElementById('src-export-logo');
+    const logoSelect = document.getElementById('src-export-logo-select');
+    if(!logoInput || !logoSelect) return;
+    logoSelect.addEventListener('click', () => logoInput.click());
+    logoInput.addEventListener('change', () => {
+        const selectedFile = logoInput.files && logoInput.files[0] ? logoInput.files[0].name : '';
+        srcSyncExportLogoSelectText(selectedFile);
     });
 }
 
@@ -1814,6 +1834,10 @@ const srcHandleExportStart = async function() {
     const disclaimer = document.getElementById('src-export-disclaimer')?.value || '';
     const scope = Array.from(document.querySelectorAll('.src-export-scope:checked')).map(el => el.value);
     const logoFile = document.getElementById('src-export-logo')?.files?.[0] || null;
+    if(logoFile && !['image/png', 'image/jpeg'].includes((logoFile.type || '').toLowerCase())) {
+        alert('Bitte nur PNG- oder JPG-Logos verwenden.');
+        return;
+    }
     const logoDataUrl = await srcReadLogoAsDataUrl(logoFile);
     const customerType = exportModalState.client || 'direct';
     const extraSettings = { projectName, validity, scope, customerType, offerId, offerSubject, customerName, customerAddress, providerName, providerAddress, providerContact, offerDate, paymentTerms, disclaimer, logoDataUrl };
@@ -1826,6 +1850,7 @@ const srcHandleExportStart = async function() {
     }
     const logoInput = document.getElementById('src-export-logo');
     if(logoInput) logoInput.value = '';
+    srcSyncExportLogoSelectText('');
     srcCloseExportModal();
 }
 
@@ -3106,19 +3131,23 @@ window.srcGeneratePDFv6 = function(options = {}) {
     doc.roundedRect(margin, 12, pageWidth - (margin * 2), 26, 3, 3, 'F');
     if(extraSettings.logoDataUrl) {
         try {
-            const mimeMatch = String(extraSettings.logoDataUrl).match(/^data:(image\/(png|jpeg|jpg|webp));/i);
+            const mimeMatch = String(extraSettings.logoDataUrl).match(/^data:(image\/(png|jpeg|jpg));/i);
             const imageTypeRaw = mimeMatch && mimeMatch[2] ? mimeMatch[2].toUpperCase() : 'PNG';
             const imageType = imageTypeRaw === 'JPG' ? 'JPEG' : imageTypeRaw;
             const imageProps = doc.getImageProperties(extraSettings.logoDataUrl);
-            const maxLogoWidth = 44;
-            const maxLogoHeight = 18;
+            const logoBoxWidth = 52;
+            const logoBoxHeight = 22;
+            const logoBoxX = margin + 2;
+            const logoBoxY = 14;
+            doc.setFillColor(255, 255, 255);
+            doc.roundedRect(logoBoxX, logoBoxY, logoBoxWidth, logoBoxHeight, 2, 2, 'F');
             const ratio = imageProps && imageProps.width && imageProps.height
-                ? Math.min(maxLogoWidth / imageProps.width, maxLogoHeight / imageProps.height)
+                ? Math.min(logoBoxWidth / imageProps.width, logoBoxHeight / imageProps.height)
                 : 1;
-            const logoWidth = imageProps && imageProps.width ? Math.max(10, imageProps.width * ratio) : maxLogoWidth;
-            const logoHeight = imageProps && imageProps.height ? Math.max(10, imageProps.height * ratio) : maxLogoHeight;
-            const logoX = margin + 2;
-            const logoY = 12 + ((26 - logoHeight) / 2);
+            const logoWidth = imageProps && imageProps.width ? Math.max(8, imageProps.width * ratio) : logoBoxWidth;
+            const logoHeight = imageProps && imageProps.height ? Math.max(8, imageProps.height * ratio) : logoBoxHeight;
+            const logoX = logoBoxX + ((logoBoxWidth - logoWidth) / 2);
+            const logoY = logoBoxY + ((logoBoxHeight - logoHeight) / 2);
             doc.addImage(extraSettings.logoDataUrl, imageType, logoX, logoY, logoWidth, logoHeight);
         } catch (e) {}
     }
@@ -3178,12 +3207,11 @@ window.srcGeneratePDFv6 = function(options = {}) {
     if(typeof doc.autoTable === 'function') {
         doc.autoTable({
             startY: currentY,
-            head: [['Pos.', 'Leistungsbeschreibung / Projekt', 'Menge', 'Einzel', 'Gesamt']],
+            head: [['Pos.', 'Leistungsbeschreibung / Projekt', 'Einzel', 'Gesamt']],
             body: [[
                 '1',
                 pricingMode === 'range' ? `${description}
 Preisrahmen: ${rangeText}` : description,
-                '1',
                 srcFormatCurrency(priceValue),
                 pricingMode === 'range' ? rangeText : srcFormatCurrency(priceValue)
             ]],
@@ -3215,25 +3243,32 @@ Preisrahmen: ${rangeText}` : description,
     doc.text(doc.splitTextToSize(rightsLines.join('\n'), pageWidth - (margin * 2)), margin, currentY);
     currentY += rightsLines.length * 4 + 6;
 
-    const summaryX = pageWidth - margin - 78;
-    let summaryY = currentY;
+    const summaryWidth = 82;
+    const summaryX = pageWidth - margin - summaryWidth;
+    const summaryHeight = 28;
+    const summaryPadding = 4;
+    const summaryContentX = summaryX + summaryPadding;
+    let summaryY = currentY + 4;
     const subtotal = pricingMode === 'package' ? priceValue : result.final[1];
     const totalLabel = pricingMode === 'range' ? rangeText : srcFormatCurrency(subtotal);
+    doc.setFillColor(248, 250, 252);
+    doc.setDrawColor(203, 213, 225);
+    doc.roundedRect(summaryX, currentY, summaryWidth, summaryHeight, 3, 3, 'FD');
     doc.setFontSize(10);
     doc.setTextColor(15, 23, 42);
-    doc.text('Preisübersicht', summaryX, summaryY);
-    summaryY += 5;
+    doc.text('Preisübersicht', summaryContentX, summaryY);
+    summaryY += 6;
     doc.setFontSize(8.5);
     doc.setTextColor(71, 85, 105);
-    doc.text('Netto', summaryX, summaryY);
-    doc.text(totalLabel, pageWidth - margin, summaryY, { align: 'right' });
+    doc.text('Netto', summaryContentX, summaryY);
+    doc.text(totalLabel, pageWidth - margin - summaryPadding, summaryY, { align: 'right' });
     summaryY += 4;
-    doc.text(i18n.assumptions.includes('MwSt') ? 'zzgl. MwSt.' : 'MwSt.-Hinweis laut Kalkulation', summaryX, summaryY);
+    doc.text(i18n.assumptions.includes('MwSt') ? 'zzgl. MwSt.' : 'MwSt.-Hinweis laut Kalkulation', summaryContentX, summaryY);
     summaryY += 4;
-    doc.text('Brutto', summaryX, summaryY);
-    doc.text('laut finaler Rechnungsstellung', pageWidth - margin, summaryY, { align: 'right' });
+    doc.text('Brutto', summaryContentX, summaryY);
+    doc.text('laut finaler Rechnungsstellung', pageWidth - margin - summaryPadding, summaryY, { align: 'right' });
 
-    currentY = Math.max(currentY, summaryY + 6);
+    currentY = Math.max(currentY, summaryY + 8);
 
     if(includeBreakdown && currentBreakdownData) {
         doc.setFontSize(9);
@@ -3260,11 +3295,16 @@ Preisrahmen: ${rangeText}` : description,
 
     const paymentText = extraSettings.paymentTerms || (lang === 'en' ? 'Payment terms: 14 days net.' : 'Zahlungsbedingungen: 14 Tage netto.');
     const disclaimerText = extraSettings.disclaimer || (lang === 'en' ? 'This offer is non-binding until written acceptance.' : 'Dieses Angebot ist freibleibend bis zur schriftlichen Beauftragung.');
-    doc.setFontSize(8.5);
+    const totalPagesExp = '{total_pages_count_string}';
+    const legalStartY = Math.min(pageHeight - 24, currentY + 20);
+    doc.setFontSize(8);
     doc.setTextColor(71, 85, 105);
-    doc.text(doc.splitTextToSize(paymentText, pageWidth - (margin * 2)), margin, pageHeight - 18);
-    doc.text(doc.splitTextToSize(disclaimerText, pageWidth - (margin * 2)), margin, pageHeight - 13);
-    doc.text(`Seite 1`, pageWidth - margin, pageHeight - 8, { align: 'right' });
+    doc.text(doc.splitTextToSize(paymentText, pageWidth - (margin * 2)), margin, legalStartY);
+    doc.text(doc.splitTextToSize(disclaimerText, pageWidth - (margin * 2)), margin, legalStartY + 5);
+    doc.text(`Seite ${doc.internal.getNumberOfPages()} von ${totalPagesExp}`, pageWidth - margin, pageHeight - 8, { align: 'right' });
+    if(typeof doc.putTotalPages === 'function') {
+        doc.putTotalPages(totalPagesExp);
+    }
 
     doc.save('Gagen_Angebot.pdf');
 }
