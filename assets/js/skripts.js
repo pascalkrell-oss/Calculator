@@ -253,6 +253,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if(exportStartBtn) {
         exportStartBtn.addEventListener('click', () => srcHandleExportStart());
     }
+    const mailCopyBtn = document.getElementById('src-mailtext-copy');
+    if(mailCopyBtn) {
+        mailCopyBtn.addEventListener('click', async () => {
+            const text = document.getElementById('src-mailtext-textarea')?.value || '';
+            const copied = await srcCopyToClipboard(text);
+            srcSetMailtextOutput(text, copied ? 'Mailtext wurde kopiert.' : 'Kopieren fehlgeschlagen. Bitte manuell markieren.');
+        });
+    }
     srcInitExportLogoSelect();
 
     const applyEstimateBtn = document.getElementById('src-apply-estimate');
@@ -811,6 +819,57 @@ const updateLicenseMetaText = function(state = null) {
     }
     target.textContent = `Gebiet: ${srcGetRegionLabel(sourceState.region)} · Laufzeit: ${durationText}`;
 }
+
+
+const srcRenderLicenseSidebar = function(state, result = null) {
+    const licBox = document.getElementById('src-license-text');
+    const licSection = document.getElementById('src-license-section');
+    if(!licBox) return;
+
+    const projectName = state.layoutMode ? 'Layout / Pitch' : srcGetProjectName(state.projectKey);
+    const linkedProjectNames = Array.from(new Set((state.linkedProjects || []).map(srcGetProjectName).filter(Boolean)));
+    const projectLabel = linkedProjectNames.length ? `${projectName} (+ ${linkedProjectNames.join(', ')})` : projectName;
+    const regionLabel = srcGetRegionLabel(state.region);
+    const durationLabel = srcGetDurationLabel(state.duration);
+    const guidancePlain = String((result && result.guidanceText) || '')
+        .replace(/<[^>]*>/g, ' ')
+        .replace(/gemäß\s+VDS\/Gagenkompass/gi, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+    const licenseMatch = guidancePlain.match(/Lizenzen?\s*:\s*([^\.\n]+)/i);
+    let licenseLabel = licenseMatch ? licenseMatch[1] : guidancePlain;
+    licenseLabel = licenseLabel
+        .replace(/\bim\s+gewählten\s+Gebiet\b/gi, '')
+        .replace(/\b(Laufzeit|Gebiet)\s*:\s*.*$/gi, '')
+        .replace(/\b(regional|national|dach|weltweit|unlimited|1\s*jahr|2\s*jahre|3\s*jahre)\b/gi, '')
+        .replace(/^[\s:;,.\-–—]+|[\s:;,.\-–—]+$/g, '')
+        .trim();
+    if(!licenseLabel) {
+        licenseLabel = projectLabel || 'laut Auswahl';
+    }
+
+    const addonEntries = srcBuildAddonSummaryEntries(state, state.projectKey);
+    const extrasHtml = addonEntries.length
+        ? `<li><strong>Zusatzlizenzen:</strong> ${addonEntries.map(entry => {
+            const amount = Number.isFinite(entry.amount) ? ` (${srcFormatCurrency(entry.amount)})` : '';
+            return `${entry.name}${amount}`;
+        }).join(' · ')}</li>`
+        : '';
+
+    licBox.innerHTML = `
+        <ul class="src-license-list">
+            <li><strong>Projekt:</strong> ${projectLabel || '—'}</li>
+            <li><strong>Lizenz:</strong> ${licenseLabel}</li>
+            <li><strong>Gebiet:</strong> ${regionLabel}</li>
+            <li><strong>Laufzeit:</strong> ${durationLabel}</li>
+            ${extrasHtml}
+        </ul>
+    `;
+    licBox.classList.remove('hidden');
+    licBox.style.display = '';
+    if(licSection) srcToggleCollapse(licSection, true);
+}
+
 
 const srcUpdateAnimatedValue = function(target, nextText) {
     if(!target) return;
@@ -1757,6 +1816,7 @@ window.srcOpenExportModal = function(options = {}) {
     srcSyncExportLogoSelectText(window.srcOfferLogoFile ? (window.srcOfferLogoFile.name || '') : '');
     srcSetExportLogoError('');
     srcPrefillExportCustomFee();
+    srcSetMailtextOutput('', '');
     if(!exportModalKeyHandler) {
         exportModalKeyHandler = (event) => {
             if(event.key === 'Escape') {
@@ -1779,16 +1839,34 @@ const srcCloseExportModal = function() {
 
 const srcCopyToClipboard = async function(text) {
     if(navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(text);
-        return true;
+        try {
+            await navigator.clipboard.writeText(text);
+            return true;
+        } catch (error) {}
     }
     const textarea = document.createElement('textarea');
     textarea.value = text;
     document.body.appendChild(textarea);
+    textarea.focus();
     textarea.select();
-    document.execCommand('copy');
+    let copied = false;
+    try {
+        copied = document.execCommand('copy');
+    } catch (error) {
+        copied = false;
+    }
     document.body.removeChild(textarea);
-    return true;
+    return copied;
+}
+
+const srcSetMailtextOutput = function(text = '', statusText = '') {
+    const output = document.getElementById('src-mailtext-output');
+    const textarea = document.getElementById('src-mailtext-textarea');
+    const status = document.getElementById('src-mailtext-status');
+    if(!output || !textarea) return;
+    textarea.value = text || '';
+    output.hidden = !text;
+    if(status) status.textContent = statusText || '';
 }
 
 const srcReadLogoAsDataUrl = async function(file) {
@@ -2105,11 +2183,16 @@ const srcHandleExportStart = async function() {
     }
     if(includeEmail) {
         const emailText = srcBuildOfferEmailText({ lang, pricingMode, selectedPackage, includeBreakdown, includeRisk, extraSettings });
-        await srcCopyToClipboard(emailText);
+        const copied = await srcCopyToClipboard(emailText);
+        srcSetMailtextOutput(emailText, copied ? 'Mailtext wurde in die Zwischenablage kopiert.' : 'Mailtext anzeigen – bitte per Button kopieren.');
+    } else {
+        srcSetMailtextOutput('', '');
     }
     srcResetExportLogoInput();
     srcSetExportLogoError('');
-    srcCloseExportModal();
+    if(!includeEmail) {
+        srcCloseExportModal();
+    }
 }
 
 const srcHandleExportTileToggle = function(tile) {
@@ -3294,41 +3377,7 @@ window.srcCalc = function() {
     srcRenderPriceDetails(info, state, result);
     
     dynamicLicenseText = licText;
-    const regionLabel = ({regional:'Regional', national:'National', dach:'DACH', world:'Weltweit'})[state.region] || '—';
-    const durationLabel = ({1:'1 Jahr', 2:'2 Jahre', 3:'3 Jahre', 4:'Unlimited'})[state.duration] || '—';
-    const projectName = state.layoutMode ? 'Layout / Pitch' : srcGetProjectName(state.projectKey);
-    const linkedProjectNames = Array.from(new Set((state.linkedProjects || []).map(srcGetProjectName).filter(Boolean)));
-    const projectLabel = linkedProjectNames.length ? `${projectName} (+ ${linkedProjectNames.join(', ')})` : projectName;
-    const guidancePlain = (result.guidanceText || dynamicLicenseText || '')
-        .replace(/<[^>]*>/g, ' ')
-        .replace(/gemäß\s+VDS\/Gagenkompass/gi, '')
-        .replace(/\s+/g, ' ')
-        .trim();
-    const licenseMatch = guidancePlain.match(/Lizenzen?\s*:\s*([^\.\n]+)/i);
-    let licenseLabel = licenseMatch ? licenseMatch[1] : guidancePlain;
-    licenseLabel = licenseLabel
-        .replace(/\bim\s+gewählten\s+Gebiet\b/gi, '')
-        .replace(/\b(Laufzeit|Gebiet)\s*:\s*.*$/gi, '')
-        .replace(/\b(regional|national|dach|weltweit|unlimited|1\s*jahr|2\s*jahre|3\s*jahre)\b/gi, '')
-        .replace(/^[\s:;,.\-–—]+|[\s:;,.\-–—]+$/g, '')
-        .trim();
-    if(!licenseLabel) {
-        licenseLabel = 'laut Auswahl';
-    }
-    const licenseHtml = `
-        <ul class="src-license-list">
-            <li><strong>Projekt:</strong> ${projectLabel || '—'}</li>
-            <li><strong>Lizenz:</strong> ${licenseLabel}</li>
-            <li><strong>Gebiet:</strong> ${regionLabel}</li>
-            <li><strong>Laufzeit:</strong> ${durationLabel}</li>
-        </ul>
-    `;
-    const licBox = document.getElementById('src-license-text');
-    const licSection = document.getElementById('src-license-section');
-    licBox.innerHTML = licenseHtml;
-    licBox.classList.remove('hidden');
-    licBox.style.display = '';
-    if(licSection) srcToggleCollapse(licSection, true);
+    srcRenderLicenseSidebar(state, result);
 
     currentResult = { low: final[0], mid: final[1], high: final[2] };
     window.srcBreakdown = info;
@@ -3385,26 +3434,32 @@ window.srcGeneratePDFv6 = function(options = {}) {
     }
 
     const isLightTheme = offerTheme === 'light';
-    const headerBg = isLightTheme ? [255, 255, 255] : [15, 20, 26];
-    const headerBorder = isLightTheme ? [203, 213, 225] : [15, 20, 26];
-    const headerText = isLightTheme ? [15, 23, 42] : [255, 255, 255];
     const summaryBg = isLightTheme ? [255, 255, 255] : [241, 245, 249];
-    doc.setFillColor(...headerBg);
-    doc.setDrawColor(...headerBorder);
-    const rightInset = 14;
-    doc.roundedRect(margin, 12, pageWidth - (margin * 2), 26, 3, 3, isLightTheme ? 'FD' : 'F');
+    const rightInset = 8;
+    const headerY = 12;
+    const headerHeight = 26;
+    const headerGap = 4;
+    const logoColWidth = 62;
+    const rightHeaderX = margin + logoColWidth + headerGap;
+    const rightHeaderWidth = pageWidth - margin - rightHeaderX;
+
+    doc.setFillColor(255, 255, 255);
+    doc.setDrawColor(203, 213, 225);
+    doc.roundedRect(margin, headerY, logoColWidth, headerHeight, 3, 3, 'FD');
+    doc.setFillColor(15, 20, 26);
+    doc.setDrawColor(15, 20, 26);
+    doc.roundedRect(rightHeaderX, headerY, rightHeaderWidth, headerHeight, 3, 3, 'F');
+
     if(extraSettings.logoDataUrl) {
         try {
             const mimeMatch = String(extraSettings.logoDataUrl).match(/^data:(image\/(png|jpeg|jpg));/i);
             const imageTypeRaw = mimeMatch && mimeMatch[2] ? mimeMatch[2].toUpperCase() : 'PNG';
             const imageType = imageTypeRaw === 'JPG' ? 'JPEG' : imageTypeRaw;
             const imageProps = doc.getImageProperties(extraSettings.logoDataUrl);
-            const logoBoxWidth = 58;
-            const logoBoxHeight = 22;
+            const logoBoxWidth = logoColWidth - 6;
+            const logoBoxHeight = headerHeight - 4;
             const logoBoxX = margin + 3;
-            const logoBoxY = 14;
-            doc.setFillColor(255, 255, 255);
-            doc.roundedRect(logoBoxX, logoBoxY, logoBoxWidth, logoBoxHeight, 2, 2, 'F');
+            const logoBoxY = headerY + 2;
             doc.saveGraphicsState();
             doc.rect(logoBoxX, logoBoxY, logoBoxWidth, logoBoxHeight, 'clip');
             const ratio = imageProps && imageProps.width && imageProps.height
@@ -3418,8 +3473,9 @@ window.srcGeneratePDFv6 = function(options = {}) {
             doc.restoreGraphicsState();
         } catch (e) {}
     }
+
     doc.setFontSize(16);
-    doc.setTextColor(...headerText);
+    doc.setTextColor(255, 255, 255);
     const headerRightX = pageWidth - margin - rightInset;
     doc.text(lang === 'en' ? 'Offer' : 'Angebot', headerRightX, 22, { align: 'right' });
     doc.setFontSize(9);
@@ -3463,7 +3519,7 @@ window.srcGeneratePDFv6 = function(options = {}) {
     doc.setFontSize(9);
     doc.setTextColor(71, 85, 105);
     doc.text(doc.splitTextToSize(i18n.intro, pageWidth - (margin * 2)), margin, currentY);
-    currentY += 10;
+    currentY += 14;
 
     const scopeText = extraSettings.scope && extraSettings.scope.length ? `Lieferumfang: ${extraSettings.scope.join(', ')}` : '';
     const description = [
@@ -3475,11 +3531,10 @@ window.srcGeneratePDFv6 = function(options = {}) {
     if(typeof doc.autoTable === 'function') {
         doc.autoTable({
             startY: currentY,
-            head: [['Pos.', 'Leistungsbeschreibung / Projekt', 'Einzel', 'Gesamt']],
+            head: [['Pos.', 'Leistungsbeschreibung / Projekt', 'Gesamt']],
             body: [[
                 '1',
                 description,
-                srcFormatCurrency(priceValue),
                 srcFormatCurrency(priceValue)
             ]],
             theme: 'grid',
@@ -3509,12 +3564,6 @@ window.srcGeneratePDFv6 = function(options = {}) {
         });
         rightsLines.push('Zusatzlizenzen.');
     }
-    const cleanLicenseText = srcStripAddonLevelLabel(srcStripHTML(dynamicLicenseText))
-        .replace(/gemäß\s+VDS\/Gagenkompass/gi, '')
-        .replace(/Zusatzlizenz(en)?\s*:/gi, '')
-        .replace(/\s+/g, ' ')
-        .trim();
-    if(cleanLicenseText) rightsLines.push(cleanLicenseText);
     doc.setFontSize(8.5);
     doc.setTextColor(71, 85, 105);
     doc.text(doc.splitTextToSize(rightsLines.join('\n'), pageWidth - (margin * 2)), margin, currentY);
@@ -3522,8 +3571,8 @@ window.srcGeneratePDFv6 = function(options = {}) {
 
     const summaryWidth = 82;
     const summaryX = pageWidth - margin - summaryWidth;
-    const summaryHeight = 28;
-    const summaryPadding = 4;
+    const summaryHeight = 34;
+    const summaryPadding = 6;
     const summaryContentX = summaryX + summaryPadding;
     let summaryY = currentY + 4;
     const subtotal = priceValue;
@@ -3538,8 +3587,11 @@ window.srcGeneratePDFv6 = function(options = {}) {
     doc.setFontSize(8.5);
     doc.setTextColor(71, 85, 105);
     doc.text('Netto', summaryContentX, summaryY);
+    summaryY += 4.5;
+    doc.setFontSize(12);
+    doc.setTextColor(15, 23, 42);
     doc.text(totalLabel, pageWidth - margin - summaryPadding, summaryY, { align: 'right' });
-    summaryY += 4;
+    summaryY += 4.5;
     doc.text(i18n.assumptions.includes('MwSt') ? 'zzgl. MwSt.' : 'MwSt.-Hinweis laut Kalkulation', summaryContentX, summaryY);
     summaryY += 4;
     doc.text('Brutto', summaryContentX, summaryY);
@@ -3579,8 +3631,8 @@ window.srcGeneratePDFv6 = function(options = {}) {
     const footerLeftWidth = pageWidth - (margin * 2) - 62;
     doc.text(doc.splitTextToSize(paymentText, footerLeftWidth), margin, legalStartY);
     doc.text(doc.splitTextToSize(disclaimerText, footerLeftWidth), margin, legalStartY + 5);
-    doc.text(doc.splitTextToSize('Sprecherpreise kalkuliert auf Grundlage des VDS Gagenkompass 2025.', footerLeftWidth), margin, legalStartY + 10);
-    doc.text(`SEITE ${doc.internal.getNumberOfPages()}/${totalPagesExp}`, pageWidth - margin - rightInset, pageHeight - 8, { align: 'right' });
+    doc.text('Sprecherpreise kalkuliert auf Grundlage des VDS Gagenkompass 2025.', margin, pageHeight - 8);
+    doc.text(`Seite ${doc.internal.getNumberOfPages()} von ${totalPagesExp}`, pageWidth / 2, pageHeight - 8, { align: 'center' });
     if(typeof doc.putTotalPages === 'function') {
         doc.putTotalPages(totalPagesExp);
     }

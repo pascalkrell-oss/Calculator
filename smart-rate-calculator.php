@@ -869,6 +869,11 @@ function src_shortcode_output_v7() {
                 <button class="src-modal__close" type="button" aria-label="Schließen" data-modal-close>×</button>
             </div>
 
+            <div class="src-range-box" id="src-export-range-box">
+                <div class="src-range-box__title">Ermittelte Range</div>
+                <div id="src-export-range-display" class="src-export-range-display">Von — bis —</div>
+            </div>
+
             <div class="src-modal__body">
                 <div class="src-modal__grid">
                     <button type="button" class="src-opt-tile is-on" data-opt="pdf" aria-pressed="true">
@@ -974,10 +979,6 @@ function src_shortcode_output_v7() {
                                     <input type="text" id="src-export-payment" class="src-input-text" placeholder="Zahlungsfrist (z.B. 14 Tage)">
                                     <small class="src-export-helper">Zahlungsfrist: Anzahl Tage bis Zahlung fällig.</small>
                                 </label>
-                                <div class="src-export-inline-field src-export-range-field">
-                                    <span>Ermittelte Range</span>
-                                    <div id="src-export-range-display" class="src-export-range-display">Von — bis —</div>
-                                </div>
                                 <label class="src-export-inline-field" for="src-export-custom-fee">Deine Gage (innerhalb der Range)
                                     <input type="text" id="src-export-custom-fee" class="src-input-text" placeholder="z.B. 1.250,00">
                                     <small id="src-export-custom-fee-hint" class="src-export-helper"></small>
@@ -1006,6 +1007,15 @@ function src_shortcode_output_v7() {
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <div id="src-mailtext-output" class="src-mailtext-output" hidden>
+                <label class="src-export-inline-field" for="src-mailtext-textarea">Mailtext</label>
+                <textarea id="src-mailtext-textarea" class="src-input-text" rows="8" readonly></textarea>
+                <div class="src-mailtext-actions">
+                    <button type="button" class="src-btn src-btn--ghost" id="src-mailtext-copy">In Zwischenablage kopieren</button>
+                    <span id="src-mailtext-status" class="src-export-helper" aria-live="polite"></span>
                 </div>
             </div>
 
