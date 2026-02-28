@@ -856,10 +856,10 @@ function src_shortcode_output_v7() {
     <div id="src-tooltip-fixed"></div>
     <div id="src-export-modal" class="src-modal-overlay" aria-hidden="true">
         <div class="src-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="srcModalTitle">
-            <div class="src-modal__head">
+            <div class="src-modal__head src-export-modal__head">
                 <div>
                     <div class="src-modal__title" id="srcModalTitle">Angebot exportieren</div>
-                    <div class="src-modal__subtitle">Wie soll dein Angebot erstellt werden?</div>
+                    <div class="src-modal__subtitle">Wie soll Dein Angebot erstellt werden?</div>
                 </div>
                 <button class="src-modal__close" type="button" aria-label="Schließen" data-modal-close>×</button>
             </div>
@@ -964,9 +964,21 @@ function src_shortcode_output_v7() {
                         <div class="src-opt-tile__panel">
                             <div class="src-opt-panel-title">Optionale Felder</div>
                             <div class="src-modal-grid">
+                                <input type="text" id="src-export-subject" class="src-input-text" placeholder="Angebotsbetreff (editierbar)">
+                                <input type="text" id="src-export-customer-name" class="src-input-text" placeholder="Kund*innenname (editierbar)">
+                                <input type="text" id="src-export-customer-address" class="src-input-text" placeholder="Kund*innenadresse (optional)">
+                                <input type="text" id="src-export-provider-name" class="src-input-text" placeholder="Eigene Firma / Name (editierbar)">
+                                <input type="text" id="src-export-provider-address" class="src-input-text" placeholder="Eigene Adresse (editierbar)">
+                                <input type="text" id="src-export-provider-contact" class="src-input-text" placeholder="Eigene Kontaktinfos (E-Mail / Telefon)">
                                 <input type="text" id="src-export-projectname" class="src-input-text" placeholder="Projektname (optional)">
                                 <input type="text" id="src-export-offer-id" class="src-input-text" placeholder="Angebotsnummer (optional)">
+                                <input type="text" id="src-export-date" class="src-input-text" placeholder="Angebotsdatum (TT.MM.JJJJ)">
                                 <input type="text" id="src-export-validity" class="src-input-text" placeholder="Gültigkeit (z.B. 14 Tage)">
+                                <input type="text" id="src-export-payment" class="src-input-text" placeholder="Zahlungsbedingungen (optional)">
+                                <input type="text" id="src-export-disclaimer" class="src-input-text" placeholder="Rechtlicher Hinweis (optional)">
+                                <label class="src-export-logo-field">Logo für PDF-Export (nur temporär)
+                                    <input type="file" id="src-export-logo" class="src-input-text" accept="image/png,image/jpeg,image/webp">
+                                </label>
                             </div>
                             <div class="src-opt-panel-title src-opt-panel-title--small">Lieferumfang (Text)</div>
                             <div class="src-opt-panel-group src-modal-scope">
