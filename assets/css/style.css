@@ -3367,38 +3367,51 @@ body.src-tutorial-active #src-tutorial-panel:not(.src-tutorial-hidden) {
     height: 1px;
 }
 
-.src-export-logo-select {
-    height: 46px;
+.src-export-logo-dropzone {
+    min-height: 74px;
     border-radius: 12px;
-    border: 1px solid var(--src-border-light);
+    border: 1px dashed #94a3b8;
     background: #fff;
-    font-size: 14px;
-    font-weight: 500;
     color: #0f172a;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    padding: 0 14px;
+    padding: 12px 14px;
     cursor: pointer;
-    text-align: left;
 }
 
-.src-export-logo-select i {
-    color: #64748b;
-    font-size: 12px;
+.src-export-logo-dropzone.is-dragover {
+    border-color: var(--src-primary);
+    background: #eff6ff;
 }
 
-.src-export-logo-select span {
+.src-export-logo-dropzone.is-selected {
+    border-style: solid;
+    border-color: #0ea5e9;
+}
+
+.src-export-logo-dropzone span {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    font-size: 14px;
+    font-weight: 500;
 }
 
-.src-export-logo-select:focus {
+.src-export-logo-dropzone:focus {
     border-color: var(--src-primary);
     outline: none;
     box-shadow: 0 0 0 4px var(--src-focus);
+}
+
+.src-export-logo-remove {
+    border: 1px solid var(--src-border-light);
+    border-radius: 999px;
+    background: #fff;
+    color: #334155;
+    font-size: 11px;
+    padding: 4px 10px;
 }
 .src-export-select {
     height: 46px;

@@ -978,8 +978,13 @@ function src_shortcode_output_v7() {
                                 <input type="text" id="src-export-projectname" class="src-input-text" placeholder="Projektname (optional)">
                                 <input type="text" id="src-export-offer-id" class="src-input-text" placeholder="Angebotsnummer (optional)">
                                 <input type="text" id="src-export-date" class="src-input-text" placeholder="Angebotsdatum (TT.MM.JJJJ)">
-                                <input type="text" id="src-export-validity" class="src-input-text" placeholder="Gültigkeit (z.B. 14 Tage)">
-                                <label class="src-export-inline-field" for="src-export-payment">Zahlungsfrist
+                                <label class="src-export-inline-field" for="src-export-theme">Angebots-Theme
+                                    <select id="src-export-theme" class="src-input-text src-export-select">
+                                        <option value="dark">Dunkel</option>
+                                        <option value="light">Hell</option>
+                                    </select>
+                                </label>
+                                                                <label class="src-export-inline-field" for="src-export-payment">Zahlungsfrist
                                     <input type="text" id="src-export-payment" class="src-input-text" placeholder="Zahlungsfrist (z.B. 14 Tage)">
                                     <small class="src-export-helper">Zahlungsfrist: Anzahl Tage bis Zahlung fällig.</small>
                                 </label>
@@ -992,11 +997,11 @@ function src_shortcode_output_v7() {
                                     </select>
                                 </label>
                                 <label class="src-export-logo-field">Logo für PDF-Export (nur temporär)
-                                    <input type="file" id="src-export-logo" class="src-input-text src-export-logo-input" accept="image/png,image/jpeg">
-                                    <button type="button" class="src-export-logo-select" id="src-export-logo-select" aria-controls="src-export-logo" aria-label="Logo auswählen">
-                                        <span id="src-export-logo-name">Logo auswählen…</span>
-                                        <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
-                                    </button>
+                                    <input type="file" id="src-export-logo" class="src-input-text src-export-logo-input" accept="image/png,image/jpeg,image/webp">
+                                    <div id="src-export-logo-dropzone" class="src-export-logo-dropzone" role="button" tabindex="0" aria-controls="src-export-logo" aria-label="Logo hochladen">
+                                        <span id="src-export-logo-name">Logo hochladen (klicken oder Datei hierher ziehen)</span>
+                                        <button type="button" id="src-export-logo-remove" class="src-export-logo-remove">Entfernen</button>
+                                    </div>
                                 </label>
                             </div>
                             <div class="src-opt-panel-title src-opt-panel-title--small">Lieferumfang (Text)</div>
