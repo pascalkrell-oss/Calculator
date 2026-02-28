@@ -997,7 +997,7 @@ function src_shortcode_output_v7() {
                                     </select>
                                 </label>
                                 <label class="src-export-logo-field">Logo für PDF-Export (nur temporär)
-                                    <input type="file" id="src-export-logo" class="src-input-text src-export-logo-input" accept="image/png,image/jpeg,image/webp">
+                                    <input type="file" id="src-export-logo" class="src-input-text src-export-logo-input" accept="image/png,image/jpeg">
                                     <div id="src-export-logo-dropzone" class="src-export-logo-dropzone" role="button" tabindex="0" aria-controls="src-export-logo" aria-label="Logo hochladen">
                                         <span id="src-export-logo-name">Logo hochladen (klicken oder Datei hierher ziehen)</span>
                                         <button type="button" id="src-export-logo-remove" class="src-export-logo-remove">Entfernen</button>
