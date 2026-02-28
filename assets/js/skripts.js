@@ -36,8 +36,16 @@ const srcGetFxRate = function(currencyCode) {
     return (Number.isFinite(rate) && rate > 0) ? rate : 1;
 }
 
+const srcIsUsd = function() {
+    return srcGetCurrencyCode() === 'USD';
+}
+
+const srcGetCurrencyPrefix = function() {
+    return srcIsUsd() ? '$' : '';
+}
+
 const srcGetCurrencySuffix = function() {
-    if(window.srcCurrencyCode === 'USD') return ' $';
+    if(srcIsUsd()) return '';
     if(window.srcCurrencyCode === 'CHF') return ' CHF';
     return ' €';
 }
@@ -66,6 +74,10 @@ const srcFormatRange = function(min, max) {
     const numberFormatter = srcGetNumberFormatter();
     const convertedMin = Math.round(srcConvertFromEUR(min));
     const convertedMax = Math.round(srcConvertFromEUR(max));
+    if(srcIsUsd()) {
+        const prefix = srcGetCurrencyPrefix();
+        return `${prefix}${numberFormatter.format(convertedMin)} – ${prefix}${numberFormatter.format(convertedMax)}`;
+    }
     return `${numberFormatter.format(convertedMin)} – ${numberFormatter.format(convertedMax)}${srcGetCurrencySuffix()}`;
 }
 
@@ -485,7 +497,10 @@ window.srcSyncOptionRowStates = function() {
 const srcFormatMoney = function(amountEur) {
     if(!Number.isFinite(amountEur)) return '–';
     const converted = srcConvertFromEUR(amountEur);
-    return `${srcGetNumberFormatter().format(Math.round(converted))}${srcGetCurrencySuffix()}`;
+    const formatted = srcGetNumberFormatter().format(Math.round(converted));
+    const prefix = srcGetCurrencyPrefix();
+    const suffix = srcGetCurrencySuffix();
+    return prefix ? `${prefix}${formatted}` : `${formatted}${suffix}`;
 }
 
 const srcFormatCurrency = srcFormatMoney;
@@ -500,9 +515,12 @@ const srcFormatSignedCurrency = function(value) {
     if(!Number.isFinite(value)) return '';
     const converted = srcConvertFromEUR(value);
     const rounded = Math.round(converted);
-    if(rounded === 0) return `${srcGetNumberFormatter().format(0)}${srcGetCurrencySuffix()}`;
+    if(rounded === 0) return srcFormatMoney(0);
     const sign = rounded > 0 ? '+' : '−';
-    return `${sign}${srcGetNumberFormatter().format(Math.abs(rounded))}${srcGetCurrencySuffix()}`;
+    const formatted = srcGetNumberFormatter().format(Math.abs(rounded));
+    const prefix = srcGetCurrencyPrefix();
+    const suffix = srcGetCurrencySuffix();
+    return prefix ? `${sign}${prefix}${formatted}` : `${sign}${formatted}${suffix}`;
 }
 
 const srcStripHTML = function(str) {
@@ -951,7 +969,7 @@ const srcRenderSocialBadges = function() {
     ];
     wrap.style.display = '';
     wrap.innerHTML = items.map((it) => {
-        const label = srcFormatMoneyNumberOnly(it.v) + srcGetCurrencySuffix();
+        const label = srcFormatMoney(it.v);
         const active = (window.srcLicenseSocialLevel === it.k) ? ' is-active' : '';
         return `<button type="button" class="src-social-badge${active}" data-level="${it.k}">${label}</button>`;
     }).join('');
@@ -3209,9 +3227,12 @@ function srcTutorialLiftAfterSpotlight(anchor) {
         window.__srcTutSpotListener = null;
     }
 
+    const pendingProps = new Set(['top', 'left', 'width', 'height', 'border-radius']);
     window.__srcTutSpotListener = (event) => {
         if (!event || event.target !== spotlight) return;
-        if (!['top', 'left', 'width', 'height'].includes(event.propertyName)) return;
+        if (!pendingProps.has(event.propertyName)) return;
+        pendingProps.delete(event.propertyName);
+        if (pendingProps.size > 0) return;
         spotlight.removeEventListener('transitionend', window.__srcTutSpotListener);
         window.__srcTutSpotListener = null;
         liftNow();
@@ -3224,7 +3245,7 @@ function srcTutorialLiftAfterSpotlight(anchor) {
             window.__srcTutSpotListener = null;
         }
         liftNow();
-    }, 260);
+    }, 320);
 }
 
 function srcTutorialApplyStep(step) {
@@ -3335,7 +3356,7 @@ function srcTutorialSetSpotlight(targetEl) {
         spotlight.style.borderRadius = '16px';
         return;
     }
-    const pad = 10;
+    const pad = 15;
     const edge = 8;
     const vw = window.innerWidth || document.documentElement.clientWidth || 0;
     const vh = window.innerHeight || document.documentElement.clientHeight || 0;
