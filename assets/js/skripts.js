@@ -3410,6 +3410,7 @@ window.srcGeneratePDFv6 = async function(options = {}) {
         console.error('SRC: jsPDF nicht verfügbar.');
         return;
     }
+
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ unit: 'mm', format: 'a4' });
     const lang = options.lang || 'de';
@@ -3419,7 +3420,6 @@ window.srcGeneratePDFv6 = async function(options = {}) {
     const includeBreakdown = Boolean(options.includeBreakdown);
     const includeRisk = Boolean(options.includeRisk);
     const extraSettings = options.extraSettings || {};
-    const offerTheme = extraSettings.offerTheme === 'light' ? 'light' : 'dark';
 
     const PAGE_W = doc.internal.pageSize.getWidth();
     const PAGE_H = doc.internal.pageSize.getHeight();
@@ -3427,9 +3427,21 @@ window.srcGeneratePDFv6 = async function(options = {}) {
     const MARGIN_R = 16;
     const MARGIN_T = 14;
     const MARGIN_B = 14;
+    const GRID = 2;
+    const LINE = 5;
+    const SP_2 = 2;
+    const SP_4 = 4;
+    const SP_6 = 6;
+    const SP_8 = 8;
+    const SP_12 = 12;
+    const BOX_PAD = 6;
     const GUTTER = 6;
     const CONTENT_W = PAGE_W - MARGIN_L - MARGIN_R;
-    const BOTTOM_LIMIT = PAGE_H - MARGIN_B - 14;
+    const FOOTER_Y = PAGE_H - 10;
+    const BOTTOM_LIMIT = FOOTER_Y - SP_8;
+    const totalPagesExp = '{total_pages_count_string}';
+    const footerText = 'Sprecherpreise kalkuliert auf Grundlage des VDS Gagenkompass 2025';
+
     let currentY = MARGIN_T;
 
     const state = srcGetStateFromUI();
@@ -3441,7 +3453,6 @@ window.srcGeneratePDFv6 = async function(options = {}) {
     const subjectText = extraSettings.offerSubject || i18n.subject;
 
     let priceValue = Number.isFinite(extraSettings.customFee) ? extraSettings.customFee : result.final[1];
-    let rangeText = srcFormatRange(result.final[0], result.final[2]);
     let packageLabel = '';
     if(pricingMode === 'package') {
         if(!packagesState) {
@@ -3452,36 +3463,47 @@ window.srcGeneratePDFv6 = async function(options = {}) {
         packageLabel = pkg.label;
     }
 
+    const alignToGrid = value => Math.ceil(value / GRID) * GRID;
     const wrapText = (text, maxWidth) => doc.splitTextToSize(String(text || ''), maxWidth);
-    const drawWrapped = (text, x, y, maxWidth, lineHeight = 4.2) => {
+    const drawWrapped = (text, x, y, maxWidth, lineHeight = LINE) => {
         const lines = wrapText(text, maxWidth);
         if(lines.length) doc.text(lines, x, y);
-        return lines.length * lineHeight;
+        return lines.length;
     };
-    const ensurePageSpace = (spaceNeeded = 8) => {
+    const ensurePageSpace = (spaceNeeded = SP_12) => {
         if(currentY + spaceNeeded <= BOTTOM_LIMIT) return;
         doc.addPage();
         currentY = MARGIN_T;
     };
-    const footerText = 'Sprecherpreise kalkuliert auf Grundlage des VDS Gagenkompass 2025';
-    const totalPagesExp = '{total_pages_count_string}';
 
-    const isLightTheme = offerTheme === 'light';
-    const headerY = MARGIN_T;
-    const headerHeight = 30;
-    const logoSlotW = 52;
-    const logoSlotX = MARGIN_L;
-    const logoSlotY = headerY;
-    const logoInnerPad = 3;
-    const metaBoxX = logoSlotX + logoSlotW + GUTTER;
-    const metaBoxW = PAGE_W - MARGIN_R - metaBoxX;
-    const metaInnerRight = 7;
+    const sectionTitle = (label) => {
+        ensurePageSpace(SP_12);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(12.5);
+        doc.setTextColor(15, 23, 42);
+        doc.text(label, MARGIN_L, currentY);
+        currentY = alignToGrid(currentY + SP_6);
+    };
 
-    doc.setFillColor(255, 255, 255);
-    doc.setDrawColor(214, 220, 230);
-    doc.roundedRect(logoSlotX, logoSlotY, logoSlotW, headerHeight, 3, 3, 'FD');
-    doc.setFillColor(15, 20, 26);
-    doc.roundedRect(metaBoxX, headerY, metaBoxW, headerHeight, 3, 3, 'F');
+    const metaLines = [
+        `${i18n.dateLabel}: ${offerDate}`,
+        `${i18n.offerNumberLabel}: ${extraSettings.offerId || '—'}`
+    ];
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10.5);
+    const metaTextW = Math.max(...metaLines.map(line => doc.getTextWidth(line)));
+    const metaBoxW = Math.min(72, Math.max(56, metaTextW + (BOX_PAD * 2)));
+    const headerH = 30;
+    const metaX = PAGE_W - MARGIN_R - metaBoxW;
+    const logoX = MARGIN_L;
+    const logoW = Math.max(46, metaX - GUTTER - logoX);
+
+    doc.setDrawColor(221, 226, 235);
+    doc.setLineWidth(0.2);
+    doc.roundedRect(logoX, currentY, logoW, headerH, 2, 2, 'S');
+    doc.setFillColor(17, 24, 39);
+    doc.roundedRect(metaX, currentY, metaBoxW, headerH, 2, 2, 'F');
 
     if(extraSettings.logoDataUrl) {
         try {
@@ -3497,241 +3519,341 @@ window.srcGeneratePDFv6 = async function(options = {}) {
                     img.src = logoDataUrl;
                 });
                 if(logoDims && logoDims.width && logoDims.height) {
-                    const boxW = logoSlotW - (logoInnerPad * 2);
-                    const boxH = headerHeight - (logoInnerPad * 2);
+                    const boxW = logoW - (SP_6 * 2);
+                    const boxH = headerH - (SP_6 * 2);
                     const scale = Math.min(boxW / logoDims.width, boxH / logoDims.height);
                     const drawW = logoDims.width * scale;
                     const drawH = logoDims.height * scale;
-                    const drawX = logoSlotX + logoInnerPad + ((boxW - drawW) / 2);
-                    const drawY = logoSlotY + logoInnerPad + ((boxH - drawH) / 2);
+                    const drawX = logoX + SP_6 + ((boxW - drawW) / 2);
+                    const drawY = currentY + SP_6 + ((boxH - drawH) / 2);
                     doc.addImage(logoDataUrl, imageType, drawX, drawY, drawW, drawH);
                 }
             }
         } catch (e) {}
     }
 
-    doc.setFontSize(16);
+    const metaRight = metaX + metaBoxW - BOX_PAD;
+    const metaCenterY = currentY + (headerH / 2);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(19);
     doc.setTextColor(255, 255, 255);
-    const headerRightX = metaBoxX + metaBoxW - metaInnerRight;
-    doc.text(lang === 'en' ? 'Offer' : 'Angebot', headerRightX, headerY + 9, { align: 'right' });
-    doc.setFontSize(9);
-    doc.text(`${i18n.dateLabel}: ${offerDate}`, headerRightX, headerY + 16, { align: 'right' });
-    doc.text(`${i18n.offerNumberLabel}: ${extraSettings.offerId || '—'}`, headerRightX, headerY + 22, { align: 'right' });
-    currentY = headerY + headerHeight + 8;
+    doc.text(lang === 'en' ? 'Offer' : 'Angebot', metaRight, metaCenterY - 4, { align: 'right' });
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10.5);
+    doc.text(metaLines[0], metaRight, metaCenterY + 2, { align: 'right' });
+    doc.text(metaLines[1], metaRight, metaCenterY + 7, { align: 'right' });
 
-    const providerLines = [
+    currentY = alignToGrid(currentY + headerH + SP_8);
+
+    const cardW = (CONTENT_W - GUTTER) / 2;
+    const cardTitle = lang === 'en' ? ['Sender', 'Recipient'] : ['Absender', 'Empfänger'];
+    const senderLines = [
         extraSettings.providerName || 'Eigene Firma / Name',
         extraSettings.providerAddress || 'Eigene Adresse',
         extraSettings.providerContact || 'Eigene Kontaktinfos'
-    ];
-    const customerLines = [
+    ].filter(Boolean);
+    const customerType = `${i18n.customerTypeLabel}: ${extraSettings.customerType === 'agency' ? i18n.customerTypeAgency : i18n.customerTypeDirect}`;
+    const recipientLines = [
         extraSettings.customerName || 'Kund*innenname',
         extraSettings.customerAddress || 'Kund*innenadresse',
-        `${i18n.customerTypeLabel}: ${extraSettings.customerType === 'agency' ? i18n.customerTypeAgency : i18n.customerTypeDirect}`
-    ];
+        customerType
+    ].filter(Boolean);
 
-    const drawAddressBlock = function(title, lines, x, y, width) {
-        const blockHeight = 34;
+    const senderWrapped = senderLines.flatMap(line => wrapText(line, cardW - (BOX_PAD * 2)));
+    const recipientWrapped = recipientLines.flatMap(line => wrapText(line, cardW - (BOX_PAD * 2)));
+    const cardContentLines = Math.max(senderWrapped.length, recipientWrapped.length, 4);
+    const cardH = alignToGrid((BOX_PAD * 2) + SP_4 + (cardContentLines * LINE));
+
+    const drawCard = (title, lines, x) => {
         doc.setDrawColor(226, 232, 240);
-        doc.setLineWidth(0.2);
-        doc.roundedRect(x, y, width, blockHeight, 2, 2, 'S');
-        doc.setFontSize(8);
+        doc.setFillColor(255, 255, 255);
+        doc.roundedRect(x, currentY, cardW, cardH, 2, 2, 'FD');
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9.8);
         doc.setTextColor(100, 116, 139);
-        doc.text(title, x + 3, y + 5.5);
-        doc.setFontSize(9.3);
+        doc.text(title, x + BOX_PAD, currentY + BOX_PAD);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10.8);
         doc.setTextColor(30, 41, 59);
-        const text = lines.filter(Boolean).join('\n');
-        drawWrapped(text, x + 3, y + 11, width - 6, 4.4);
+        const wrapped = lines.flatMap(line => wrapText(line, cardW - (BOX_PAD * 2)));
+        if(wrapped.length) {
+            doc.text(wrapped, x + BOX_PAD, currentY + BOX_PAD + SP_4);
+        }
     };
 
-    const blockWidth = (CONTENT_W - GUTTER) / 2;
-    drawAddressBlock(lang === 'en' ? 'Sender' : 'Absender', providerLines, MARGIN_L, currentY, blockWidth);
-    drawAddressBlock(lang === 'en' ? 'Recipient' : 'Empfänger', customerLines, MARGIN_L + blockWidth + GUTTER, currentY, blockWidth);
-    currentY += 42;
+    drawCard(cardTitle[0], senderLines, MARGIN_L);
+    drawCard(cardTitle[1], recipientLines, MARGIN_L + cardW + GUTTER);
+    currentY = alignToGrid(currentY + cardH + SP_8);
 
-    doc.setFontSize(13);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(12.5);
     doc.setTextColor(15, 23, 42);
     doc.text(`${i18n.subjectLabel}: ${subjectText}`, MARGIN_L, currentY);
-    currentY += 6.5;
-    doc.setFontSize(9);
-    doc.setTextColor(71, 85, 105);
-    currentY += drawWrapped(i18n.intro, MARGIN_L, currentY, CONTENT_W, 4.3);
-    currentY += 7;
+    currentY = alignToGrid(currentY + SP_6);
 
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10.8);
+    doc.setTextColor(51, 65, 85);
+    const introLines = drawWrapped(i18n.intro, MARGIN_L, currentY, CONTENT_W, LINE);
+    currentY = alignToGrid(currentY + (introLines * LINE) + SP_8);
+
+    ensurePageSpace(30);
     const scopeText = extraSettings.scope && extraSettings.scope.length ? `Lieferumfang: ${extraSettings.scope.join(', ')}` : '';
-    const description = [
-        extraSettings.projectName ? `Projekt: ${extraSettings.projectName}` : `Projekt: ${projectLabel}`,
-        packageLabel ? `Paket: ${packageLabel}` : '',
-        scopeText
-    ].filter(Boolean).join('\n');
+    const tableMain = extraSettings.projectName ? `Projekt: ${extraSettings.projectName}` : `Projekt: ${projectLabel}`;
+    const tableSecondary = [packageLabel ? `Paket: ${packageLabel}` : '', scopeText].filter(Boolean).join(' · ');
+    const tableSecondaryLines = tableSecondary ? wrapText(tableSecondary, CONTENT_W - 58) : [];
 
-    ensurePageSpace(24);
     if(typeof doc.autoTable === 'function') {
         doc.autoTable({
             startY: currentY,
-            head: [['Pos.', 'Leistungsbeschreibung / Projekt', 'Gesamt']],
+            theme: 'grid',
+            head: [['Pos', 'Leistungsbeschreibung / Projekt', 'Gesamt']],
             body: [[
                 '1',
-                description,
+                { main: tableMain, secondary: tableSecondaryLines },
                 srcFormatCurrency(priceValue)
             ]],
-            theme: 'plain',
-            headStyles: { fillColor: [31, 41, 55], textColor: 255, fontSize: 10, cellPadding: 2.4 },
-            styles: { fontSize: 10, cellPadding: 2.2, textColor: [30, 41, 59], lineColor: [226, 232, 240], lineWidth: 0.2 },
+            headStyles: {
+                fillColor: [36, 44, 56],
+                textColor: [255, 255, 255],
+                fontStyle: 'bold',
+                fontSize: 10.5,
+                lineColor: [65, 74, 86],
+                lineWidth: 0.15,
+                cellPadding: { top: 2.4, right: 2.5, bottom: 2.4, left: 2.5 }
+            },
+            styles: {
+                font: 'helvetica',
+                fontSize: 10.5,
+                textColor: [30, 41, 59],
+                lineColor: [231, 235, 241],
+                lineWidth: 0.12,
+                valign: 'top',
+                cellPadding: { top: 2.2, right: 2.4, bottom: 2.2, left: 2.4 }
+            },
             columnStyles: {
-                0: { halign: 'center', cellWidth: 13, overflow: 'hidden' },
+                0: { halign: 'center', cellWidth: 12 },
+                1: { cellWidth: 'auto' },
                 2: { halign: 'right', cellWidth: 34 }
             },
             didParseCell: function(hookData) {
-                if(hookData.column.index === 0) {
-                    hookData.cell.text = ['Pos.'.replace(/\s+/g, '')];
-                    return;
-                }
                 if(hookData.section === 'body' && hookData.column.index === 1) {
-                    const lines = String(hookData.cell.raw || '').split('\n').filter(Boolean);
-                    const main = lines[0] || '';
-                    const secondary = lines.slice(1).join(' · ');
-                    hookData.cell.text = secondary ? [`${main}`, `${secondary}`] : [main];
+                    const raw = hookData.cell.raw || {};
+                    const sec = Array.isArray(raw.secondary) ? raw.secondary : [];
+                    hookData.cell.text = [''];
+                    hookData.cell.styles.minCellHeight = 4 + LINE + (sec.length ? ((sec.length * 4) + 2) : 0);
+                }
+            },
+            didDrawCell: function(hookData) {
+                if(hookData.section === 'body' && hookData.column.index === 1) {
+                    const raw = hookData.cell.raw || {};
+                    const main = raw.main || '';
+                    const sec = Array.isArray(raw.secondary) ? raw.secondary : [];
+                    const cellX = hookData.cell.x + 2.4;
+                    let textY = hookData.cell.y + 5.1;
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(10.5);
+                    doc.setTextColor(15, 23, 42);
+                    doc.text(main, cellX, textY);
+                    if(sec.length) {
+                        textY += 4.2;
+                        doc.setFont('helvetica', 'normal');
+                        doc.setFontSize(9.7);
+                        doc.setTextColor(100, 116, 139);
+                        doc.text(sec, cellX, textY);
+                    }
                 }
             }
         });
-        currentY = doc.lastAutoTable.finalY + 8;
+        currentY = alignToGrid(doc.lastAutoTable.finalY + SP_8);
     }
 
-    ensurePageSpace(26);
-    doc.setFontSize(10);
-    doc.setTextColor(15, 23, 42);
-    doc.text(lang === 'en' ? 'Rights & Licenses' : 'Nutzungsrechte & Lizenzen', MARGIN_L, currentY);
-    currentY += 5;
-    const rightsLines = [];
+    sectionTitle(lang === 'en' ? 'Rights & Licenses' : 'Nutzungsrechte & Lizenzen');
     const addonEntries = srcBuildAddonSummaryEntries(state, state.projectKey);
+    const keyValues = [];
+    keyValues.push([lang === 'en' ? 'Medium/License' : 'Medium/Lizenz', projectLabel]);
     if(['tv','online_paid','radio','cinema','pos'].includes(state.projectKey)) {
         const regionLabel = state.region === 'regional' ? 'Regional' : state.region === 'national' ? 'National' : state.region === 'dach' ? 'DACH' : 'Weltweit';
-        rightsLines.push(`Gebiet: ${regionLabel}`);
-        rightsLines.push(`Laufzeit: ${state.duration === 4 ? 'Unlimited' : `${state.duration} ${state.duration === 1 ? 'Jahr' : 'Jahre'}`}`);
+        keyValues.push([lang === 'en' ? 'Region' : 'Gebiet', regionLabel]);
+        keyValues.push([lang === 'en' ? 'Term' : 'Laufzeit', state.duration === 4 ? 'Unlimited' : `${state.duration} ${state.duration === 1 ? 'Jahr' : 'Jahre'}`]);
     }
-    rightsLines.push(`Medium/Lizenz: ${projectLabel}`);
-    const addonLines = addonEntries.map(entry => {
-        const amount = Number.isFinite(entry.amount) ? ` (${srcFormatCurrency(entry.amount)})` : '';
-        return `• ${srcStripAddonLevelLabel(entry.name)}${amount}`;
-    });
-    if(addonLines.length) rightsLines.push('Zusatzlizenzen:');
-    doc.setFontSize(8.5);
-    doc.setTextColor(71, 85, 105);
-    currentY += drawWrapped(rightsLines.join('\n'), MARGIN_L, currentY, CONTENT_W, 4.2);
-    if(addonLines.length) {
-        doc.setTextColor(51, 65, 85);
-        currentY += drawWrapped(addonLines.join('\n'), MARGIN_L + 2, currentY + 1, CONTENT_W - 2, 4.2);
+
+    const keyW = 34;
+    const valueW = CONTENT_W - (BOX_PAD * 2) - keyW;
+    let rightsHeight = BOX_PAD + keyValues.length * LINE + BOX_PAD;
+    if(addonEntries.length) {
+        rightsHeight += SP_4 + (addonEntries.length * LINE);
     }
-    currentY += 6;
+    rightsHeight = alignToGrid(rightsHeight);
+    ensurePageSpace(rightsHeight + SP_8);
 
-    ensurePageSpace(36);
-    const summaryWidth = 86;
-    const summaryX = PAGE_W - MARGIN_R - summaryWidth;
-    const summaryPadding = 6;
-    const summaryContentX = summaryX + summaryPadding;
-    const summaryRightX = summaryX + summaryWidth - summaryPadding;
-    const summaryLineHeight = 5;
-    const summaryPriceLineHeight = 6;
-    const subtotal = priceValue;
-    const totalLabel = srcFormatCurrency(subtotal);
-    const vatLabel = i18n.assumptions.includes('MwSt') ? 'zzgl. MwSt.' : 'MwSt.-Hinweis laut Kalkulation';
-    const grossHintLines = doc.splitTextToSize('laut finaler Rechnungsstellung', 40);
-    const summaryHeight = (summaryPadding * 2) + 4 + summaryLineHeight + summaryPriceLineHeight + summaryLineHeight + (grossHintLines.length * 4.2);
-
-    doc.setFillColor(...(isLightTheme ? [250, 250, 252] : [241, 245, 249]));
     doc.setDrawColor(226, 232, 240);
-    doc.roundedRect(summaryX, currentY, summaryWidth, summaryHeight, 3, 3, 'FD');
+    doc.setFillColor(250, 251, 253);
+    doc.roundedRect(MARGIN_L, currentY, CONTENT_W, rightsHeight, 2, 2, 'FD');
 
-    let summaryY = currentY + summaryPadding;
+    let rightsY = currentY + BOX_PAD;
+    keyValues.forEach(([label, value]) => {
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9.8);
+        doc.setTextColor(100, 116, 139);
+        doc.text(`${label}:`, MARGIN_L + BOX_PAD, rightsY);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10.5);
+        doc.setTextColor(51, 65, 85);
+        const lines = wrapText(value, valueW);
+        doc.text(lines, MARGIN_L + BOX_PAD + keyW, rightsY);
+        rightsY += Math.max(LINE, lines.length * LINE);
+    });
+
+    if(addonEntries.length) {
+        rightsY += SP_2;
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9.7);
+        doc.setTextColor(100, 116, 139);
+        doc.text(lang === 'en' ? 'Additional licenses:' : 'Zusatzlizenzen:', MARGIN_L + BOX_PAD, rightsY);
+        rightsY += SP_4;
+
+        addonEntries.forEach(entry => {
+            const amount = Number.isFinite(entry.amount) ? srcFormatCurrency(entry.amount) : '';
+            const leftText = `• ${srcStripAddonLevelLabel(entry.name)}`;
+            const amountW = amount ? doc.getTextWidth(amount) + SP_2 : 0;
+            const leftMax = CONTENT_W - (BOX_PAD * 2) - amountW;
+            const lines = wrapText(leftText, leftMax);
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(9.8);
+            doc.setTextColor(100, 116, 139);
+            doc.text(lines, MARGIN_L + BOX_PAD, rightsY);
+            if(amount) {
+                doc.setTextColor(71, 85, 105);
+                doc.text(amount, MARGIN_L + CONTENT_W - BOX_PAD, rightsY, { align: 'right' });
+            }
+            rightsY += Math.max(LINE, lines.length * LINE);
+        });
+    }
+
+    currentY = alignToGrid(currentY + rightsHeight + SP_8);
+
+    const summaryW = 92;
+    const summaryX = PAGE_W - MARGIN_R - summaryW;
+    const summaryPad = BOX_PAD;
+    const summaryRight = summaryX + summaryW - summaryPad;
+    const totalLabel = srcFormatCurrency(priceValue);
+    const vatLabel = i18n.assumptions.includes('MwSt') ? 'zzgl. MwSt.' : 'MwSt.-Hinweis laut Kalkulation';
+    const grossHint = 'laut finaler Rechnungsstellung';
+    const grossLines = wrapText(grossHint, 38);
+    const summaryH = alignToGrid((summaryPad * 2) + SP_4 + LINE + 7 + LINE + Math.max(LINE, grossLines.length * 4.2));
+
+    ensurePageSpace(summaryH + SP_8);
+    doc.setFillColor(247, 249, 252);
+    doc.setDrawColor(226, 232, 240);
+    doc.roundedRect(summaryX, currentY, summaryW, summaryH, 2, 2, 'FD');
+
+    let sy = currentY + summaryPad;
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10.5);
+    doc.setFontSize(12);
     doc.setTextColor(15, 23, 42);
-    doc.text('Preisübersicht', summaryContentX, summaryY);
-    summaryY += summaryLineHeight;
+    doc.text('Preisübersicht', summaryX + summaryPad, sy);
+    sy += SP_6;
 
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
-    doc.setTextColor(71, 85, 105);
-    doc.text('Netto', summaryContentX, summaryY);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(13.5);
-    doc.setTextColor(15, 23, 42);
-    doc.text(totalLabel, summaryRightX, summaryY, { align: 'right' });
-    summaryY += summaryPriceLineHeight;
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8.8);
-    doc.setTextColor(71, 85, 105);
-    doc.text(vatLabel, summaryContentX, summaryY);
-    summaryY += summaryLineHeight;
-
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(30, 41, 59);
-    doc.text('Brutto', summaryContentX, summaryY);
-    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9.8);
     doc.setTextColor(100, 116, 139);
-    doc.text(grossHintLines, summaryRightX, summaryY, { align: 'right' });
+    doc.text('Netto', summaryX + summaryPad, sy);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(15.5);
+    doc.setTextColor(15, 23, 42);
+    doc.text(totalLabel, summaryRight, sy, { align: 'right' });
+    sy += SP_6;
 
-    currentY += summaryHeight + 8;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9.6);
+    doc.setTextColor(100, 116, 139);
+    doc.text(vatLabel, summaryX + summaryPad, sy);
+    sy += SP_6;
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9.8);
+    doc.setTextColor(71, 85, 105);
+    doc.text('Brutto', summaryX + summaryPad, sy);
+    doc.setFontSize(9.6);
+    doc.setTextColor(100, 116, 139);
+    doc.text(grossLines, summaryRight, sy, { align: 'right' });
+
+    currentY = alignToGrid(currentY + summaryH + SP_8);
 
     if(includeBreakdown && currentBreakdownData) {
-        ensurePageSpace(20);
+        const breakdownLines = [`Basis: ${srcFormatCurrency(currentBreakdownData.base.mid)}`].concat(currentBreakdownData.steps.map(step => `${srcStripAddonLevelLabel(srcStripHTML(step.label))}: ${srcStripHTML(step.amountOrFactor)}`));
+        const wrapped = wrapText(breakdownLines.join('\n'), CONTENT_W - (BOX_PAD * 2));
+        const boxH = alignToGrid(BOX_PAD + SP_2 + (wrapped.length * 4.2) + BOX_PAD);
+        ensurePageSpace(boxH + SP_6);
         doc.setDrawColor(226, 232, 240);
         doc.setFillColor(248, 250, 252);
-        doc.roundedRect(MARGIN_L, currentY - 2, CONTENT_W, 18, 2, 2, 'FD');
-        doc.setFontSize(9);
+        doc.roundedRect(MARGIN_L, currentY, CONTENT_W, boxH, 2, 2, 'FD');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
         doc.setTextColor(15, 23, 42);
-        doc.text(i18n.breakdown, MARGIN_L + 3, currentY + 2);
-        currentY += 4.5;
-        doc.setFontSize(8.5);
+        doc.text(i18n.breakdown, MARGIN_L + BOX_PAD, currentY + BOX_PAD);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9.4);
         doc.setTextColor(71, 85, 105);
-        const breakdownLines = [`Basis: ${srcFormatCurrency(currentBreakdownData.base.mid)}`].concat(currentBreakdownData.steps.map(step => `${srcStripAddonLevelLabel(srcStripHTML(step.label))}: ${srcStripHTML(step.amountOrFactor)}`));
-        currentY += drawWrapped(breakdownLines.join('\n'), MARGIN_L + 3, currentY + 2, CONTENT_W - 6, 3.8) + 6;
+        doc.text(wrapped, MARGIN_L + BOX_PAD, currentY + BOX_PAD + SP_4);
+        currentY = alignToGrid(currentY + boxH + SP_6);
     }
 
     if(includeRisk && currentRiskChecks.length) {
-        ensurePageSpace(20);
+        const wrapped = wrapText(currentRiskChecks.map(check => `• ${srcStripHTML(check.text)}`).join('\n'), CONTENT_W - (BOX_PAD * 2));
+        const boxH = alignToGrid(BOX_PAD + SP_2 + (wrapped.length * 4.2) + BOX_PAD);
+        ensurePageSpace(boxH + SP_6);
         doc.setDrawColor(224, 231, 255);
         doc.setFillColor(239, 246, 255);
-        doc.roundedRect(MARGIN_L, currentY - 2, CONTENT_W, 16, 2, 2, 'FD');
-        doc.setFontSize(9);
+        doc.roundedRect(MARGIN_L, currentY, CONTENT_W, boxH, 2, 2, 'FD');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
         doc.setTextColor(15, 23, 42);
-        doc.text(i18n.risks, MARGIN_L + 3, currentY + 2);
-        currentY += 4.5;
-        doc.setFontSize(8.5);
+        doc.text(i18n.risks, MARGIN_L + BOX_PAD, currentY + BOX_PAD);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9.4);
         doc.setTextColor(71, 85, 105);
-        currentY += drawWrapped(currentRiskChecks.map(check => `• ${srcStripHTML(check.text)}`).join('\n'), MARGIN_L + 3, currentY + 2, CONTENT_W - 6, 3.8) + 6;
+        doc.text(wrapped, MARGIN_L + BOX_PAD, currentY + BOX_PAD + SP_4);
+        currentY = alignToGrid(currentY + boxH + SP_6);
     }
 
     const paymentText = extraSettings.paymentTerms || (lang === 'en' ? 'Payment terms as agreed.' : 'Zahlungsbedingungen gemäß Vereinbarung.');
     const disclaimerText = extraSettings.disclaimer || (lang === 'en' ? 'This offer is non-binding until written acceptance.' : 'Dieses Angebot ist freibleibend bis zur schriftlichen Beauftragung.');
-    ensurePageSpace(16);
-    const legalStartY = Math.min(PAGE_H - MARGIN_B - 16, currentY + 8);
-    doc.setFontSize(8);
-    doc.setTextColor(71, 85, 105);
-    const legalWidth = CONTENT_W;
-    drawWrapped(paymentText, MARGIN_L, legalStartY, legalWidth, 3.8);
-    drawWrapped(disclaimerText, MARGIN_L, legalStartY + 4.4, legalWidth, 3.8);
+    ensurePageSpace(SP_12 + (LINE * 2));
+    currentY = alignToGrid(currentY + SP_8);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9.6);
+    doc.setTextColor(100, 116, 139);
+    const legal1 = wrapText(paymentText, CONTENT_W);
+    doc.text(legal1, MARGIN_L, currentY);
+    currentY += Math.max(LINE, legal1.length * LINE);
+    const legal2 = wrapText(disclaimerText, CONTENT_W);
+    doc.text(legal2, MARGIN_L, currentY);
 
     const totalPages = doc.internal.getNumberOfPages();
     for(let pageNumber = 1; pageNumber <= totalPages; pageNumber++) {
         doc.setPage(pageNumber);
-        const footerY = PAGE_H - 10;
-        const footerLeftWidth = (PAGE_W / 2) - MARGIN_L - 8;
-        const footerLines = doc.splitTextToSize(footerText, footerLeftWidth);
-        const footerTopY = footerY - ((footerLines.length - 1) * 3.2);
-        doc.setFontSize(7.4);
+        let footerFont = 9.6;
+        const footerMaxWidth = (PAGE_W / 2) - MARGIN_L - SP_8;
+        while(footerFont > 8.4) {
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(footerFont);
+            if(doc.getTextWidth(footerText) <= footerMaxWidth) break;
+            footerFont -= 0.2;
+        }
         doc.setTextColor(100, 116, 139);
-        doc.text(footerLines, MARGIN_L, footerTopY, { align: 'left' });
-        doc.text(`Seite ${pageNumber} von ${totalPagesExp}`, PAGE_W / 2, footerY, { align: 'center' });
+        doc.text(footerText, MARGIN_L, FOOTER_Y, { align: 'left', maxWidth: footerMaxWidth });
+        doc.text(`Seite ${pageNumber} von ${totalPagesExp}`, PAGE_W / 2, FOOTER_Y, { align: 'center' });
     }
+
     if(typeof doc.putTotalPages === 'function') {
         doc.putTotalPages(totalPagesExp);
     }
 
     doc.save('Gagen_Angebot.pdf');
 }
+
 
 
 /* --- CUSTOM HIGH-END TUTORIAL SYSTEM --- */
