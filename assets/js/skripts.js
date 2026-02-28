@@ -1817,6 +1817,7 @@ window.srcOpenExportModal = function(options = {}) {
     srcSetExportLogoError('');
     srcPrefillExportCustomFee();
     srcSetMailtextOutput('', '');
+    srcSyncMailtextOutputVisibility();
     if(!exportModalKeyHandler) {
         exportModalKeyHandler = (event) => {
             if(event.key === 'Escape') {
@@ -1865,8 +1866,16 @@ const srcSetMailtextOutput = function(text = '', statusText = '') {
     const status = document.getElementById('src-mailtext-status');
     if(!output || !textarea) return;
     textarea.value = text || '';
-    output.hidden = !text;
+    output.hidden = !text && !exportModalState.email;
     if(status) status.textContent = statusText || '';
+}
+
+const srcSyncMailtextOutputVisibility = function() {
+    const output = document.getElementById('src-mailtext-output');
+    const textarea = document.getElementById('src-mailtext-textarea');
+    if(!output || !textarea) return;
+    const hasText = Boolean((textarea.value || '').trim());
+    output.hidden = !exportModalState.email && !hasText;
 }
 
 const srcReadLogoAsDataUrl = async function(file) {
@@ -2179,7 +2188,7 @@ const srcHandleExportStart = async function() {
     const customFee = Number.isFinite(customFeeValue) && customFeeValue > 0 ? customFeeValue : null;
     const extraSettings = { projectName, scope, customerType, offerId, offerSubject, customerName, customerAddress, providerName, providerAddress, providerContact, offerDate, paymentTerms, disclaimer, logoDataUrl, offerTheme, customFee };
     if(includePdf) {
-        srcGeneratePDFv6({ lang, pricingMode, selectedPackage, includeBreakdown, includeRisk, extraSettings });
+        await srcGeneratePDFv6({ lang, pricingMode, selectedPackage, includeBreakdown, includeRisk, extraSettings });
     }
     if(includeEmail) {
         const emailText = srcBuildOfferEmailText({ lang, pricingMode, selectedPackage, includeBreakdown, includeRisk, extraSettings });
@@ -2188,6 +2197,7 @@ const srcHandleExportStart = async function() {
     } else {
         srcSetMailtextOutput('', '');
     }
+    srcSyncMailtextOutputVisibility();
     srcResetExportLogoInput();
     srcSetExportLogoError('');
     if(!includeEmail) {
@@ -2217,6 +2227,7 @@ const srcSyncOutputModeFromState = function() {
     if(exportModalState.pdf && !exportModalState.email) mode = 'pdf';
     if(!exportModalState.pdf && exportModalState.email) mode = 'email';
     outputMode.value = mode;
+    srcSyncMailtextOutputVisibility();
 }
 
 const srcSyncOutputModeToTiles = function() {
@@ -2226,6 +2237,7 @@ const srcSyncOutputModeToTiles = function() {
     exportModalState.pdf = (mode === 'both' || mode === 'pdf');
     exportModalState.email = (mode === 'both' || mode === 'email');
     srcSyncExportTiles();
+    srcSyncMailtextOutputVisibility();
 }
 
 const srcSyncExportTiles = function() {
@@ -2242,6 +2254,7 @@ const srcSyncExportTiles = function() {
         tile.classList.toggle('is-on', isOn);
         tile.setAttribute('aria-pressed', isOn ? 'true' : 'false');
     });
+    srcSyncMailtextOutputVisibility();
 }
 
 window.srcSaveStateToStorage = function() {
@@ -3392,13 +3405,13 @@ window.srcCalc = function() {
     srcSaveStateToStorage();
 }
 
-window.srcGeneratePDFv6 = function(options = {}) {
+window.srcGeneratePDFv6 = async function(options = {}) {
     if(!window.jspdf || !window.jspdf.jsPDF) {
         console.error('SRC: jsPDF nicht verfügbar.');
         return;
     }
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
     const lang = options.lang || 'de';
     const i18n = SRC_I18N[lang] || SRC_I18N.de;
     const pricingMode = options.pricingMode || 'custom';
@@ -3408,10 +3421,16 @@ window.srcGeneratePDFv6 = function(options = {}) {
     const extraSettings = options.extraSettings || {};
     const offerTheme = extraSettings.offerTheme === 'light' ? 'light' : 'dark';
 
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const pageHeight = doc.internal.pageSize.getHeight();
-    const margin = 15;
-    let currentY = 20;
+    const PAGE_W = doc.internal.pageSize.getWidth();
+    const PAGE_H = doc.internal.pageSize.getHeight();
+    const MARGIN_L = 16;
+    const MARGIN_R = 16;
+    const MARGIN_T = 14;
+    const MARGIN_B = 14;
+    const GUTTER = 6;
+    const CONTENT_W = PAGE_W - MARGIN_L - MARGIN_R;
+    const BOTTOM_LIMIT = PAGE_H - MARGIN_B - 14;
+    let currentY = MARGIN_T;
 
     const state = srcGetStateFromUI();
     const result = srcComputeResult(state);
@@ -3433,55 +3452,72 @@ window.srcGeneratePDFv6 = function(options = {}) {
         packageLabel = pkg.label;
     }
 
+    const wrapText = (text, maxWidth) => doc.splitTextToSize(String(text || ''), maxWidth);
+    const drawWrapped = (text, x, y, maxWidth, lineHeight = 4.2) => {
+        const lines = wrapText(text, maxWidth);
+        if(lines.length) doc.text(lines, x, y);
+        return lines.length * lineHeight;
+    };
+    const ensurePageSpace = (spaceNeeded = 8) => {
+        if(currentY + spaceNeeded <= BOTTOM_LIMIT) return;
+        doc.addPage();
+        currentY = MARGIN_T;
+    };
+    const footerText = 'Sprecherpreise kalkuliert auf Grundlage des VDS Gagenkompass 2025';
+    const totalPagesExp = '{total_pages_count_string}';
+
     const isLightTheme = offerTheme === 'light';
-    const summaryBg = isLightTheme ? [255, 255, 255] : [241, 245, 249];
-    const rightInset = 8;
-    const headerY = 12;
-    const headerHeight = 26;
-    const headerGap = 4;
-    const logoColWidth = 62;
-    const rightHeaderX = margin + logoColWidth + headerGap;
-    const rightHeaderWidth = pageWidth - margin - rightHeaderX;
+    const headerY = MARGIN_T;
+    const headerHeight = 30;
+    const logoSlotW = 52;
+    const logoSlotX = MARGIN_L;
+    const logoSlotY = headerY;
+    const logoInnerPad = 3;
+    const metaBoxX = logoSlotX + logoSlotW + GUTTER;
+    const metaBoxW = PAGE_W - MARGIN_R - metaBoxX;
+    const metaInnerRight = 7;
 
     doc.setFillColor(255, 255, 255);
-    doc.setDrawColor(203, 213, 225);
-    doc.roundedRect(margin, headerY, logoColWidth, headerHeight, 3, 3, 'FD');
+    doc.setDrawColor(214, 220, 230);
+    doc.roundedRect(logoSlotX, logoSlotY, logoSlotW, headerHeight, 3, 3, 'FD');
     doc.setFillColor(15, 20, 26);
-    doc.setDrawColor(15, 20, 26);
-    doc.roundedRect(rightHeaderX, headerY, rightHeaderWidth, headerHeight, 3, 3, 'F');
+    doc.roundedRect(metaBoxX, headerY, metaBoxW, headerHeight, 3, 3, 'F');
 
     if(extraSettings.logoDataUrl) {
         try {
-            const mimeMatch = String(extraSettings.logoDataUrl).match(/^data:(image\/(png|jpeg|jpg));/i);
-            const imageTypeRaw = mimeMatch && mimeMatch[2] ? mimeMatch[2].toUpperCase() : 'PNG';
-            const imageType = imageTypeRaw === 'JPG' ? 'JPEG' : imageTypeRaw;
-            const imageProps = doc.getImageProperties(extraSettings.logoDataUrl);
-            const logoBoxWidth = logoColWidth - 6;
-            const logoBoxHeight = headerHeight - 4;
-            const logoBoxX = margin + 3;
-            const logoBoxY = headerY + 2;
-            doc.saveGraphicsState();
-            doc.rect(logoBoxX, logoBoxY, logoBoxWidth, logoBoxHeight, 'clip');
-            const ratio = imageProps && imageProps.width && imageProps.height
-                ? Math.min(logoBoxWidth / imageProps.width, logoBoxHeight / imageProps.height)
-                : 1;
-            const logoWidth = imageProps && imageProps.width ? imageProps.width * ratio : logoBoxWidth;
-            const logoHeight = imageProps && imageProps.height ? imageProps.height * ratio : logoBoxHeight;
-            const logoX = logoBoxX + ((logoBoxWidth - logoWidth) / 2);
-            const logoY = logoBoxY + ((logoBoxHeight - logoHeight) / 2);
-            doc.addImage(extraSettings.logoDataUrl, imageType, logoX, logoY, logoWidth, logoHeight);
-            doc.restoreGraphicsState();
+            const logoDataUrl = String(extraSettings.logoDataUrl);
+            const mimeMatch = logoDataUrl.match(/^data:(image\/(png|jpeg|jpg));/i);
+            if(mimeMatch) {
+                const imageTypeRaw = mimeMatch[2].toUpperCase();
+                const imageType = imageTypeRaw === 'JPG' ? 'JPEG' : imageTypeRaw;
+                const logoDims = await new Promise((resolve, reject) => {
+                    const img = new Image();
+                    img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
+                    img.onerror = reject;
+                    img.src = logoDataUrl;
+                });
+                if(logoDims && logoDims.width && logoDims.height) {
+                    const boxW = logoSlotW - (logoInnerPad * 2);
+                    const boxH = headerHeight - (logoInnerPad * 2);
+                    const scale = Math.min(boxW / logoDims.width, boxH / logoDims.height);
+                    const drawW = logoDims.width * scale;
+                    const drawH = logoDims.height * scale;
+                    const drawX = logoSlotX + logoInnerPad + ((boxW - drawW) / 2);
+                    const drawY = logoSlotY + logoInnerPad + ((boxH - drawH) / 2);
+                    doc.addImage(logoDataUrl, imageType, drawX, drawY, drawW, drawH);
+                }
+            }
         } catch (e) {}
     }
 
     doc.setFontSize(16);
     doc.setTextColor(255, 255, 255);
-    const headerRightX = pageWidth - margin - rightInset;
-    doc.text(lang === 'en' ? 'Offer' : 'Angebot', headerRightX, 22, { align: 'right' });
+    const headerRightX = metaBoxX + metaBoxW - metaInnerRight;
+    doc.text(lang === 'en' ? 'Offer' : 'Angebot', headerRightX, headerY + 9, { align: 'right' });
     doc.setFontSize(9);
-    doc.text(`${i18n.dateLabel}: ${offerDate}`, headerRightX, 28, { align: 'right' });
-    doc.text(`${i18n.offerNumberLabel}: ${extraSettings.offerId || '—'}`, headerRightX, 33, { align: 'right' });
-    currentY = 48;
+    doc.text(`${i18n.dateLabel}: ${offerDate}`, headerRightX, headerY + 16, { align: 'right' });
+    doc.text(`${i18n.offerNumberLabel}: ${extraSettings.offerId || '—'}`, headerRightX, headerY + 22, { align: 'right' });
+    currentY = headerY + headerHeight + 8;
 
     const providerLines = [
         extraSettings.providerName || 'Eigene Firma / Name',
@@ -3491,35 +3527,36 @@ window.srcGeneratePDFv6 = function(options = {}) {
     const customerLines = [
         extraSettings.customerName || 'Kund*innenname',
         extraSettings.customerAddress || 'Kund*innenadresse',
-        extraSettings.customerType === 'agency' ? i18n.customerTypeAgency : i18n.customerTypeDirect
+        `${i18n.customerTypeLabel}: ${extraSettings.customerType === 'agency' ? i18n.customerTypeAgency : i18n.customerTypeDirect}`
     ];
 
     const drawAddressBlock = function(title, lines, x, y, width) {
-        doc.setDrawColor(203, 213, 225);
+        const blockHeight = 34;
+        doc.setDrawColor(226, 232, 240);
         doc.setLineWidth(0.2);
-        doc.rect(x, y, width, 28);
-        doc.setFontSize(9);
-        doc.setTextColor(15, 23, 42);
-        doc.text(title, x + 3, y + 5);
-        doc.setFontSize(8.5);
-        doc.setTextColor(71, 85, 105);
-        const text = doc.splitTextToSize(lines.filter(Boolean).join('\n'), width - 6);
-        doc.text(text, x + 3, y + 10);
+        doc.roundedRect(x, y, width, blockHeight, 2, 2, 'S');
+        doc.setFontSize(8);
+        doc.setTextColor(100, 116, 139);
+        doc.text(title, x + 3, y + 5.5);
+        doc.setFontSize(9.3);
+        doc.setTextColor(30, 41, 59);
+        const text = lines.filter(Boolean).join('\n');
+        drawWrapped(text, x + 3, y + 11, width - 6, 4.4);
     };
 
-    const blockWidth = (pageWidth - (margin * 2) - 8) / 2;
-    drawAddressBlock(lang === 'en' ? 'Sender' : 'Absender', providerLines, margin, currentY, blockWidth);
-    drawAddressBlock(lang === 'en' ? 'Recipient' : 'Empfänger', customerLines, margin + blockWidth + 8, currentY, blockWidth);
-    currentY += 36;
+    const blockWidth = (CONTENT_W - GUTTER) / 2;
+    drawAddressBlock(lang === 'en' ? 'Sender' : 'Absender', providerLines, MARGIN_L, currentY, blockWidth);
+    drawAddressBlock(lang === 'en' ? 'Recipient' : 'Empfänger', customerLines, MARGIN_L + blockWidth + GUTTER, currentY, blockWidth);
+    currentY += 42;
 
-    doc.setFontSize(12);
+    doc.setFontSize(13);
     doc.setTextColor(15, 23, 42);
-    doc.text(`${i18n.subjectLabel}: ${subjectText}`, margin, currentY);
-    currentY += 6;
+    doc.text(`${i18n.subjectLabel}: ${subjectText}`, MARGIN_L, currentY);
+    currentY += 6.5;
     doc.setFontSize(9);
     doc.setTextColor(71, 85, 105);
-    doc.text(doc.splitTextToSize(i18n.intro, pageWidth - (margin * 2)), margin, currentY);
-    currentY += 14;
+    currentY += drawWrapped(i18n.intro, MARGIN_L, currentY, CONTENT_W, 4.3);
+    currentY += 7;
 
     const scopeText = extraSettings.scope && extraSettings.scope.length ? `Lieferumfang: ${extraSettings.scope.join(', ')}` : '';
     const description = [
@@ -3528,6 +3565,7 @@ window.srcGeneratePDFv6 = function(options = {}) {
         scopeText
     ].filter(Boolean).join('\n');
 
+    ensurePageSpace(24);
     if(typeof doc.autoTable === 'function') {
         doc.autoTable({
             startY: currentY,
@@ -3537,16 +3575,45 @@ window.srcGeneratePDFv6 = function(options = {}) {
                 description,
                 srcFormatCurrency(priceValue)
             ]],
-            theme: 'grid',
-            headStyles: { fillColor: [15, 20, 26], textColor: 255 },
-            styles: { fontSize: 8.5, cellPadding: 2.5 }
+            theme: 'plain',
+            headStyles: { fillColor: [31, 41, 55], textColor: 255, fontSize: 10, cellPadding: 2.4 },
+            styles: { fontSize: 10, cellPadding: 2.2, textColor: [30, 41, 59], lineColor: [226, 232, 240], lineWidth: 0.2 },
+            columnStyles: {
+                0: { halign: 'center', cellWidth: 10 },
+                2: { halign: 'right', cellWidth: 34 }
+            },
+            didParseCell: function(hookData) {
+                if(hookData.section === 'body' && hookData.column.index === 1) {
+                    const lines = String(hookData.cell.raw || '').split('\n').filter(Boolean);
+                    const main = lines[0] || '';
+                    const secondary = lines.slice(1).join(' · ');
+                    hookData.cell.text = secondary ? [`${main}`, `${secondary}`] : [main];
+                }
+            },
+            didDrawCell: function(hookData) {
+                if(hookData.section === 'body' && hookData.column.index === 1 && Array.isArray(hookData.cell.text) && hookData.cell.text.length > 1) {
+                    const [line1, line2] = hookData.cell.text;
+                    const baseX = hookData.cell.x + hookData.cell.padding('left');
+                    const baseY = hookData.cell.y + hookData.cell.padding('top') + 3.4;
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(9.8);
+                    doc.setTextColor(15, 23, 42);
+                    doc.text(line1, baseX, baseY);
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(8.4);
+                    doc.setTextColor(100, 116, 139);
+                    doc.text(line2, baseX, baseY + 4.2);
+                    hookData.cell.text = '';
+                }
+            }
         });
         currentY = doc.lastAutoTable.finalY + 8;
     }
 
+    ensurePageSpace(26);
     doc.setFontSize(10);
     doc.setTextColor(15, 23, 42);
-    doc.text(lang === 'en' ? 'Rights & Licenses' : 'Nutzungsrechte & Lizenzen', margin, currentY);
+    doc.text(lang === 'en' ? 'Rights & Licenses' : 'Nutzungsrechte & Lizenzen', MARGIN_L, currentY);
     currentY += 5;
     const rightsLines = [];
     const addonEntries = srcBuildAddonSummaryEntries(state, state.projectKey);
@@ -3556,29 +3623,31 @@ window.srcGeneratePDFv6 = function(options = {}) {
         rightsLines.push(`Laufzeit: ${state.duration === 4 ? 'Unlimited' : `${state.duration} ${state.duration === 1 ? 'Jahr' : 'Jahre'}`}`);
     }
     rightsLines.push(`Medium/Lizenz: ${projectLabel}`);
-    if(addonEntries.length) {
-        rightsLines.push('Zusatzlizenzen:');
-        addonEntries.forEach(entry => {
-            const amount = Number.isFinite(entry.amount) ? ` (${srcFormatCurrency(entry.amount)})` : '';
-            rightsLines.push(`- ${entry.name}${amount}`);
-        });
-        rightsLines.push('Zusatzlizenzen.');
-    }
+    const addonLines = addonEntries.map(entry => {
+        const amount = Number.isFinite(entry.amount) ? ` (${srcFormatCurrency(entry.amount)})` : '';
+        return `• ${srcStripAddonLevelLabel(entry.name)}${amount}`;
+    });
+    if(addonLines.length) rightsLines.push('Zusatzlizenzen:');
     doc.setFontSize(8.5);
     doc.setTextColor(71, 85, 105);
-    doc.text(doc.splitTextToSize(rightsLines.join('\n'), pageWidth - (margin * 2)), margin, currentY);
-    currentY += rightsLines.length * 4 + 6;
+    currentY += drawWrapped(rightsLines.join('\n'), MARGIN_L, currentY, CONTENT_W, 4.2);
+    if(addonLines.length) {
+        doc.setTextColor(51, 65, 85);
+        currentY += drawWrapped(addonLines.join('\n'), MARGIN_L + 2, currentY + 1, CONTENT_W - 2, 4.2);
+    }
+    currentY += 6;
 
-    const summaryWidth = 82;
-    const summaryX = pageWidth - margin - summaryWidth;
-    const summaryHeight = 34;
-    const summaryPadding = 6;
+    ensurePageSpace(36);
+    const summaryWidth = 86;
+    const summaryX = PAGE_W - MARGIN_R - summaryWidth;
+    const summaryHeight = 36;
+    const summaryPadding = 5.5;
     const summaryContentX = summaryX + summaryPadding;
-    let summaryY = currentY + 4;
+    let summaryY = currentY + 6;
     const subtotal = priceValue;
     const totalLabel = srcFormatCurrency(subtotal);
-    doc.setFillColor(...summaryBg);
-    doc.setDrawColor(203, 213, 225);
+    doc.setFillColor(...(isLightTheme ? [250, 250, 252] : [241, 245, 249]));
+    doc.setDrawColor(226, 232, 240);
     doc.roundedRect(summaryX, currentY, summaryWidth, summaryHeight, 3, 3, 'FD');
     doc.setFontSize(10);
     doc.setTextColor(15, 23, 42);
@@ -3588,51 +3657,65 @@ window.srcGeneratePDFv6 = function(options = {}) {
     doc.setTextColor(71, 85, 105);
     doc.text('Netto', summaryContentX, summaryY);
     summaryY += 4.5;
-    doc.setFontSize(12);
+    doc.setFontSize(13.5);
     doc.setTextColor(15, 23, 42);
-    doc.text(totalLabel, pageWidth - margin - summaryPadding, summaryY, { align: 'right' });
+    doc.text(totalLabel, PAGE_W - MARGIN_R - summaryPadding, summaryY, { align: 'right' });
     summaryY += 4.5;
     doc.text(i18n.assumptions.includes('MwSt') ? 'zzgl. MwSt.' : 'MwSt.-Hinweis laut Kalkulation', summaryContentX, summaryY);
     summaryY += 4;
     doc.text('Brutto', summaryContentX, summaryY);
-    doc.text('laut finaler Rechnungsstellung', pageWidth - margin - summaryPadding, summaryY, { align: 'right' });
+    doc.text('laut finaler Rechnungsstellung', PAGE_W - MARGIN_R - summaryPadding, summaryY, { align: 'right' });
 
-    currentY = Math.max(currentY, summaryY + 8);
+    currentY = Math.max(currentY + 4, summaryY + 10);
 
     if(includeBreakdown && currentBreakdownData) {
+        ensurePageSpace(20);
+        doc.setDrawColor(226, 232, 240);
+        doc.setFillColor(248, 250, 252);
+        doc.roundedRect(MARGIN_L, currentY - 2, CONTENT_W, 18, 2, 2, 'FD');
         doc.setFontSize(9);
         doc.setTextColor(15, 23, 42);
-        doc.text(i18n.breakdown, margin, currentY);
+        doc.text(i18n.breakdown, MARGIN_L + 3, currentY + 2);
         currentY += 4.5;
         doc.setFontSize(8.5);
         doc.setTextColor(71, 85, 105);
         const breakdownLines = [`Basis: ${srcFormatCurrency(currentBreakdownData.base.mid)}`].concat(currentBreakdownData.steps.map(step => `${srcStripAddonLevelLabel(srcStripHTML(step.label))}: ${srcStripHTML(step.amountOrFactor)}`));
-        doc.text(doc.splitTextToSize(breakdownLines.join('\n'), pageWidth - (margin * 2)), margin, currentY);
-        currentY += breakdownLines.length * 3.8 + 4;
+        currentY += drawWrapped(breakdownLines.join('\n'), MARGIN_L + 3, currentY + 2, CONTENT_W - 6, 3.8) + 6;
     }
 
     if(includeRisk && currentRiskChecks.length) {
+        ensurePageSpace(20);
+        doc.setDrawColor(224, 231, 255);
+        doc.setFillColor(239, 246, 255);
+        doc.roundedRect(MARGIN_L, currentY - 2, CONTENT_W, 16, 2, 2, 'FD');
         doc.setFontSize(9);
         doc.setTextColor(15, 23, 42);
-        doc.text(i18n.risks, margin, currentY);
+        doc.text(i18n.risks, MARGIN_L + 3, currentY + 2);
         currentY += 4.5;
         doc.setFontSize(8.5);
         doc.setTextColor(71, 85, 105);
-        doc.text(doc.splitTextToSize(currentRiskChecks.map(check => `- ${srcStripHTML(check.text)}`).join('\n'), pageWidth - (margin * 2)), margin, currentY);
-        currentY += currentRiskChecks.length * 3.8 + 4;
+        currentY += drawWrapped(currentRiskChecks.map(check => `• ${srcStripHTML(check.text)}`).join('\n'), MARGIN_L + 3, currentY + 2, CONTENT_W - 6, 3.8) + 6;
     }
 
     const paymentText = extraSettings.paymentTerms || (lang === 'en' ? 'Payment terms as agreed.' : 'Zahlungsbedingungen gemäß Vereinbarung.');
     const disclaimerText = extraSettings.disclaimer || (lang === 'en' ? 'This offer is non-binding until written acceptance.' : 'Dieses Angebot ist freibleibend bis zur schriftlichen Beauftragung.');
-    const totalPagesExp = '{total_pages_count_string}';
-    const legalStartY = Math.min(pageHeight - 24, currentY + 20);
+    ensurePageSpace(16);
+    const legalStartY = Math.min(PAGE_H - MARGIN_B - 16, currentY + 8);
     doc.setFontSize(8);
     doc.setTextColor(71, 85, 105);
-    const footerLeftWidth = pageWidth - (margin * 2) - 62;
-    doc.text(doc.splitTextToSize(paymentText, footerLeftWidth), margin, legalStartY);
-    doc.text(doc.splitTextToSize(disclaimerText, footerLeftWidth), margin, legalStartY + 5);
-    doc.text('Sprecherpreise kalkuliert auf Grundlage des VDS Gagenkompass 2025.', margin, pageHeight - 8);
-    doc.text(`Seite ${doc.internal.getNumberOfPages()} von ${totalPagesExp}`, pageWidth / 2, pageHeight - 8, { align: 'center' });
+    const legalWidth = CONTENT_W;
+    drawWrapped(paymentText, MARGIN_L, legalStartY, legalWidth, 3.8);
+    drawWrapped(disclaimerText, MARGIN_L, legalStartY + 4.4, legalWidth, 3.8);
+
+    const totalPages = doc.internal.getNumberOfPages();
+    for(let pageNumber = 1; pageNumber <= totalPages; pageNumber++) {
+        doc.setPage(pageNumber);
+        const footerY = PAGE_H - 10;
+        doc.setFontSize(7.8);
+        doc.setTextColor(100, 116, 139);
+        doc.text(footerText, MARGIN_L, footerY);
+        doc.text(`Seite ${pageNumber} von ${totalPagesExp}`, PAGE_W / 2, footerY, { align: 'center' });
+    }
     if(typeof doc.putTotalPages === 'function') {
         doc.putTotalPages(totalPagesExp);
     }
