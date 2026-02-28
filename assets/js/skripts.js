@@ -18,8 +18,10 @@ let stickyRaf = 0;
 let compareState = { enabled: false, A: null, B: null, activeTab: 'A' };
 let packagesState = null;
 let srcSocialBadgeBound = false;
+let srcEventBadgeBound = false;
 window.srcLicenseSocialEnabled = false;
 window.srcLicenseSocialLevel = 'mid';
+window.srcLicenseEventLevel = 'mid';
 window.srcCurrencyCode = 'EUR';
 window.srcFxRates = { CHF: 1, USD: 1 };
 const SRC_CURRENCY_STORAGE_KEY = 'src_currency';
@@ -235,7 +237,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if(exportModal) {
         exportModal.addEventListener('click', (event) => {
             const target = event.target;
-            if(target === exportModal || (target && target.hasAttribute('data-modal-close'))) {
+            if(target && target.hasAttribute('data-modal-close')) {
                 srcCloseExportModal();
             }
         });
@@ -304,6 +306,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 window.srcLicenseSocialLevel = 'mid';
             }
             srcRenderSocialBadges();
+            srcRenderEventBadges();
             srcCalc();
         });
     }
@@ -320,6 +323,33 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         srcSocialBadgeBound = true;
     }
+    const eventBadges = document.getElementById('src-event-badges');
+    if(eventBadges && !srcEventBadgeBound) {
+        eventBadges.addEventListener('click', (event) => {
+            const btn = event.target.closest('.src-social-badge[data-level]');
+            if(!btn || !document.getElementById('src-lic-event')?.checked) return;
+            const nextLevel = btn.getAttribute('data-level');
+            if(!['low', 'mid', 'high'].includes(nextLevel)) return;
+            window.srcLicenseEventLevel = nextLevel;
+            srcRenderEventBadges();
+            srcCalc();
+        });
+        srcEventBadgeBound = true;
+    }
+    const eventToggle = document.getElementById('src-lic-event');
+    if(eventToggle) {
+        eventToggle.addEventListener('change', () => {
+            if(!['low', 'mid', 'high'].includes(window.srcLicenseEventLevel)) {
+                window.srcLicenseEventLevel = 'mid';
+            }
+            srcRenderEventBadges();
+            srcCalc();
+        });
+    }
+    const outputMode = document.getElementById('src-export-output-mode');
+    if(outputMode) {
+        outputMode.addEventListener('change', () => srcSyncOutputModeToTiles());
+    }
     srcEnforceProjectTypeDropdownDownward();
     const genreSelect = document.getElementById('src-genre');
     if(genreSelect) {
@@ -332,6 +362,7 @@ document.addEventListener('DOMContentLoaded', () => {
     srcUpdateDurationSliderFill();
 
     srcSyncExportTiles();
+    srcSyncOutputModeFromState();
     srcUpdateExportPackageVisibility();
     updateStickyOffset();
     const scheduleStickyOffsetUpdate = () => {
@@ -659,6 +690,7 @@ const srcGetStateFromUI = function() {
         licenseSocialEnabled: Boolean(window.srcLicenseSocialEnabled),
         licenseSocialLevel: window.srcLicenseSocialEnabled ? (['low', 'mid', 'high'].includes(window.srcLicenseSocialLevel) ? window.srcLicenseSocialLevel : 'mid') : 'off',
         licenseEvent: document.getElementById('src-lic-event') ? document.getElementById('src-lic-event').checked : false,
+        licenseEventLevel: ['low', 'mid', 'high'].includes(window.srcLicenseEventLevel) ? window.srcLicenseEventLevel : 'mid',
         licenseInternal: srcProjectSupportsInternalUse(genre) && (document.getElementById('src-lic-internal') ? document.getElementById('src-lic-internal').checked : false),
         cutdown: document.getElementById('src-cutdown') ? document.getElementById('src-cutdown').checked : false,
         phoneCount: parseInt(document.getElementById('src-phone-count').value, 10) || 1,
@@ -981,6 +1013,35 @@ const srcRenderSocialBadges = function() {
     }).join('');
 }
 
+const srcRenderEventBadges = function() {
+    const wrap = document.getElementById('src-event-badges');
+    const toggle = document.getElementById('src-lic-event');
+    if(!wrap || !toggle) return;
+    if(!toggle.checked) {
+        wrap.innerHTML = '';
+        wrap.style.display = 'none';
+        return;
+    }
+    const state = srcGetStateFromUI();
+    const currentData = (srcRatesData && srcRatesData[state.projectKey]) ? srcRatesData[state.projectKey] : null;
+    const socialTrip = srcEnsurePriceTriple(currentData?.license_extras?.social_organic, [50, 150, 250]);
+    const eventTrip = srcEnsurePriceTriple(currentData?.license_extras?.event_pos, socialTrip);
+    const items = [
+        { k: 'low', v: eventTrip[0] },
+        { k: 'mid', v: eventTrip[1] },
+        { k: 'high', v: eventTrip[2] }
+    ];
+    if(!['low', 'mid', 'high'].includes(window.srcLicenseEventLevel)) {
+        window.srcLicenseEventLevel = 'mid';
+    }
+    wrap.style.display = '';
+    wrap.innerHTML = items.map((it) => {
+        const label = srcFormatMoney(it.v);
+        const active = (window.srcLicenseEventLevel === it.k) ? ' is-active' : '';
+        return `<button type="button" class="src-social-badge${active}" data-level="${it.k}">${label}</button>`;
+    }).join('');
+}
+
 const srcUpdateSocialLevelAvailability = function(projectKey) {
     const toggle = document.getElementById('src-social-toggle');
     const row = srcGetSocialLevelRow();
@@ -1008,6 +1069,7 @@ const srcUpdateSocialLevelAvailability = function(projectKey) {
         }
     }
     srcRenderSocialBadges();
+    srcRenderEventBadges();
     return { supported: supportsSocial, wasReset };
 }
 
@@ -1420,6 +1482,7 @@ const srcBuildPackages = function(currentState) {
                 licenseSocialEnabled: Boolean(data.license_extras && data.license_extras.social_organic),
                 licenseSocialLevel: (data.license_extras && data.license_extras.social_organic) ? 'mid' : 'off',
                 licenseEvent: Boolean(data.license_extras && data.license_extras.event_pos),
+                licenseEventLevel: (data.license_extras && data.license_extras.event_pos) ? 'mid' : 'off',
                 licenseInternal: Boolean(data.license_extras && data.license_extras.internal_use),
                 packageAtv: baseState.projectKey === 'online_paid',
                 packageOnline: baseState.projectKey === 'radio'
@@ -1511,7 +1574,7 @@ const srcRenderPackages = function() {
                 </div>
                 <div class="src-package-action">
                     <button class="src-package-export-link" type="button" data-export-package="${key}">
-                        Als Angebot exportieren <span class="dashicons dashicons-arrow-right-alt"></span>
+                        Als Angebot exportieren <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
                     </button>
                 </div>
             </div>
@@ -1581,6 +1644,7 @@ window.srcOpenExportModal = function(options = {}) {
     srcUpdateExportPackageVisibility();
     srcSyncExportPackageCards();
     srcSyncExportTiles();
+    srcSyncOutputModeFromState();
     const dateField = document.getElementById('src-export-date');
     if(dateField && !dateField.value) {
         dateField.value = new Date().toLocaleDateString('de-DE');
@@ -1684,7 +1748,7 @@ const srcBuildOfferEmailText = function({ lang, pricingMode, selectedPackage, in
     if(state.packageOnline) addons.push('Online Audio');
     if(state.packageAtv) addons.push('ATV/CTV');
     if(state.licenseSocialEnabled && state.licenseSocialLevel && state.licenseSocialLevel !== 'off') addons.push(`Social Media (${(state.licenseSocialLevel || 'mid').toUpperCase()})`);
-    if(state.licenseEvent) addons.push('Event / Messe / POS');
+    if(state.licenseEvent) addons.push(`Event / Messe / POS (${(state.licenseEventLevel || 'mid').toUpperCase()})`);
     if(state.licenseInternal) addons.push('Interne Nutzung (Intranet)');
     if(state.cutdown) addons.push('Cut-down');
     if(state.expressToggle) addons.push('Express');
@@ -1778,6 +1842,24 @@ const srcHandleExportTileToggle = function(tile) {
     }
     srcSyncExportTiles();
     srcUpdateExportPackageVisibility();
+}
+
+const srcSyncOutputModeFromState = function() {
+    const outputMode = document.getElementById('src-export-output-mode');
+    if(!outputMode) return;
+    let mode = 'both';
+    if(exportModalState.pdf && !exportModalState.email) mode = 'pdf';
+    if(!exportModalState.pdf && exportModalState.email) mode = 'email';
+    outputMode.value = mode;
+}
+
+const srcSyncOutputModeToTiles = function() {
+    const outputMode = document.getElementById('src-export-output-mode');
+    if(!outputMode) return;
+    const mode = outputMode.value;
+    exportModalState.pdf = (mode === 'both' || mode === 'pdf');
+    exportModalState.email = (mode === 'both' || mode === 'email');
+    srcSyncExportTiles();
 }
 
 const srcSyncExportTiles = function() {
@@ -1945,6 +2027,7 @@ window.srcReset = function() {
     const socialToggle = document.getElementById('src-social-toggle');
     window.srcLicenseSocialEnabled = false;
     window.srcLicenseSocialLevel = 'mid';
+    window.srcLicenseEventLevel = 'mid';
     if(socialToggle) {
         socialToggle.checked = false;
         srcSetOptionRowState(socialToggle);
@@ -2268,17 +2351,28 @@ const srcComputeGlobalAddons = function(state, projectKeys) {
             if(!rateCandidates.length) {
                 return;
             }
-            const extraRates = rateCandidates.reduce((acc, rates) => {
+            let extraRates = rateCandidates.reduce((acc, rates) => {
                 return acc.map((value, idx) => Math.max(value, rates[idx] || 0));
             }, [0, 0, 0]);
+            if(addon.key === 'social_organic' || addon.key === 'event_pos') {
+                const levelMap = { low: 0, mid: 1, high: 2 };
+                const selectedLevel = addon.key === 'social_organic' ? state.licenseSocialLevel : state.licenseEventLevel;
+                const selectedIdx = levelMap[selectedLevel] !== undefined ? levelMap[selectedLevel] : 1;
+                const selectedValue = extraRates[selectedIdx] || 0;
+                extraRates = [selectedValue, selectedValue, selectedValue];
+            }
             if(!srcHasPositiveAddonAmount(extraRates)) {
                 return;
             }
-            const addonLabel = addon.key === 'social_organic' ? `${addon.label} – ${(state.licenseSocialLevel || 'mid').toUpperCase()}` : addon.label;
+            const addonLabel = addon.key === 'social_organic'
+                ? `${addon.label} – ${(state.licenseSocialLevel || 'mid').toUpperCase()}`
+                : addon.key === 'event_pos'
+                    ? `${addon.label} – ${(state.licenseEventLevel || 'mid').toUpperCase()}`
+                    : addon.label;
             result.licenseLines.push(`${addonLabel}${scopeSuffix}`);
             result.rangeAdd = result.rangeAdd.map((value, idx) => value + extraRates[idx]);
             result.breakdownSteps.push({
-                label: addon.key === 'social_organic' ? `${addon.label} – ${(state.licenseSocialLevel || 'mid').toUpperCase()}` : addon.label,
+                label: addonLabel,
                 amountOrFactor: srcFormatSignedCurrency(extraRates[1]),
                 effectOnRange: 'add'
             });
@@ -2286,7 +2380,7 @@ const srcComputeGlobalAddons = function(state, projectKeys) {
                 ? `Zusatzlizenz (gilt für: ${scopeNames.join(', ')})`
                 : 'Zusatzlizenz (global)';
             result.info.push({
-                label: addon.key === 'social_organic' ? `${addon.label} – ${(state.licenseSocialLevel || 'mid').toUpperCase()}` : addon.label,
+                label: addonLabel,
                 amount: srcFormatSignedCurrency(extraRates[1]),
                 formula: formulaSuffix
             });
@@ -2510,11 +2604,16 @@ const srcComputeSingleProjectResult = function(state, projectKey, options = {}) 
                 licParts.push("+ Social Media");
             }
             if(state.licenseEvent && applyAddons) {
-                const extraRates = eventExtra || [150, 150, 150];
+                const eventTrip = srcEnsurePriceTriple(eventExtra, [50, 150, 250]);
+                const eventLevelMap = { low: 0, mid: 1, high: 2 };
+                const eventIdx = eventLevelMap[state.licenseEventLevel] !== undefined ? eventLevelMap[state.licenseEventLevel] : 1;
+                const eventValue = eventTrip[eventIdx] || 0;
+                const extraRates = [eventValue, eventValue, eventValue];
                 final = final.map((v, idx) => v + extraRates[idx]);
                 if(srcHasPositiveAddonAmount(extraRates)) {
-                    breakdownSteps.push({ label: "Event", amountOrFactor: srcFormatSignedCurrency(extraRates[1]), effectOnRange: 'add' });
-                    addInfo("Event / Messe / POS", srcFormatSignedCurrency(extraRates[1]), "Zusatzlizenz");
+                    const eventLevelLabel = (state.licenseEventLevel || 'mid').toUpperCase();
+                    breakdownSteps.push({ label: `Event / Messe / POS – ${eventLevelLabel}`, amountOrFactor: srcFormatSignedCurrency(extraRates[1]), effectOnRange: 'add' });
+                    addInfo(`Event / Messe / POS – ${eventLevelLabel}`, srcFormatSignedCurrency(extraRates[1]), "Zusatzlizenz");
                 }
                 licParts.push("+ Event");
             }
@@ -2556,7 +2655,7 @@ const srcComputeSingleProjectResult = function(state, projectKey, options = {}) 
 
     if(applyAddons) {
         if(state.licenseSocialEnabled && state.licenseSocialLevel && state.licenseSocialLevel !== 'off') { licMeta.push(`Zusatzlizenz: Social Media (organisch) – ${(state.licenseSocialLevel || 'mid').toUpperCase()}`); }
-        if(state.licenseEvent) { licMeta.push("Zusatzlizenz: Event / Messe / POS"); }
+        if(state.licenseEvent) { licMeta.push(`Zusatzlizenz: Event / Messe / POS – ${(state.licenseEventLevel || 'mid').toUpperCase()}`); }
         if(state.licenseInternal && srcProjectSupportsInternalUse(genre)) {
             const internalAmount = srcGetLicenseExtraAmount((data.license_extras || {}), 'internal_use');
             if(srcHasPositiveAddonAmount(internalAmount)) {
@@ -2850,7 +2949,11 @@ window.srcCalc = function() {
     if(state.licenseSocialLevel && state.licenseSocialLevel !== 'off') {
         window.srcLicenseSocialLevel = state.licenseSocialLevel;
     }
+    if(state.licenseEventLevel && state.licenseEventLevel !== 'off') {
+        window.srcLicenseEventLevel = state.licenseEventLevel;
+    }
     srcRenderSocialBadges();
+    srcRenderEventBadges();
 
     if(!genre) {
         const breakdownBox = document.getElementById('src-calc-breakdown');
@@ -3003,7 +3106,20 @@ window.srcGeneratePDFv6 = function(options = {}) {
     doc.roundedRect(margin, 12, pageWidth - (margin * 2), 26, 3, 3, 'F');
     if(extraSettings.logoDataUrl) {
         try {
-            doc.addImage(extraSettings.logoDataUrl, 'PNG', margin + 2, 15, 20, 20);
+            const mimeMatch = String(extraSettings.logoDataUrl).match(/^data:(image\/(png|jpeg|jpg|webp));/i);
+            const imageTypeRaw = mimeMatch && mimeMatch[2] ? mimeMatch[2].toUpperCase() : 'PNG';
+            const imageType = imageTypeRaw === 'JPG' ? 'JPEG' : imageTypeRaw;
+            const imageProps = doc.getImageProperties(extraSettings.logoDataUrl);
+            const maxLogoWidth = 44;
+            const maxLogoHeight = 18;
+            const ratio = imageProps && imageProps.width && imageProps.height
+                ? Math.min(maxLogoWidth / imageProps.width, maxLogoHeight / imageProps.height)
+                : 1;
+            const logoWidth = imageProps && imageProps.width ? Math.max(10, imageProps.width * ratio) : maxLogoWidth;
+            const logoHeight = imageProps && imageProps.height ? Math.max(10, imageProps.height * ratio) : maxLogoHeight;
+            const logoX = margin + 2;
+            const logoY = 12 + ((26 - logoHeight) / 2);
+            doc.addImage(extraSettings.logoDataUrl, imageType, logoX, logoY, logoWidth, logoHeight);
         } catch (e) {}
     }
     doc.setFontSize(16);
@@ -3090,7 +3206,7 @@ Preisrahmen: ${rangeText}` : description,
     }
     rightsLines.push(`Medium/Lizenz: ${projectLabel}`);
     if(state.licenseSocialEnabled && state.licenseSocialLevel && state.licenseSocialLevel !== 'off') rightsLines.push(`Zusatzlizenz: Social Media (${(state.licenseSocialLevel || 'mid').toUpperCase()})`);
-    if(state.licenseEvent) rightsLines.push('Zusatzlizenz: Event / Messe / POS');
+    if(state.licenseEvent) rightsLines.push(`Zusatzlizenz: Event / Messe / POS (${(state.licenseEventLevel || 'mid').toUpperCase()})`);
     if(state.licenseInternal) rightsLines.push('Zusatzlizenz: Interne Nutzung (Intranet)');
     const cleanLicenseText = srcStripHTML(dynamicLicenseText);
     if(cleanLicenseText) rightsLines.push(cleanLicenseText);
@@ -3489,7 +3605,7 @@ window.srcRenderTutStep = function() {
     if (prevBtn) prevBtn.style.display = srcTutCurrentStep === 0 ? 'none' : 'inline-flex';
     const nextBtn = document.getElementById('src-tut-next');
     if (nextBtn) {
-        nextBtn.innerHTML = srcTutCurrentStep === srcTutSteps.length - 1 ? 'Beenden <span class="dashicons dashicons-yes"></span>' : 'Weiter <span class="dashicons dashicons-arrow-right-alt"></span>';
+        nextBtn.innerHTML = srcTutCurrentStep === srcTutSteps.length - 1 ? 'Beenden <i class="fa-solid fa-check" aria-hidden="true"></i>' : 'Weiter <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>';
     }
 
     if (window.__srcTutorialActive && step.element === '#src-packages-section') {

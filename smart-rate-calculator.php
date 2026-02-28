@@ -23,7 +23,6 @@ function src_enqueue_assets_v7() {
         return;
     }
 
-    wp_enqueue_style('dashicons');
     wp_enqueue_style(
         'src-rubik-font',
         'https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700&display=swap',
@@ -34,7 +33,7 @@ function src_enqueue_assets_v7() {
     wp_enqueue_style(
         'src-styles', 
         SRC_PLUGIN_URL . 'assets/css/style.css', 
-        array('dashicons', 'src-rubik-font'), 
+        array('src-rubik-font'), 
         '7.0.0'
     );
 
@@ -152,11 +151,11 @@ function src_shortcode_output_v7() {
     <div class="src-reset-header src-header-flex">
         <div class="src-header-left">
             <button class="src-action-link" onclick="srcStartTutorial()">
-                <span class="dashicons dashicons-welcome-learn-more"></span> Tutorial starten
+                <i class="fa-solid fa-graduation-cap" aria-hidden="true"></i> Tutorial starten
             </button>
             <span class="src-divider">|</span>
             <button class="src-action-link" onclick="srcOpenGuide()">
-                <span class="dashicons dashicons-book"></span> Anleitung
+                <i class="fa-solid fa-book" aria-hidden="true"></i> Anleitung
             </button>
             <span class="src-divider">|</span>
             <span class="src-currency-label">Währung wählen</span>
@@ -167,7 +166,7 @@ function src_shortcode_output_v7() {
             </div>
         </div>
         <button class="src-reset-btn" onclick="srcReset()">
-            <span class="dashicons dashicons-image-rotate"></span> Gagenrechner zurücksetzen
+            <i class="fa-solid fa-rotate-left" aria-hidden="true"></i> Gagenrechner zurücksetzen
         </button>
     </div>
 
@@ -177,7 +176,7 @@ function src_shortcode_output_v7() {
             <div class="src-layout-block">
                 <div class="src-top-grid">
                 <div>
-                    <div class="src-section-title"><span class="dashicons dashicons-portfolio"></span> Projektart</div>
+                    <div class="src-section-title"><i class="fa-solid fa-briefcase" aria-hidden="true"></i> Projektart</div>
                     <select id="src-genre" class="src-select" onchange="srcUIUpdate()">
                         <option value="" disabled selected>Bitte auswählen...</option>
                         <optgroup label="Werbung & Kampagne (Paid Media)">
@@ -206,7 +205,7 @@ function src_shortcode_output_v7() {
                 </div>
                 
                 <div>
-                    <div class="src-section-title"><span class="dashicons dashicons-translation"></span> Sprache</div>
+                    <div class="src-section-title"><i class="fa-solid fa-language" aria-hidden="true"></i> Sprache</div>
                     <select id="src-language" class="src-select" onchange="srcAnalyzeText()">
                         <option value="de">Deutsch (Standard)</option>
                         <option value="en">Englisch (+30%)</option>
@@ -309,7 +308,7 @@ function src_shortcode_output_v7() {
 
                 <div class="src-group" id="src-group-text">
                 <div class="src-section-title">
-                    <span class="dashicons dashicons-editor-alignleft"></span> Skript / Länge
+                    <i class="fa-solid fa-align-left" aria-hidden="true"></i> Skript / Länge
                     <span class="src-tooltip-icon src-field-tip" data-field-tip="length" data-default-tip="Tipp: Mit Skript kann die Dauer genauer geschätzt werden.">?</span>
                 </div>
                 <textarea id="src-text" class="src-textarea" placeholder="Skript hier einfügen für automatische Berechnung..." oninput="srcAnalyzeText()"></textarea>
@@ -358,7 +357,7 @@ function src_shortcode_output_v7() {
                     <div id="mod-ads" class="src-slide-wrap">
                         <div class="src-light-box-wrapper">
                             <div id="src-pos-type-wrap" class="src-slide-wrap">
-                                <div class="src-section-title"><span class="dashicons dashicons-admin-site"></span> POS Typ</div>
+                                <div class="src-section-title"><i class="fa-solid fa-store" aria-hidden="true"></i> POS Typ</div>
                                 <select id="src-pos-type" class="src-select" onchange="srcCalc()">
                                     <option value="pos_spot">POS Spot (mit Bild)</option>
                                     <option value="ladenfunk">Ladenfunk (ohne Bild)</option>
@@ -367,21 +366,21 @@ function src_shortcode_output_v7() {
                             </div>
                             <div class="src-group src-rights-panel src-rights-panel--compact" style="margin-bottom:20px;">
                                 <div class="src-section-title" style="margin-bottom:10px;">
-                                    <span class="dashicons dashicons-location-alt"></span> Verbreitungsgebiet
+                                    <i class="fa-solid fa-location-dot" aria-hidden="true"></i> Verbreitungsgebiet
                                     <span class="src-tooltip-icon src-field-tip" data-field-tip="region" data-default-tip="Tipp: Größere Gebiete bedeuten höhere Reichweite und höhere Lizenzkosten.">?</span>
                                 </div>
                                 <div class="src-tiles-grid">
                                     <label>
                                         <input type="radio" name="region" value="regional" class="src-tile-input" onchange="srcCalc()">
                                         <div class="src-tile">
-                                            <span class="dashicons dashicons-location src-tile-icon"></span>
+                                            <i class="fa-solid fa-location-dot src-tile-icon" aria-hidden="true"></i>
                                             <div class="src-tile-label">Regional</div>
                                         </div>
                                     </label>
                                     <label>
                                         <input type="radio" name="region" value="national" class="src-tile-input" checked onchange="srcCalc()">
                                         <div class="src-tile">
-                                            <span class="dashicons dashicons-flag src-tile-icon"></span>
+                                            <i class="fa-solid fa-flag src-tile-icon" aria-hidden="true"></i>
                                             <div class="src-tile-label">National</div>
                                         </div>
                                     </label>
@@ -395,7 +394,7 @@ function src_shortcode_output_v7() {
                                     <label>
                                         <input type="radio" name="region" value="world" class="src-tile-input" onchange="srcCalc()">
                                         <div class="src-tile">
-                                            <span class="dashicons dashicons-admin-site src-tile-icon"></span>
+                                            <i class="fa-solid fa-earth-europe src-tile-icon" aria-hidden="true"></i>
                                             <div class="src-tile-label">Weltweit</div>
                                         </div>
                                     </label>
@@ -405,7 +404,7 @@ function src_shortcode_output_v7() {
                             <div class="src-group src-rights-panel src-rights-panel--compact" style="margin-bottom:20px;">
                                 <div class="src-slider-header">
                                 <div class="src-section-title" style="margin:0;">
-                                    <span class="dashicons dashicons-calendar-alt"></span> Nutzungsdauer
+                                    <i class="fa-solid fa-calendar-days" aria-hidden="true"></i> Nutzungsdauer
                                     <span class="src-tooltip-icon src-field-tip" data-field-tip="duration" data-default-tip="Wie lange darf die Aufnahme genutzt werden? Standard ist 1 Jahr.">?</span>
                                 </div>
                                 <div id="src-slider-val" class="src-slider-val">1 Jahr</div>
@@ -431,7 +430,7 @@ function src_shortcode_output_v7() {
                                 <div id="src-pkg-online-wrap" class="src-slide-wrap">
                                     <div class="src-switch-row boxed">
                                         <span class="src-switch-content">
-                                            <span class="dashicons dashicons-cloud src-switch-icon"></span>
+                                            <i class="fa-solid fa-cloud src-switch-icon" aria-hidden="true"></i>
                                             <div>
                                                 <div class="src-switch-text">Paket: Online Audio <span class="src-tooltip-icon" data-tip="Zusätzliche Verwertung im Internet (Audio only) - ca. +60% Aufschlag.">?</span></div>
                                                 <div class="src-switch-sub">Zusätzlich zum Funkspot</div>
@@ -447,7 +446,7 @@ function src_shortcode_output_v7() {
                                 <div id="src-pkg-atv-wrap" class="src-slide-wrap">
                                     <div class="src-switch-row boxed">
                                         <span class="src-switch-content">
-                                            <span class="dashicons dashicons-video-alt3 src-switch-icon"></span>
+                                            <i class="fa-solid fa-tv src-switch-icon" aria-hidden="true"></i>
                                             <div>
                                                 <div class="src-switch-text">Paket: ATV/CTV <span class="src-tooltip-icon" data-tip="Addressable TV & Connected TV Nutzung - ca. +60% Aufschlag.">?</span></div>
                                                 <div class="src-switch-sub">Addressable TV Add-on</div>
@@ -466,10 +465,10 @@ function src_shortcode_output_v7() {
                     <div id="mod-image" class="src-slide-wrap">
                         <div class="src-subsection">
                             <div class="src-group src-rights-panel" style="margin-bottom:0;">
-                                <div class="src-section-title"><span class="dashicons dashicons-plus-alt"></span> Zusatzlizenzen</div>
+                                <div class="src-section-title"><i class="fa-solid fa-plus" aria-hidden="true"></i> Zusatzlizenzen</div>
                                 <div class="src-switch-row boxed">
                                     <span class="src-switch-content">
-                                        <span class="dashicons dashicons-share src-switch-icon"></span>
+                                        <i class="fa-solid fa-share-nodes src-switch-icon" aria-hidden="true"></i>
                                         <div>
                                             <div class="src-switch-text">Social Media (Organisch)</div>
                                             <div class="src-switch-sub">Zusatzlizenz aktivieren</div>
@@ -485,17 +484,23 @@ function src_shortcode_output_v7() {
                                 </div>
                                 <div class="src-switch-row boxed">
                                     <span class="src-switch-content">
-                                        <span class="dashicons dashicons-groups src-switch-icon"></span>
-                                        <div><div class="src-switch-text">Event / Messe / POS</div></div>
+                                        <i class="fa-solid fa-people-group src-switch-icon" aria-hidden="true"></i>
+                                        <div>
+                                            <div class="src-switch-text">Event / Messe / POS</div>
+                                            <div class="src-switch-sub">Zusatzlizenz aktivieren</div>
+                                        </div>
                                     </span>
-                                    <div class="src-toggle-wrapper">
-                                        <input type="checkbox" id="src-lic-event">
-                                        <label class="src-toggle-slider" for="src-lic-event"></label>
+                                    <div class="src-field-inline src-social-inline" id="src-lic-event-level-wrap">
+                                        <div class="src-toggle-wrapper">
+                                            <input type="checkbox" id="src-lic-event">
+                                            <label class="src-toggle-slider" for="src-lic-event"></label>
+                                        </div>
+                                        <div class="src-social-badges" id="src-event-badges"></div>
                                     </div>
                                 </div>
                                 <div class="src-switch-row boxed">
                                     <span class="src-switch-content">
-                                        <span class="dashicons dashicons-welcome-learn-more src-switch-icon"></span>
+                                        <i class="fa-solid fa-building-columns src-switch-icon" aria-hidden="true"></i>
                                         <div><div class="src-switch-text">Interne Nutzung (Mitarbeiterschulung / Intranet)</div></div>
                                     </span>
                                     <div class="src-toggle-wrapper">
@@ -577,7 +582,7 @@ function src_shortcode_output_v7() {
                 <div class="src-opt-card src-collapse" data-opt="cutdown">
                     <div class="src-opt-head">
                         <div class="src-opt-left">
-                            <span class="dashicons dashicons-controls-repeat src-opt-icon" aria-hidden="true"></span>
+                            <i class="fa-solid fa-repeat src-opt-icon" aria-hidden="true"></i>
                             <div class="src-opt-text">
                                 <div class="src-opt-title">
                                     Cut-down / Reminder
@@ -601,7 +606,7 @@ function src_shortcode_output_v7() {
                 <div class="src-opt-card" data-opt="localmode">
                     <div class="src-opt-head">
                         <div class="src-opt-left">
-                            <span class="dashicons dashicons-location src-opt-icon"></span>
+                            <i class="fa-solid fa-location-dot src-opt-icon" aria-hidden="true"></i>
                             <div class="src-opt-text">
                                 <div class="src-opt-title">Kleinräumiges Segment (Lokal)</div>
                                 <div class="src-opt-sub">Sondertarif für Lokalradio / KMU Online</div>
@@ -622,7 +627,7 @@ function src_shortcode_output_v7() {
                 <div class="src-opt-card" data-opt="layout">
                     <div class="src-opt-head">
                         <div class="src-opt-left">
-                            <span class="dashicons dashicons-edit src-opt-icon"></span>
+                            <i class="fa-solid fa-pen-to-square src-opt-icon" aria-hidden="true"></i>
                             <div class="src-opt-text">
                                 <div class="src-opt-title">Nur Layout / Pitch</div>
                                 <div class="src-opt-sub">Keine Veröffentlichung (Intern)</div>
@@ -643,7 +648,7 @@ function src_shortcode_output_v7() {
                 <div class="src-opt-card" data-opt="studio">
                     <div class="src-opt-head">
                         <div class="src-opt-left">
-                            <span class="dashicons dashicons-microphone src-opt-icon"></span>
+                            <i class="fa-solid fa-microphone src-opt-icon" aria-hidden="true"></i>
                             <div class="src-opt-text">
                                 <div class="src-opt-title">Eigenes Studio / Remote</div>
                                 <div class="src-opt-sub">Technik-Pauschale addieren</div>
@@ -667,7 +672,7 @@ function src_shortcode_output_v7() {
                 <div class="src-opt-card" data-opt="express">
                     <div class="src-opt-head">
                         <div class="src-opt-left">
-                            <span class="dashicons dashicons-clock src-opt-icon"></span>
+                            <i class="fa-solid fa-clock src-opt-icon" aria-hidden="true"></i>
                             <div class="src-opt-text">
                                 <div class="src-opt-title">Express Lieferung</div>
                                 <div class="src-opt-sub">Schnellere Abgabe mit Aufpreis</div>
@@ -693,7 +698,7 @@ function src_shortcode_output_v7() {
                 <div class="src-opt-card" data-opt="discount">
                     <div class="src-opt-head">
                         <div class="src-opt-left">
-                            <span class="dashicons dashicons-tag src-opt-icon"></span>
+                            <i class="fa-solid fa-tag src-opt-icon" aria-hidden="true"></i>
                             <div class="src-opt-text">
                                 <div class="src-opt-title">Rabatt gewähren?</div>
                                 <div class="src-opt-sub">Vom Netto-Betrag abziehen</div>
@@ -723,7 +728,7 @@ function src_shortcode_output_v7() {
             <div class="src-sidebar">
                 <div class="src-sidebar-sticky" id="srcSidebarSticky">
                     <div class="src-sidebar-section" id="src-kalkulation-section">
-                        <div class="src-sidebar-title"><span class="src-title-main"><span class="src-title-icon" aria-hidden="true"><span class="dashicons dashicons-calculator"></span></span><span class="src-title-text">Kalkulation</span></span><span class="src-live-badge">Live-Rechnung</span></div>
+                        <div class="src-sidebar-title"><span class="src-title-main"><span class="src-title-icon" aria-hidden="true"><i class="fa-solid fa-calculator"></i></span><span class="src-title-text">Kalkulation</span></span><span class="src-live-badge">Live-Rechnung</span></div>
                         <div class="src-result-card">
                             <div class="src-price-label">Empfohlene Gage (Netto)</div>
                             <div class="src-price-main-box">
@@ -755,7 +760,7 @@ function src_shortcode_output_v7() {
                     <section id="src-license-section" class="src-sidebar-section src-license-section src-license-sidebar src-collapse">
                         <div class="src-sidebar-head src-license-sidebar__head">
                             <div class="src-sidebar-head__left">
-                                <span class="src-sidebar-icon src-title-icon" aria-hidden="true"><span class="dashicons dashicons-media-document"></span></span>
+                                <span class="src-sidebar-icon src-title-icon" aria-hidden="true"><i class="fa-solid fa-file-lines"></i></span>
                                 <h3 class="src-sidebar-title">Nutzungsrechte &amp; Lizenzen</h3>
                             </div>
                         </div>
@@ -765,7 +770,7 @@ function src_shortcode_output_v7() {
                     </section>
 
                     <div class="src-sidebar-section src-collapse" id="src-pricedetails-section">
-                        <div class="src-sidebar-title src-sidebar-title--pricedetails"><span class="src-title-main"><span class="src-title-icon" aria-hidden="true"><span class="dashicons dashicons-list-view"></span></span><span class="src-title-text">Preis-Details</span></span></div>
+                        <div class="src-sidebar-title src-sidebar-title--pricedetails"><span class="src-title-main"><span class="src-title-icon" aria-hidden="true"><i class="fa-solid fa-list"></i></span><span class="src-title-text">Preis-Details</span></span></div>
                         <div id="src-calc-breakdown" class="src-breakdown-box src-collapse">
                             <div id="src-breakdown-list">
                                 <div class="src-breakdown-row">
@@ -780,12 +785,12 @@ function src_shortcode_output_v7() {
                     </div>
 
                     <div class="src-sidebar-section src-collapse src-sidebar-box--notes" id="src-notes-tips-section">
-                        <div class="src-sidebar-title src-sidebar-title--notes"><span class="src-title-main"><span class="src-title-icon" aria-hidden="true"><span class="dashicons dashicons-lightbulb"></span></span><span class="src-title-text">Hinweise &amp; Tipps</span></span></div>
+                        <div class="src-sidebar-title src-sidebar-title--notes"><span class="src-title-main"><span class="src-title-icon" aria-hidden="true"><i class="fa-solid fa-lightbulb"></i></span><span class="src-title-text">Hinweise &amp; Tipps</span></span></div>
                         <div id="src-static-notes" class="src-notes-tips-box"></div>
                     </div>
 
                     <div class="src-sidebar-section src-collapse src-sidebar-box--packages" id="src-packages-section">
-                        <div class="src-sidebar-title src-sidebar-title--packages"><span class="src-title-main"><span class="src-title-icon" aria-hidden="true"><span class="dashicons dashicons-grid-view"></span></span><span class="src-title-text">Pakete</span></span></div>
+                        <div class="src-sidebar-title src-sidebar-title--packages"><span class="src-title-main"><span class="src-title-icon" aria-hidden="true"><i class="fa-solid fa-table-cells-large"></i></span><span class="src-title-text">Pakete</span></span></div>
                         <div class="src-packages-box">
                             <button class="src-mini-btn src-mini-btn--wide" id="src-build-packages" type="button">Pakete erzeugen</button>
                             <div id="src-packages-list"></div>
@@ -793,7 +798,7 @@ function src_shortcode_output_v7() {
                     </div>
 
                     <div class="src-sidebar-section src-info-section" id="src-knowledge-section">
-                        <div class="src-sidebar-title src-sidebar-title--knowledge"><span class="src-title-main"><span class="src-title-icon" aria-hidden="true"><span class="dashicons dashicons-welcome-learn-more"></span></span><span class="src-title-text">Wissenswertes</span></span></div>
+                        <div class="src-sidebar-title src-sidebar-title--knowledge"><span class="src-title-main"><span class="src-title-icon" aria-hidden="true"><i class="fa-solid fa-circle-info"></i></span><span class="src-title-text">Wissenswertes</span></span></div>
                         <div class="src-info-box">
                             <div class="src-acc-item">
                                 <div class="src-acc-head" onclick="toggleAccordion(this)">Berechnungsgrundlage</div>
@@ -842,7 +847,7 @@ function src_shortcode_output_v7() {
                     <div id="src-save-section">
                     <div class="src-footer-actions">
                         <button class="src-btn" id="src-offer-save-btn" onclick="srcOpenExportModal()">
-                            <span class="dashicons dashicons-pdf"></span> Angebot speichern
+                            <i class="fa-solid fa-file-pdf" aria-hidden="true"></i> Angebot speichern
                         </button>
                         <div class="src-note-text">
                             <a class="src-vds-link" href="https://www.sprecherverband.de/wp-content/uploads/2025/02/VDS_Gagenkompass_2025.pdf" target="_blank" rel="noopener">Auf Basis VDS Gagenkompass 2025</a>. Alle Preise zzgl. MwSt.
@@ -976,6 +981,13 @@ function src_shortcode_output_v7() {
                                 <input type="text" id="src-export-validity" class="src-input-text" placeholder="Gültigkeit (z.B. 14 Tage)">
                                 <input type="text" id="src-export-payment" class="src-input-text" placeholder="Zahlungsbedingungen (optional)">
                                 <input type="text" id="src-export-disclaimer" class="src-input-text" placeholder="Rechtlicher Hinweis (optional)">
+                                <label class="src-export-logo-field">PDF Ausgabe
+                                    <select id="src-export-output-mode" class="src-input-text src-export-select">
+                                        <option value="both">PDF + Mailtext</option>
+                                        <option value="pdf">Nur PDF Angebot</option>
+                                        <option value="email">Nur Mailtext kopieren</option>
+                                    </select>
+                                </label>
                                 <label class="src-export-logo-field">Logo für PDF-Export (nur temporär)
                                     <input type="file" id="src-export-logo" class="src-input-text" accept="image/png,image/jpeg,image/webp">
                                 </label>
@@ -1002,7 +1014,7 @@ function src_shortcode_output_v7() {
             
             <div class="src-modal__head src-guide-header-modern">
                 <div class="src-guide-header-left">
-                    <div class="src-guide-header-icon"><span class="dashicons dashicons-book"></span></div>
+                    <div class="src-guide-header-icon"><i class="fa-solid fa-book" aria-hidden="true"></i></div>
                     <div>
                         <div class="src-modal__title">Anleitung & Leitfaden</div>
                         <div class="src-modal__subtitle">So kalkulierst Du Sprechergagen professionell</div>
@@ -1030,31 +1042,31 @@ function src_shortcode_output_v7() {
                 <p class="src-guide-intro-text">
                     Willkommen im Leitfaden zur Gagenkalkulation! Die Honorierung von professionellen Sprecherleistungen basiert nicht auf Stundenlöhnen, sondern auf dem Prinzip der <strong>Nutzungsrechte</strong>. Grundlage für alle Berechnungen ist der offizielle <a href="https://www.sprecherverband.de/wp-content/uploads/2025/02/VDS_Gagenkompass_2025.pdf" target="_blank" rel="noopener" class="src-vds-link-inline">VDS Gagenkompass 2025</a>. Diese Anleitung beantwortet alle Fragen zur korrekten Einstellung und Nutzung.
                 </p>
-                <h3 id="guide-1" class="src-guide-h3"><span class="dashicons dashicons-chart-pie src-guide-h3-icon"></span> 1. Das Verwertungsprinzip</h3>
+                <h3 id="guide-1" class="src-guide-h3"><i class="fa-solid fa-chart-pie src-guide-h3-icon" aria-hidden="true"></i> 1. Das Verwertungsprinzip</h3>
                 <p>Man bezahlt primär für die Reichweite und die Zeit, in der eine Marke die Stimme nutzt. Ein Werbespot, der ein Jahr lang national im TV läuft, hat einen deutlich höheren Werbewert als ein reines internes Schulungsvideo. Daher steigen die Kosten exponentiell mit dem Medium, der Verbreitung (Gebiet) und der Laufzeit.</p>
 
-                <h3 id="guide-2" class="src-guide-h3"><span class="dashicons dashicons-portfolio src-guide-h3-icon"></span> 2. Projektarten & Layout</h3>
+                <h3 id="guide-2" class="src-guide-h3"><i class="fa-solid fa-briefcase src-guide-h3-icon" aria-hidden="true"></i> 2. Projektarten & Layout</h3>
                 <p>Die Projektart bestimmt die Grundlage. Paid Media (TV, Funk, Online Ads) basiert auf Reichweiten-Faktoren, während Unpaid Media (Imagefilme, E-Learning) meist nach Textlänge abgerechnet wird.</p>
                 <div class="src-guide-tip">
                     <strong>💡 Layout & Pitch (Sonderfall)</strong><br>
                     Wird die Aufnahme lediglich genutzt, um intern eine Idee in einem <span class="src-glossary-term" data-hover="Präsentation einer Idee vor dem Kunden, bevor das eigentliche Projekt final beauftragt wird.">Pitchbild</span> zu präsentieren, wähle in den Optionen <em>"Nur Layout / Pitch"</em>. Hier wird eine stark reduzierte Pauschale ohne Rechte berechnet.
                 </div>
 
-                <h3 id="guide-3" class="src-guide-h3"><span class="dashicons dashicons-clock src-guide-h3-icon"></span> 3. Skriptlänge & Module</h3>
+                <h3 id="guide-3" class="src-guide-h3"><i class="fa-solid fa-clock src-guide-h3-icon" aria-hidden="true"></i> 3. Skriptlänge & Module</h3>
                 <p>Die Länge des Textes ist bei Corporate- oder E-Learning-Projekten essenziell. Das System schätzt die Dauer automatisch, sobald ein Skript eingefügt wird.</p>
                 <div class="src-guide-tip">
                     <strong>⏱️ Faustregel & Telefonansagen</strong><br>
                     Kalkuliere pro Minute mit etwa 900 Zeichen (inkl. Leerzeichen). Bei <em>Telefonansagen (IVR)</em> wird nicht nach Länge, sondern nach <span class="src-glossary-term" data-hover="Ein Modul entspricht einer einzelnen, in sich abgeschlossenen Ansage im Telefonsystem.">Modulen</span> abgerechnet. 3 Module sind in der Grundpauschale enthalten.
                 </div>
 
-                <h3 id="guide-4" class="src-guide-h3"><span class="dashicons dashicons-location-alt src-guide-h3-icon"></span> 4. Verbreitungsgebiet & Lokal</h3>
+                <h3 id="guide-4" class="src-guide-h3"><i class="fa-solid fa-location-dot src-guide-h3-icon" aria-hidden="true"></i> 4. Verbreitungsgebiet & Lokal</h3>
                 <p>Das Gebiet definiert die Ausstrahlungsgrenzen (Regional, National, DACH, Weltweit) und ist für Werbespots hochrelevant.</p>
                 <div class="src-guide-tip">
                     <strong>📍 Kleinräumiges Segment (Lokal / KMU)</strong><br>
                     Aktiviere in den Optionen <em>"Kleinräumiges Segment"</em> für Sondertarife, die nicht über reguläre Multiplikatoren laufen. Z.B. "Funkspot (Lokal)" oder "Online Video (Kleinräumig)" für <span class="src-glossary-term" data-hover="Kleine und mittlere Unternehmen mit einem strikt begrenzten Media-Budget (max. 5.000 €).">KMU</span>.
                 </div>
 
-                <h3 id="guide-5" class="src-guide-h3"><span class="dashicons dashicons-calendar-alt src-guide-h3-icon"></span> 5. Laufzeiten & Buyouts</h3>
+                <h3 id="guide-5" class="src-guide-h3"><i class="fa-solid fa-calendar-days src-guide-h3-icon" aria-hidden="true"></i> 5. Laufzeiten & Buyouts</h3>
                 <p>Die Standard-Lizenz für Werbung beträgt oft 1 Jahr. Unter "Erweitert" lassen sich komplexe Modelle abbilden:</p>
                 <ul>
                     <li><strong><span class="src-glossary-term" data-hover="Ein pauschaler Zuschlag (+25%), um Nutzungsrechte vereinfacht für einen festgelegten Zeitraum abzugelten.">Buyout</span> (einmalig):</strong> Ein Aufschlag von 25% auf die Endsumme.</li>
@@ -1062,14 +1074,14 @@ function src_shortcode_output_v7() {
                     <li><strong>Unlimited:</strong> Eine zeitlich unbegrenzte Nutzung im Paid-Bereich vervielfacht das Honorar, da die Stimme potenziell für Konkurrenzprodukte blockiert wird.</li>
                 </ul>
 
-                <h3 id="guide-6" class="src-guide-h3"><span class="dashicons dashicons-plus-alt src-guide-h3-icon"></span> 6. Zusatzlizenzen & Cut-downs</h3>
+                <h3 id="guide-6" class="src-guide-h3"><i class="fa-solid fa-plus src-guide-h3-icon" aria-hidden="true"></i> 6. Zusatzlizenzen & Cut-downs</h3>
                 <p>Zusätzliche Medienkanäle oder Kurzversionen können dem Projekt flexibel hinzugefügt werden.</p>
                 <div class="src-guide-tip">
                     <strong>✂️ Cut-downs, Tag-ons & Pakete</strong><br>
                     Wird aus einem 30-sekündigen Hauptspot noch eine Kurzversion geschnitten, gilt dies als <span class="src-glossary-term" data-hover="Eine gekürzte Version des Hauptspots (oft als 15s Reminder) aus dem gleichen Rohmaterial.">Cut-down</span> (50 % der Gage). Nutze zudem Pakete (z.B. <em>Online Audio</em> für Funkspots), um Cross-Media-Kampagnen branchenüblich abzubilden.
                 </div>
 
-                <h3 id="guide-7" class="src-guide-h3"><span class="dashicons dashicons-admin-settings src-guide-h3-icon"></span> 7. Optionen, Aufwand & Rabatte</h3>
+                <h3 id="guide-7" class="src-guide-h3"><i class="fa-solid fa-sliders src-guide-h3-icon" aria-hidden="true"></i> 7. Optionen, Aufwand & Rabatte</h3>
                 <p>Weitere Projektumstände können die Summe final anpassen:</p>
                 <ul>
                     <li><strong>Produktion & Aufwand:</strong> Spezielles <span class="src-glossary-term" data-hover="Die exakte lippensynchrone Anpassung der Sprache an die Bewegungen im Video.">Lipsync</span>, technisches Vokabular oder mehrere Sprachversionen fließen hier als Komplexitätsfaktor ein.</li>
@@ -1078,7 +1090,7 @@ function src_shortcode_output_v7() {
                     <li><strong>Währungsumrechnung:</strong> Die empfohlenen deutschen Gagen werden ausschließlich zum aktuellen Wechselkurs in CHF bzw. $ umgerechnet. Es werden keine anderen (z.B. schweizerischen/amerikanischen) Preismodelle verwendet.</li>
                 </ul>
 
-                <h3 id="guide-8" class="src-guide-h3"><span class="dashicons dashicons-lock src-guide-h3-icon"></span> 8. Datenschutz & Sicherheit</h3>
+                <h3 id="guide-8" class="src-guide-h3"><i class="fa-solid fa-lock src-guide-h3-icon" aria-hidden="true"></i> 8. Datenschutz & Sicherheit</h3>
                 <p><strong>100% Lokal & Privat:</strong> Alle Deine eingegebenen Daten, Projektinformationen, Skripte und kalkulierten Zahlen werden <strong>niemals</strong> auf unseren Servern gespeichert oder an Dritte übertragen. Die gesamte Berechnung und auch die Erstellung der PDF-Angebote findet ausschließlich lokal in Deinem Browser statt. Deine Daten gehören nur Dir.</p>
                 <br>
             </div>
@@ -1098,7 +1110,7 @@ function src_shortcode_output_v7() {
                 <div class="src-tutorial-dots" id="src-tut-dots"></div>
                 <div class="src-tutorial-nav">
                     <button type="button" id="src-tut-prev" class="src-tut-btn src-tut-btn-secondary" onclick="srcTutPrev()">Zurück</button>
-                    <button type="button" id="src-tut-next" class="src-tut-btn src-tut-btn-primary" onclick="srcTutNext()">Weiter <span class="dashicons dashicons-arrow-right-alt"></span></button>
+                    <button type="button" id="src-tut-next" class="src-tut-btn src-tut-btn-primary" onclick="srcTutNext()">Weiter <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></button>
                 </div>
             </div>
         </div>
