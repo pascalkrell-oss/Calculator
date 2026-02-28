@@ -133,7 +133,7 @@ let exportModalState = {
     breakdown: false,
     risk: false,
     lang: 'de',
-    pricing: 'range',
+    pricing: 'custom',
     client: 'direct',
     offerTheme: 'dark',
     selectedPackage: 'standard'
@@ -349,6 +349,18 @@ document.addEventListener('DOMContentLoaded', () => {
             srcCalc();
         });
     }
+    const customFeeInput = document.getElementById('src-export-custom-fee');
+    if(customFeeInput) {
+        customFeeInput.addEventListener('input', () => srcUpdateExportFeeFields());
+        customFeeInput.addEventListener('blur', () => {
+            const value = srcParseCustomFeeInput(customFeeInput.value);
+            if(Number.isFinite(value) && value > 0) {
+                customFeeInput.value = srcFormatCurrency(value).replace(/\s*[A-Z]{3}$/, '').trim();
+            }
+            srcUpdateExportFeeFields();
+        });
+    }
+
     const outputMode = document.getElementById('src-export-output-mode');
     if(outputMode) {
         outputMode.addEventListener('change', () => srcSyncOutputModeToTiles());
@@ -1662,6 +1674,44 @@ const srcUpdateDurationSliderFill = function() {
     });
 }
 
+
+const srcParseCustomFeeInput = function(rawValue) {
+    const normalized = String(rawValue || '').replace(/\./g, '').replace(',', '.').trim();
+    const parsed = parseFloat(normalized);
+    return Number.isFinite(parsed) ? parsed : NaN;
+}
+
+const srcUpdateExportFeeFields = function() {
+    const rangeEl = document.getElementById('src-export-range-display');
+    const inputEl = document.getElementById('src-export-custom-fee');
+    const hintEl = document.getElementById('src-export-custom-fee-hint');
+    if(!rangeEl || !inputEl) return;
+    const state = srcGetStateFromUI();
+    const result = srcComputeResult(state);
+    rangeEl.textContent = `Von ${srcFormatCurrency(result.final[0])} bis ${srcFormatCurrency(result.final[2])}`;
+
+    const feeValue = srcParseCustomFeeInput(inputEl.value);
+    if(!hintEl) return;
+    if(Number.isFinite(feeValue) && feeValue > 0 && (feeValue < result.final[0] || feeValue > result.final[2])) {
+        hintEl.textContent = 'Hinweis: Die Gage liegt außerhalb der ermittelten Range.';
+    } else {
+        hintEl.textContent = '';
+    }
+}
+
+const srcPrefillExportCustomFee = function() {
+    const inputEl = document.getElementById('src-export-custom-fee');
+    if(!inputEl) return;
+    const finalFeeInput = document.getElementById('src-final-fee-user');
+    const manualValue = srcParseCustomFeeInput(finalFeeInput ? finalFeeInput.value : '');
+    if(Number.isFinite(manualValue) && manualValue > 0) {
+        inputEl.value = srcFormatCurrency(manualValue).replace(/\s*[A-Z]{3}$/, '').trim();
+    } else if(!inputEl.value.trim()) {
+        inputEl.value = '';
+    }
+    srcUpdateExportFeeFields();
+}
+
 const srcUpdateExportPackageVisibility = function() {
     const wrap = document.getElementById('src-export-package-wrap');
     if(!wrap) return;
@@ -1706,6 +1756,7 @@ window.srcOpenExportModal = function(options = {}) {
     }
     srcSyncExportLogoSelectText(window.srcOfferLogoFile ? (window.srcOfferLogoFile.name || '') : '');
     srcSetExportLogoError('');
+    srcPrefillExportCustomFee();
     if(!exportModalKeyHandler) {
         exportModalKeyHandler = (event) => {
             if(event.key === 'Escape') {
@@ -1913,11 +1964,8 @@ const srcBuildOfferEmailText = function({ lang, pricingMode, selectedPackage, in
     const projectName = state.layoutMode ? "Layout / Pitch" : srcGetProjectName(state.projectKey);
     const linkedProjectNames = Array.from(new Set((state.linkedProjects || []).map(srcGetProjectName).filter(Boolean)));
     const projectLabel = linkedProjectNames.length ? `${projectName} (+ ${linkedProjectNames.join(', ')})` : projectName;
-    const pricingLabel = pricingMode === 'mean' ? i18n.pricingMean : pricingMode === 'package' ? i18n.pricingPackage : i18n.pricingRange;
-    let priceText = srcFormatRange(result.final[0], result.final[2]);
-    if(pricingMode === 'mean') {
-        priceText = srcFormatCurrency(result.final[1]);
-    }
+    const pricingLabel = pricingMode === 'package' ? i18n.pricingPackage : i18n.pricingMean;
+    let priceText = srcFormatCurrency(Number.isFinite(extraSettings.customFee) ? extraSettings.customFee : result.final[1]);
     if(pricingMode === 'package') {
         if(!packagesState) {
             packagesState = srcBuildPackages(state);
@@ -2004,7 +2052,7 @@ const srcHandleExportStart = async function() {
         return;
     }
     const lang = exportModalState.lang || 'de';
-    const pricingMode = exportModalState.pricing || 'range';
+    const pricingMode = exportModalState.pricing || 'custom';
     const selectedPackage = document.getElementById('src-export-package')?.value || exportModalState.selectedPackage || 'standard';
     const includePdf = exportModalState.pdf;
     const includeEmail = exportModalState.email;
@@ -2048,7 +2096,10 @@ const srcHandleExportStart = async function() {
         return;
     }
     const customerType = exportModalState.client || 'direct';
-    const extraSettings = { projectName, scope, customerType, offerId, offerSubject, customerName, customerAddress, providerName, providerAddress, providerContact, offerDate, paymentTerms, disclaimer, logoDataUrl, offerTheme };
+    const customFeeInput = document.getElementById('src-export-custom-fee');
+    const customFeeValue = srcParseCustomFeeInput(customFeeInput ? customFeeInput.value : '');
+    const customFee = Number.isFinite(customFeeValue) && customFeeValue > 0 ? customFeeValue : null;
+    const extraSettings = { projectName, scope, customerType, offerId, offerSubject, customerName, customerAddress, providerName, providerAddress, providerContact, offerDate, paymentTerms, disclaimer, logoDataUrl, offerTheme, customFee };
     if(includePdf) {
         srcGeneratePDFv6({ lang, pricingMode, selectedPackage, includeBreakdown, includeRisk, extraSettings });
     }
@@ -3250,6 +3301,7 @@ window.srcCalc = function() {
     const projectLabel = linkedProjectNames.length ? `${projectName} (+ ${linkedProjectNames.join(', ')})` : projectName;
     const guidancePlain = (result.guidanceText || dynamicLicenseText || '')
         .replace(/<[^>]*>/g, ' ')
+        .replace(/gemäß\s+VDS\/Gagenkompass/gi, '')
         .replace(/\s+/g, ' ')
         .trim();
     const licenseMatch = guidancePlain.match(/Lizenzen?\s*:\s*([^\.\n]+)/i);
@@ -3300,7 +3352,7 @@ window.srcGeneratePDFv6 = function(options = {}) {
     const doc = new jsPDF();
     const lang = options.lang || 'de';
     const i18n = SRC_I18N[lang] || SRC_I18N.de;
-    const pricingMode = options.pricingMode || 'range';
+    const pricingMode = options.pricingMode || 'custom';
     const selectedPackage = options.selectedPackage || 'standard';
     const includeBreakdown = Boolean(options.includeBreakdown);
     const includeRisk = Boolean(options.includeRisk);
@@ -3320,7 +3372,7 @@ window.srcGeneratePDFv6 = function(options = {}) {
     const offerDate = extraSettings.offerDate || new Date().toLocaleDateString(lang === 'en' ? 'en-US' : 'de-DE');
     const subjectText = extraSettings.offerSubject || i18n.subject;
 
-    let priceValue = result.final[1];
+    let priceValue = Number.isFinite(extraSettings.customFee) ? extraSettings.customFee : result.final[1];
     let rangeText = srcFormatRange(result.final[0], result.final[2]);
     let packageLabel = '';
     if(pricingMode === 'package') {
@@ -3339,6 +3391,7 @@ window.srcGeneratePDFv6 = function(options = {}) {
     const summaryBg = isLightTheme ? [255, 255, 255] : [241, 245, 249];
     doc.setFillColor(...headerBg);
     doc.setDrawColor(...headerBorder);
+    const rightInset = 14;
     doc.roundedRect(margin, 12, pageWidth - (margin * 2), 26, 3, 3, isLightTheme ? 'FD' : 'F');
     if(extraSettings.logoDataUrl) {
         try {
@@ -3346,28 +3399,32 @@ window.srcGeneratePDFv6 = function(options = {}) {
             const imageTypeRaw = mimeMatch && mimeMatch[2] ? mimeMatch[2].toUpperCase() : 'PNG';
             const imageType = imageTypeRaw === 'JPG' ? 'JPEG' : imageTypeRaw;
             const imageProps = doc.getImageProperties(extraSettings.logoDataUrl);
-            const logoBoxWidth = 52;
+            const logoBoxWidth = 58;
             const logoBoxHeight = 22;
-            const logoBoxX = margin + 2;
+            const logoBoxX = margin + 3;
             const logoBoxY = 14;
             doc.setFillColor(255, 255, 255);
             doc.roundedRect(logoBoxX, logoBoxY, logoBoxWidth, logoBoxHeight, 2, 2, 'F');
+            doc.saveGraphicsState();
+            doc.rect(logoBoxX, logoBoxY, logoBoxWidth, logoBoxHeight, 'clip');
             const ratio = imageProps && imageProps.width && imageProps.height
                 ? Math.min(logoBoxWidth / imageProps.width, logoBoxHeight / imageProps.height)
                 : 1;
-            const logoWidth = imageProps && imageProps.width ? Math.max(8, imageProps.width * ratio) : logoBoxWidth;
-            const logoHeight = imageProps && imageProps.height ? Math.max(8, imageProps.height * ratio) : logoBoxHeight;
+            const logoWidth = imageProps && imageProps.width ? imageProps.width * ratio : logoBoxWidth;
+            const logoHeight = imageProps && imageProps.height ? imageProps.height * ratio : logoBoxHeight;
             const logoX = logoBoxX + ((logoBoxWidth - logoWidth) / 2);
             const logoY = logoBoxY + ((logoBoxHeight - logoHeight) / 2);
             doc.addImage(extraSettings.logoDataUrl, imageType, logoX, logoY, logoWidth, logoHeight);
+            doc.restoreGraphicsState();
         } catch (e) {}
     }
     doc.setFontSize(16);
     doc.setTextColor(...headerText);
-    doc.text(lang === 'en' ? 'Offer' : 'Angebot', pageWidth - margin - 2, 22, { align: 'right' });
+    const headerRightX = pageWidth - margin - rightInset;
+    doc.text(lang === 'en' ? 'Offer' : 'Angebot', headerRightX, 22, { align: 'right' });
     doc.setFontSize(9);
-    doc.text(`${i18n.dateLabel}: ${offerDate}`, pageWidth - margin - 2, 28, { align: 'right' });
-    doc.text(`${i18n.offerNumberLabel}: ${extraSettings.offerId || '—'}`, pageWidth - margin - 2, 33, { align: 'right' });
+    doc.text(`${i18n.dateLabel}: ${offerDate}`, headerRightX, 28, { align: 'right' });
+    doc.text(`${i18n.offerNumberLabel}: ${extraSettings.offerId || '—'}`, headerRightX, 33, { align: 'right' });
     currentY = 48;
 
     const providerLines = [
@@ -3421,10 +3478,9 @@ window.srcGeneratePDFv6 = function(options = {}) {
             head: [['Pos.', 'Leistungsbeschreibung / Projekt', 'Einzel', 'Gesamt']],
             body: [[
                 '1',
-                pricingMode === 'range' ? `${description}
-Preisrahmen: ${rangeText}` : description,
+                description,
                 srcFormatCurrency(priceValue),
-                pricingMode === 'range' ? rangeText : srcFormatCurrency(priceValue)
+                srcFormatCurrency(priceValue)
             ]],
             theme: 'grid',
             headStyles: { fillColor: [15, 20, 26], textColor: 255 },
@@ -3454,6 +3510,7 @@ Preisrahmen: ${rangeText}` : description,
         rightsLines.push('Zusatzlizenzen.');
     }
     const cleanLicenseText = srcStripAddonLevelLabel(srcStripHTML(dynamicLicenseText))
+        .replace(/gemäß\s+VDS\/Gagenkompass/gi, '')
         .replace(/Zusatzlizenz(en)?\s*:/gi, '')
         .replace(/\s+/g, ' ')
         .trim();
@@ -3469,8 +3526,8 @@ Preisrahmen: ${rangeText}` : description,
     const summaryPadding = 4;
     const summaryContentX = summaryX + summaryPadding;
     let summaryY = currentY + 4;
-    const subtotal = pricingMode === 'package' ? priceValue : result.final[1];
-    const totalLabel = pricingMode === 'range' ? rangeText : srcFormatCurrency(subtotal);
+    const subtotal = priceValue;
+    const totalLabel = srcFormatCurrency(subtotal);
     doc.setFillColor(...summaryBg);
     doc.setDrawColor(203, 213, 225);
     doc.roundedRect(summaryX, currentY, summaryWidth, summaryHeight, 3, 3, 'FD');
@@ -3519,11 +3576,11 @@ Preisrahmen: ${rangeText}` : description,
     const legalStartY = Math.min(pageHeight - 24, currentY + 20);
     doc.setFontSize(8);
     doc.setTextColor(71, 85, 105);
-    const footerLeftWidth = pageWidth - (margin * 2) - 48;
+    const footerLeftWidth = pageWidth - (margin * 2) - 62;
     doc.text(doc.splitTextToSize(paymentText, footerLeftWidth), margin, legalStartY);
     doc.text(doc.splitTextToSize(disclaimerText, footerLeftWidth), margin, legalStartY + 5);
     doc.text(doc.splitTextToSize('Sprecherpreise kalkuliert auf Grundlage des VDS Gagenkompass 2025.', footerLeftWidth), margin, legalStartY + 10);
-    doc.text(`Seite ${doc.internal.getNumberOfPages()} von ${totalPagesExp}`, pageWidth - margin, pageHeight - 8, { align: 'right' });
+    doc.text(`SEITE ${doc.internal.getNumberOfPages()}/${totalPagesExp}`, pageWidth - margin - rightInset, pageHeight - 8, { align: 'right' });
     if(typeof doc.putTotalPages === 'function') {
         doc.putTotalPages(totalPagesExp);
     }
