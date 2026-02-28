@@ -3579,31 +3579,19 @@ window.srcGeneratePDFv6 = async function(options = {}) {
             headStyles: { fillColor: [31, 41, 55], textColor: 255, fontSize: 10, cellPadding: 2.4 },
             styles: { fontSize: 10, cellPadding: 2.2, textColor: [30, 41, 59], lineColor: [226, 232, 240], lineWidth: 0.2 },
             columnStyles: {
-                0: { halign: 'center', cellWidth: 10 },
+                0: { halign: 'center', cellWidth: 13, overflow: 'hidden' },
                 2: { halign: 'right', cellWidth: 34 }
             },
             didParseCell: function(hookData) {
+                if(hookData.column.index === 0) {
+                    hookData.cell.text = ['Pos.'.replace(/\s+/g, '')];
+                    return;
+                }
                 if(hookData.section === 'body' && hookData.column.index === 1) {
                     const lines = String(hookData.cell.raw || '').split('\n').filter(Boolean);
                     const main = lines[0] || '';
                     const secondary = lines.slice(1).join(' · ');
                     hookData.cell.text = secondary ? [`${main}`, `${secondary}`] : [main];
-                }
-            },
-            didDrawCell: function(hookData) {
-                if(hookData.section === 'body' && hookData.column.index === 1 && Array.isArray(hookData.cell.text) && hookData.cell.text.length > 1) {
-                    const [line1, line2] = hookData.cell.text;
-                    const baseX = hookData.cell.x + hookData.cell.padding('left');
-                    const baseY = hookData.cell.y + hookData.cell.padding('top') + 3.4;
-                    doc.setFont('helvetica', 'bold');
-                    doc.setFontSize(9.8);
-                    doc.setTextColor(15, 23, 42);
-                    doc.text(line1, baseX, baseY);
-                    doc.setFont('helvetica', 'normal');
-                    doc.setFontSize(8.4);
-                    doc.setTextColor(100, 116, 139);
-                    doc.text(line2, baseX, baseY + 4.2);
-                    hookData.cell.text = '';
                 }
             }
         });
@@ -3640,33 +3628,52 @@ window.srcGeneratePDFv6 = async function(options = {}) {
     ensurePageSpace(36);
     const summaryWidth = 86;
     const summaryX = PAGE_W - MARGIN_R - summaryWidth;
-    const summaryHeight = 36;
-    const summaryPadding = 5.5;
+    const summaryPadding = 6;
     const summaryContentX = summaryX + summaryPadding;
-    let summaryY = currentY + 6;
+    const summaryRightX = summaryX + summaryWidth - summaryPadding;
+    const summaryLineHeight = 5;
+    const summaryPriceLineHeight = 6;
     const subtotal = priceValue;
     const totalLabel = srcFormatCurrency(subtotal);
+    const vatLabel = i18n.assumptions.includes('MwSt') ? 'zzgl. MwSt.' : 'MwSt.-Hinweis laut Kalkulation';
+    const grossHintLines = doc.splitTextToSize('laut finaler Rechnungsstellung', 40);
+    const summaryHeight = (summaryPadding * 2) + 4 + summaryLineHeight + summaryPriceLineHeight + summaryLineHeight + (grossHintLines.length * 4.2);
+
     doc.setFillColor(...(isLightTheme ? [250, 250, 252] : [241, 245, 249]));
     doc.setDrawColor(226, 232, 240);
     doc.roundedRect(summaryX, currentY, summaryWidth, summaryHeight, 3, 3, 'FD');
-    doc.setFontSize(10);
+
+    let summaryY = currentY + summaryPadding;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10.5);
     doc.setTextColor(15, 23, 42);
     doc.text('Preisübersicht', summaryContentX, summaryY);
-    summaryY += 6;
-    doc.setFontSize(8.5);
+    summaryY += summaryLineHeight;
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
     doc.setTextColor(71, 85, 105);
     doc.text('Netto', summaryContentX, summaryY);
-    summaryY += 4.5;
+    doc.setFont('helvetica', 'bold');
     doc.setFontSize(13.5);
     doc.setTextColor(15, 23, 42);
-    doc.text(totalLabel, PAGE_W - MARGIN_R - summaryPadding, summaryY, { align: 'right' });
-    summaryY += 4.5;
-    doc.text(i18n.assumptions.includes('MwSt') ? 'zzgl. MwSt.' : 'MwSt.-Hinweis laut Kalkulation', summaryContentX, summaryY);
-    summaryY += 4;
-    doc.text('Brutto', summaryContentX, summaryY);
-    doc.text('laut finaler Rechnungsstellung', PAGE_W - MARGIN_R - summaryPadding, summaryY, { align: 'right' });
+    doc.text(totalLabel, summaryRightX, summaryY, { align: 'right' });
+    summaryY += summaryPriceLineHeight;
 
-    currentY = Math.max(currentY + 4, summaryY + 10);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8.8);
+    doc.setTextColor(71, 85, 105);
+    doc.text(vatLabel, summaryContentX, summaryY);
+    summaryY += summaryLineHeight;
+
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(30, 41, 59);
+    doc.text('Brutto', summaryContentX, summaryY);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(100, 116, 139);
+    doc.text(grossHintLines, summaryRightX, summaryY, { align: 'right' });
+
+    currentY += summaryHeight + 8;
 
     if(includeBreakdown && currentBreakdownData) {
         ensurePageSpace(20);
@@ -3711,9 +3718,12 @@ window.srcGeneratePDFv6 = async function(options = {}) {
     for(let pageNumber = 1; pageNumber <= totalPages; pageNumber++) {
         doc.setPage(pageNumber);
         const footerY = PAGE_H - 10;
-        doc.setFontSize(7.8);
+        const footerLeftWidth = (PAGE_W / 2) - MARGIN_L - 8;
+        const footerLines = doc.splitTextToSize(footerText, footerLeftWidth);
+        const footerTopY = footerY - ((footerLines.length - 1) * 3.2);
+        doc.setFontSize(7.4);
         doc.setTextColor(100, 116, 139);
-        doc.text(footerText, MARGIN_L, footerY);
+        doc.text(footerLines, MARGIN_L, footerTopY, { align: 'left' });
         doc.text(`Seite ${pageNumber} von ${totalPagesExp}`, PAGE_W / 2, footerY, { align: 'center' });
     }
     if(typeof doc.putTotalPages === 'function') {
