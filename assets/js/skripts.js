@@ -621,6 +621,31 @@ const srcNormalizeAddonPriceTriple = function(value, addonKey) {
     return fallback;
 }
 
+
+const srcGetAdvertisingMultipliers = function(projectKey) {
+    const config = srcRatesData.license_multipliers || {};
+    const defaults = config.default_advertising || {};
+    const projectCfg = (config.projects && config.projects[projectKey]) ? config.projects[projectKey] : {};
+    const regionDefaults = defaults.region || {};
+    const durationDefaults = defaults.duration || {};
+
+    const region = {
+        regional: Number.isFinite(Number(projectCfg.region?.regional)) ? Number(projectCfg.region.regional) : (Number.isFinite(Number(regionDefaults.regional)) ? Number(regionDefaults.regional) : 0.8),
+        national: Number.isFinite(Number(projectCfg.region?.national)) ? Number(projectCfg.region.national) : (Number.isFinite(Number(regionDefaults.national)) ? Number(regionDefaults.national) : 1.0),
+        dach: Number.isFinite(Number(projectCfg.region?.dach)) ? Number(projectCfg.region.dach) : (Number.isFinite(Number(regionDefaults.dach)) ? Number(regionDefaults.dach) : 2.5),
+        world: Number.isFinite(Number(projectCfg.region?.world)) ? Number(projectCfg.region.world) : (Number.isFinite(Number(regionDefaults.world)) ? Number(regionDefaults.world) : 4.0)
+    };
+
+    const duration = {
+        1: Number.isFinite(Number(projectCfg.duration?.['1'])) ? Number(projectCfg.duration['1']) : (Number.isFinite(Number(durationDefaults['1'])) ? Number(durationDefaults['1']) : 1.0),
+        2: Number.isFinite(Number(projectCfg.duration?.['2'])) ? Number(projectCfg.duration['2']) : (Number.isFinite(Number(durationDefaults['2'])) ? Number(durationDefaults['2']) : 2.0),
+        3: Number.isFinite(Number(projectCfg.duration?.['3'])) ? Number(projectCfg.duration['3']) : (Number.isFinite(Number(durationDefaults['3'])) ? Number(durationDefaults['3']) : 3.0),
+        4: Number.isFinite(Number(projectCfg.duration?.['4'])) ? Number(projectCfg.duration['4']) : (Number.isFinite(Number(durationDefaults['4'])) ? Number(durationDefaults['4']) : 4.0)
+    };
+
+    return { region, duration };
+}
+
 const srcGetAddonPriceConfig = function(projectKey) {
     const projectData = (projectKey && srcRatesData && srcRatesData[projectKey]) ? srcRatesData[projectKey] : {};
     const extras = projectData.license_extras || {};
@@ -1247,7 +1272,7 @@ const srcAuditRatesAgainstVDS = function() {
     const expected = (srcPluginData && srcPluginData.vdsExpected) ? srcPluginData.vdsExpected : {};
     const found = srcRatesData || {};
     const ignoreKeys = new Set(['rights_guidance', 'options_by_project', 'project_tips']);
-    const fieldsToCheck = ['base', 'tiers', 'extra', 'extra_unit', 'extra_after', 'tier_unit', 'license_extras', 'variants', 'limit', 'per_min', 'min'];
+    const fieldsToCheck = ['base', 'tiers', 'extra', 'extra_unit', 'extra_after', 'tier_unit', 'license_extras', 'variants', 'limit', 'per_min', 'min', 'license_multipliers'];
     const diffs = [];
 
     Object.keys(expected).forEach((projectKey) => {
@@ -2854,12 +2879,10 @@ const srcComputeSingleProjectResult = function(state, projectKey, options = {}) 
             addInfo(`Grundhonorar (${adName}${langLabel})`, srcFormatCurrency(base[1]), langFactor !== 1 ? `Basis × Sprachfaktor (${langFactor})` : "Basis");
 
             const region = state.region;
-            let regionMult = 1.0;
-            if(!isLocalModeActive) {
-                if(region === 'regional') { regionMult = 0.8; }
-                if(region === 'dach') { regionMult = 2.5; }
-                if(region === 'world') { regionMult = 4.0; }
-            }
+            const adMultipliers = srcGetAdvertisingMultipliers(genre);
+            const regionMult = !isLocalModeActive
+                ? (adMultipliers.region[region] ?? adMultipliers.region.national ?? 1.0)
+                : 1.0;
 
             if(!isLocalModeActive) {
                 const regionLabel = region === 'regional' ? 'Regional' : region === 'national' ? 'National' : region === 'dach' ? 'DACH' : 'Weltweit';
@@ -2875,14 +2898,14 @@ const srcComputeSingleProjectResult = function(state, projectKey, options = {}) 
             let timeMult = 1;
             if(!isLocalModeActive) {
                 if(years === 4) {
-                    timeMult = 4;
+                    timeMult = adMultipliers.duration[4] ?? 4;
                     const intermediate = base[1] * regionMult;
                     const timeDiff = Math.round(intermediate * (timeMult - 1));
                     addInfo("Laufzeit: Unlimited", srcFormatSignedCurrency(timeDiff), `Zwischensumme × Faktor Laufzeit (${timeMult})`);
                     licParts.push("Unlimited");
                     licMeta.push("Laufzeit: Unlimited");
                 } else {
-                    timeMult = years;
+                    timeMult = adMultipliers.duration[years] ?? years;
                     const intermediate = base[1] * regionMult;
                     const timeDiff = Math.round(intermediate * (timeMult - 1));
                     const timeAmount = timeMult === 1 ? '—' : srcFormatSignedCurrency(timeDiff);
