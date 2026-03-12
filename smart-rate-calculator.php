@@ -874,8 +874,10 @@ function src_shortcode_output_v7() {
                 <div class="src-range-box__title">Ermittelte Range</div>
                 <div id="src-export-range-display" class="src-export-range-display">Von — bis —</div>
                 <div class="src-export-range-field">
-                    <input type="text" id="src-export-final-fee" class="src-input-text" placeholder="Finale Angebotsgage auf Basis der ermittelten Range eintragen">
+                    <input type="text" id="src-export-final-fee" class="src-input-text" inputmode="decimal" autocomplete="off">
+                    <small class="src-export-field-note">Finale Angebotsgage</small>
                     <small class="src-export-helper">Wenn gesetzt, wird die finale Angebotsgage im PDF bevorzugt verwendet.</small>
+                    <small class="src-export-helper src-export-helper--error" id="src-export-final-fee-error" aria-live="polite"></small>
                 </div>
             </div>
 
@@ -947,7 +949,7 @@ function src_shortcode_output_v7() {
                         </button>
                     </div>
 
-                    <div class="src-opt-tile src-opt-tile--full src-opt-tile--panel" aria-hidden="true">
+                    <div class="src-opt-tile src-opt-tile--full src-opt-tile--panel src-export-package-panel" aria-hidden="true">
                         <div class="src-opt-tile__panel">
                             <div class="src-opt-panel-title">Paket auswählen (optional)</div>
                             <div id="src-export-package-wrap" class="src-opt-panel-group">
@@ -969,35 +971,61 @@ function src_shortcode_output_v7() {
                 <section class="src-export-panel">
                     <h4 class="src-export-panel__title">Optionale Angaben</h4>
                     <div class="src-export-grid">
-                        <input type="text" id="src-export-subject" class="src-input-text" placeholder="Angebotsbetreff (editierbar)">
-                        <input type="text" id="src-export-provider-name" class="src-input-text" placeholder="Eigene Firma / Name (editierbar)">
-                        <input type="text" id="src-export-customer-name" class="src-input-text" placeholder="Kund*innenname (editierbar)">
-                        <input type="text" id="src-export-provider-address" class="src-input-text" placeholder="Eigene Adresse (editierbar)">
-                        <input type="text" id="src-export-customer-address" class="src-input-text" placeholder="Kund*innenadresse (optional)">
-                        <input type="text" id="src-export-provider-contact" class="src-input-text" placeholder="Eigene Kontaktinfos (E-Mail / Telefon)">
-                        <input type="text" id="src-export-projectname" class="src-input-text" placeholder="Projektname (optional)">
-                        <input type="text" id="src-export-date" class="src-input-text" placeholder="Angebotsdatum (TT.MM.JJJJ)">
-                        <input type="text" id="src-export-offer-id" class="src-input-text" placeholder="Angebotsnummer (optional)">
-                        <label class="src-export-inline-field" for="src-export-payment">Zahlungsfrist
-                            <input type="text" id="src-export-payment" class="src-input-text" placeholder="Zahlungsfrist (z.B. 14 Tage)">
+                        <div class="src-export-field">
+                            <input type="text" id="src-export-subject" class="src-input-text" autocomplete="off">
+                            <small class="src-export-field-note">Angebotsbetreff</small>
+                        </div>
+                        <div class="src-export-field">
+                            <input type="text" id="src-export-provider-name" class="src-input-text" autocomplete="off">
+                            <small class="src-export-field-note">Eigene Firma / Name</small>
+                        </div>
+                        <div class="src-export-field">
+                            <input type="text" id="src-export-customer-name" class="src-input-text" autocomplete="off">
+                            <small class="src-export-field-note">Kund*innenname</small>
+                        </div>
+                        <div class="src-export-field">
+                            <input type="text" id="src-export-provider-address" class="src-input-text" autocomplete="off">
+                            <small class="src-export-field-note">Eigene Adresse</small>
+                        </div>
+                        <div class="src-export-field">
+                            <input type="text" id="src-export-customer-address" class="src-input-text" autocomplete="off">
+                            <small class="src-export-field-note">Kund*innenadresse (optional)</small>
+                        </div>
+                        <div class="src-export-field">
+                            <input type="text" id="src-export-provider-contact" class="src-input-text" autocomplete="off">
+                            <small class="src-export-field-note">Eigene Kontaktinfos (E-Mail / Telefon)</small>
+                        </div>
+                        <div class="src-export-field">
+                            <input type="text" id="src-export-projectname" class="src-input-text" autocomplete="off">
+                            <small class="src-export-field-note">Projektname (optional)</small>
+                        </div>
+                        <div class="src-export-field">
+                            <input type="text" id="src-export-date" class="src-input-text" placeholder="TT.MM.JJJJ" autocomplete="off">
+                            <small class="src-export-field-note">Angebotsdatum</small>
+                        </div>
+                        <div class="src-export-field">
+                            <input type="text" id="src-export-offer-id" class="src-input-text" autocomplete="off">
+                            <small class="src-export-field-note">Angebotsnummer (optional)</small>
+                        </div>
+                        <label class="src-export-inline-field" for="src-export-payment">
+                            <input type="text" id="src-export-payment" class="src-input-text" placeholder="z.B. 14 Tage" autocomplete="off">
+                            <small class="src-export-field-note">Zahlungsfrist</small>
                             <small class="src-export-helper">Zahlungsfrist: Anzahl Tage bis Zahlung fällig.</small>
                         </label>
-                        <label class="src-export-inline-field" for="src-export-currency">Währung
+                        <label class="src-export-inline-field" for="src-export-currency">
                             <select id="src-export-currency" class="src-input-text src-export-select">
                                 <option value="EUR" selected>EUR €</option>
                                 <option value="USD">USD $</option>
                                 <option value="CHF">CHF CHF</option>
                                 <option value="GBP">GBP £</option>
                             </select>
+                            <small class="src-export-field-note">Währung</small>
                         </label>
-                        <label class="src-export-inline-field" for="src-export-theme">Angebots-Theme
-                            <select id="src-export-theme" class="src-input-text src-export-select">
-                                <option value="dark">Dunkel</option>
-                                <option value="light">Hell</option>
-                            </select>
-                        </label>
-                        <input type="text" id="src-export-disclaimer" class="src-input-text" placeholder="Rechtlicher Hinweis (optional)">
-                        <div class="src-export-logo-field">Logo für PDF-Export (nur temporär)
+                        <div class="src-export-field">
+                            <input type="text" id="src-export-disclaimer" class="src-input-text" autocomplete="off">
+                            <small class="src-export-field-note">Rechtlicher Hinweis (optional)</small>
+                        </div>
+                        <div class="src-export-logo-field src-export-logo-field--full">Logo für PDF-Export (nur temporär)
                             <input type="file" id="src-export-logo" class="src-input-text src-export-logo-input" accept="image/png,image/jpeg">
                             <div id="src-export-logo-dropzone" class="src-export-logo-dropzone" role="button" tabindex="0" aria-controls="src-export-logo" aria-label="Logo hochladen">
                                 <span id="src-export-logo-name">Logo hochladen (klicken oder Datei hierher ziehen)</span>
