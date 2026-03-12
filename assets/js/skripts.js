@@ -138,6 +138,18 @@ let exportModalState = {
     selectedPackage: 'standard'
 };
 
+
+const SRC_EXPORT_CURRENCY_MAP = {
+    EUR: { code: 'EUR', locale: 'de-DE', symbol: '€', suffix: true },
+    USD: { code: 'USD', locale: 'en-US', symbol: '$', suffix: false },
+    CHF: { code: 'CHF', locale: 'de-CH', symbol: 'CHF', suffix: true },
+    GBP: { code: 'GBP', locale: 'en-GB', symbol: '£', suffix: false }
+};
+
+let srcGlossaryTooltipEl = null;
+let srcGlossaryTooltipTarget = null;
+let srcGlossaryTooltipMoveHandlerBound = false;
+
 document.addEventListener('DOMContentLoaded', () => { 
     const iconUrl = (window.srcPluginData && srcPluginData.checkIconUrl) ? String(srcPluginData.checkIconUrl).trim() : '';
     if(iconUrl){
@@ -221,11 +233,23 @@ document.addEventListener('DOMContentLoaded', () => {
             if(!tipText) return;
             tipEl.innerText = tipText;
             tipEl.classList.add('is-visible');
-            // Initial Pos
             requestAnimationFrame(() => {
                 const rect = e.target.getBoundingClientRect();
-                tipEl.style.top = (rect.top - tipEl.offsetHeight - 10) + 'px';
-                tipEl.style.left = (rect.left + (rect.width/2) - (tipEl.offsetWidth/2)) + 'px';
+                const margin = 10;
+                const gap = 10;
+                const vw = window.innerWidth || document.documentElement.clientWidth || 0;
+                const vh = window.innerHeight || document.documentElement.clientHeight || 0;
+                let left = rect.left + (rect.width / 2) - (tipEl.offsetWidth / 2);
+                left = Math.max(margin, Math.min(vw - tipEl.offsetWidth - margin, left));
+                let top = rect.top - tipEl.offsetHeight - gap;
+                if(top < margin) {
+                    top = rect.bottom + gap;
+                }
+                if(top + tipEl.offsetHeight > vh - margin) {
+                    top = Math.max(margin, vh - tipEl.offsetHeight - margin);
+                }
+                tipEl.style.top = `${top}px`;
+                tipEl.style.left = `${left}px`;
             });
         });
         icon.addEventListener('mouseleave', () => {
@@ -233,6 +257,8 @@ document.addEventListener('DOMContentLoaded', () => {
             tipEl.classList.remove('is-visible');
         });
     });
+
+    srcInitGlossaryTooltips();
 
     const exportModal = document.getElementById('src-export-modal');
     if(exportModal) {
@@ -404,6 +430,87 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     srcAuditRatesAgainstVDS();
 });
+
+const srcInitGlossaryTooltips = function() {
+    const terms = document.querySelectorAll('.src-glossary-term[data-hover]');
+    if(!terms.length) return;
+    if(!srcGlossaryTooltipEl) {
+        srcGlossaryTooltipEl = document.createElement('div');
+        srcGlossaryTooltipEl.id = 'src-glossary-tooltip';
+        srcGlossaryTooltipEl.setAttribute('role', 'tooltip');
+        document.body.appendChild(srcGlossaryTooltipEl);
+    }
+
+    const showTooltip = (target) => {
+        const text = target?.getAttribute('data-hover');
+        if(!srcGlossaryTooltipEl || !text) return;
+        srcGlossaryTooltipTarget = target;
+        srcGlossaryTooltipEl.textContent = text;
+        srcGlossaryTooltipEl.classList.add('is-visible');
+        srcPositionGlossaryTooltip(target);
+    };
+
+    terms.forEach(term => {
+        if(!term.hasAttribute('tabindex')) term.setAttribute('tabindex', '0');
+        term.addEventListener('mouseenter', () => showTooltip(term));
+        term.addEventListener('focus', () => showTooltip(term));
+        term.addEventListener('mouseleave', srcHideGlossaryTooltip);
+        term.addEventListener('blur', srcHideGlossaryTooltip);
+    });
+
+    if(!srcGlossaryTooltipMoveHandlerBound) {
+        srcGlossaryTooltipMoveHandlerBound = true;
+        window.addEventListener('scroll', srcHandleGlossaryTooltipMove, true);
+        window.addEventListener('resize', srcHandleGlossaryTooltipMove);
+    }
+};
+
+const srcHandleGlossaryTooltipMove = function() {
+    if(srcGlossaryTooltipTarget) {
+        srcPositionGlossaryTooltip(srcGlossaryTooltipTarget);
+    }
+};
+
+const srcPositionGlossaryTooltip = function(target) {
+    if(!target || !srcGlossaryTooltipEl) return;
+    const rect = target.getBoundingClientRect();
+    const vw = window.innerWidth || document.documentElement.clientWidth || 0;
+    const vh = window.innerHeight || document.documentElement.clientHeight || 0;
+    const margin = 12;
+    const gap = 10;
+
+    srcGlossaryTooltipEl.style.left = '0px';
+    srcGlossaryTooltipEl.style.top = '0px';
+    const tipRect = srcGlossaryTooltipEl.getBoundingClientRect();
+
+    let left = rect.left + (rect.width / 2) - (tipRect.width / 2);
+    left = Math.max(margin, Math.min(vw - tipRect.width - margin, left));
+
+    let top = rect.top - tipRect.height - gap;
+    let flip = false;
+    if(top < margin) {
+        top = rect.bottom + gap;
+        flip = true;
+    }
+    if(top + tipRect.height > vh - margin) {
+        top = Math.max(margin, vh - tipRect.height - margin);
+    }
+
+    const anchorCenter = rect.left + (rect.width / 2);
+    const arrowLeft = Math.max(14, Math.min(tipRect.width - 14, anchorCenter - left));
+
+    srcGlossaryTooltipEl.style.setProperty('--src-arrow-left', `${arrowLeft}px`);
+    srcGlossaryTooltipEl.classList.toggle('is-flip', flip);
+    srcGlossaryTooltipEl.style.left = `${left}px`;
+    srcGlossaryTooltipEl.style.top = `${top}px`;
+};
+
+const srcHideGlossaryTooltip = function() {
+    if(!srcGlossaryTooltipEl) return;
+    srcGlossaryTooltipEl.classList.remove('is-visible');
+    srcGlossaryTooltipEl.classList.remove('is-flip');
+    srcGlossaryTooltipTarget = null;
+};
 
 /* --- HELPER FUNCTIONS --- */
 
@@ -2038,7 +2145,7 @@ const srcHandleExportStart = async function() {
     const disclaimer = document.getElementById('src-export-disclaimer')?.value || '';
     const scope = Array.from(document.querySelectorAll('.src-scope-card.is-active[data-export-scope]')).map(el => el.getAttribute('data-export-scope')).filter(Boolean);
     const logoFile = window.srcOfferLogoFile || document.getElementById('src-export-logo')?.files?.[0] || null;
-    const exportCurrency = document.getElementById('src-export-currency')?.value || 'EUR';
+    const exportCurrency = srcGetExportCurrencyMeta(document.getElementById('src-export-currency')?.value).code;
     const maxLogoSize = 10 * 1024 * 1024;
     const allowedLogoTypes = ['image/png', 'image/jpeg'];
     if(logoFile && !allowedLogoTypes.includes((logoFile.type || '').toLowerCase())) {
@@ -3249,10 +3356,8 @@ window.srcCalc = function() {
 }
 
 const srcGetExportCurrencyMeta = function(code) {
-    if(code === 'USD') return { code: 'USD', locale: 'en-US', symbol: '$', suffix: false };
-    if(code === 'CHF') return { code: 'CHF', locale: 'de-CH', symbol: 'CHF', suffix: true };
-    if(code === 'GBP') return { code: 'GBP', locale: 'en-GB', symbol: '£', suffix: false };
-    return { code: 'EUR', locale: 'de-DE', symbol: '€', suffix: true };
+    const normalized = String(code || 'EUR').trim().toUpperCase();
+    return SRC_EXPORT_CURRENCY_MAP[normalized] || SRC_EXPORT_CURRENCY_MAP.EUR;
 }
 
 const srcFormatCurrencyForExport = function(amount, currencyCode) {
@@ -3456,21 +3561,42 @@ window.srcGeneratePDFv6 = async function(options = {}) {
     currentY = alignToGrid(currentY + (introLines * LINE) + SP_8);
 
     ensurePageSpace(30);
-    const scopeText = extraSettings.scope && extraSettings.scope.length ? `Lieferumfang: ${extraSettings.scope.join(', ')}` : '';
-    const tableMain = extraSettings.projectName ? `Projekt: ${extraSettings.projectName}` : `Projekt: ${projectLabel}`;
-    const tableSecondary = [packageLabel ? `Paket: ${packageLabel}` : '', scopeText].filter(Boolean).join(' · ');
-    const tableSecondaryLines = tableSecondary ? wrapText(tableSecondary, CONTENT_W - 58) : [];
+    const scopeText = extraSettings.scope && extraSettings.scope.length ? `${i18n.scope}: ${extraSettings.scope.join(', ')}` : '';
+    const offerPositions = [];
+    offerPositions.push({
+        code: '1',
+        main: lang === 'en' ? 'Main voice service' : 'Hauptleistung / Sprachaufnahme',
+        secondary: [extraSettings.projectName ? `${i18n.projectNameLabel}: ${extraSettings.projectName}` : `${i18n.project}: ${projectLabel}`].filter(Boolean),
+        amount: priceValue
+    });
+    if(packageLabel) {
+        offerPositions.push({
+            code: '2',
+            main: lang === 'en' ? 'Package model' : 'Paketmodell',
+            secondary: [packageLabel],
+            amount: null
+        });
+    }
+    if(scopeText) {
+        offerPositions.push({
+            code: String(offerPositions.length + 1),
+            main: lang === 'en' ? 'Scope of delivery' : 'Lieferumfang',
+            secondary: [scopeText.replace(`${i18n.scope}: `, '')],
+            amount: null
+        });
+    }
 
     if(typeof doc.autoTable === 'function') {
+        const tableRows = offerPositions.map(position => ([
+            position.code,
+            { main: position.main, secondary: position.secondary.flatMap(line => wrapText(line, CONTENT_W - 58)) },
+            Number.isFinite(position.amount) ? srcFormatCurrencyForExport(position.amount, exportCurrency) : '—'
+        ]));
         doc.autoTable({
             startY: currentY,
             theme: 'grid',
-            head: [['Pos', 'Leistungsbeschreibung / Projekt', 'Gesamt']],
-            body: [[
-                '1',
-                { main: tableMain, secondary: tableSecondaryLines },
-                srcFormatCurrencyForExport(priceValue, exportCurrency)
-            ]],
+            head: [['Pos', lang === 'en' ? 'Offer position' : 'Angebotsposition', lang === 'en' ? 'Amount' : 'Betrag']],
+            body: tableRows,
             headStyles: {
                 fillColor: [36, 44, 56],
                 textColor: [255, 255, 255],
@@ -3602,15 +3728,15 @@ window.srcGeneratePDFv6 = async function(options = {}) {
     const summaryH = alignToGrid((summaryPad * 2) + SP_4 + LINE + 7 + LINE + Math.max(LINE, grossLines.length * 4.2));
 
     ensurePageSpace(summaryH + SP_8);
-    doc.setFillColor(247, 249, 252);
-    doc.setDrawColor(226, 232, 240);
+    doc.setFillColor(240, 247, 255);
+    doc.setDrawColor(147, 197, 253);
     doc.roundedRect(summaryX, currentY, summaryW, summaryH, 2, 2, 'FD');
 
     let sy = currentY + summaryPad;
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(12);
     doc.setTextColor(15, 23, 42);
-    doc.text('Preisübersicht', summaryX + summaryPad, sy);
+    doc.text(lang === 'en' ? 'Offer summary' : 'Preisübersicht', summaryX + summaryPad, sy);
     sy += SP_6;
 
     doc.setFont('helvetica', 'normal');

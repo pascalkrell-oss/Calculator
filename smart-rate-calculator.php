@@ -860,11 +860,12 @@ function src_shortcode_output_v7() {
     </div>
     <div id="src-tooltip-fixed"></div>
     <div id="src-export-modal" class="src-modal-overlay" aria-hidden="true">
-        <div class="src-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="srcModalTitle">
+        <div class="src-modal-dialog src-export-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="srcModalTitle">
             <div class="src-modal__head src-export-modal__head">
-                <div>
+                <div class="src-export-headline">
+                    <span class="src-export-headline__kicker">PDF Export</span>
                     <div class="src-modal__title" id="srcModalTitle">Angebot exportieren</div>
-                    <div class="src-modal__subtitle">Wie soll Dein Angebot erstellt werden?</div>
+                    <div class="src-modal__subtitle">Stelle die Kerndaten ein und erstelle Dein professionelles PDF-Angebot.</div>
                 </div>
                 <button class="src-modal__close" type="button" aria-label="Schließen" data-modal-close>×</button>
             </div>
@@ -874,68 +875,78 @@ function src_shortcode_output_v7() {
                 <div id="src-export-range-display" class="src-export-range-display">Von — bis —</div>
                 <div class="src-export-range-field">
                     <input type="text" id="src-export-final-fee" class="src-input-text" placeholder="Finale Angebotsgage auf Basis der ermittelten Range eintragen">
-                    <small class="src-export-helper">Eigene Gage basierend auf der Empfehlung eingeben.</small>
+                    <small class="src-export-helper">Wenn gesetzt, wird die finale Angebotsgage im PDF bevorzugt verwendet.</small>
                 </div>
             </div>
 
             <div class="src-modal__body">
-                <div class="src-modal__grid">
-                    <button type="button" class="src-opt-tile is-on" data-opt="pdf" aria-pressed="true">
-                        <span class="src-opt-tile__check" aria-hidden="true"></span>
-                        <span class="src-opt-tile__text">
-                            <span class="src-opt-tile__title">PDF Angebot</span>
-                            <span class="src-opt-tile__sub">Zusammenfassung &amp; Details</span>
-                        </span>
-                    </button>
-                    <button type="button" class="src-opt-tile" data-opt="breakdown" aria-pressed="false">
-                        <span class="src-opt-tile__check" aria-hidden="true"></span>
-                        <span class="src-opt-tile__text">
-                            <span class="src-opt-tile__title">Rechenweg anhängen</span>
-                            <span class="src-opt-tile__sub">Detaillierte Kalkulation</span>
-                        </span>
-                    </button>
-                    <button type="button" class="src-opt-tile" data-opt="risk" aria-pressed="false">
-                        <span class="src-opt-tile__check" aria-hidden="true"></span>
-                        <span class="src-opt-tile__text">
-                            <span class="src-opt-tile__title">Hinweise anhängen</span>
-                            <span class="src-opt-tile__sub">Rechte- &amp; Risiko-Check</span>
-                        </span>
-                    </button>
-                    <button type="button" class="src-opt-tile is-on" data-opt-group="lang" data-value="de" aria-pressed="true">
-                        <span class="src-opt-tile__check" aria-hidden="true"></span>
-                        <span class="src-opt-tile__text">
-                            <span class="src-opt-tile__title">Sprache: Deutsch</span>
-                            <span class="src-opt-tile__sub">Standardversion</span>
-                        </span>
-                    </button>
-                    <button type="button" class="src-opt-tile" data-opt-group="lang" data-value="en" aria-pressed="false">
-                        <span class="src-opt-tile__check" aria-hidden="true"></span>
-                        <span class="src-opt-tile__text">
-                            <span class="src-opt-tile__title">Sprache: Englisch</span>
-                            <span class="src-opt-tile__sub">Internationales Angebot</span>
-                        </span>
-                    </button>
-                    <button type="button" class="src-opt-tile" data-opt-group="pricing" data-value="package" aria-pressed="false">
-                        <span class="src-opt-tile__check" aria-hidden="true"></span>
-                        <span class="src-opt-tile__text">
-                            <span class="src-opt-tile__title">Preisstrategie: Paket</span>
-                            <span class="src-opt-tile__sub">Basic, Standard, Premium</span>
-                        </span>
-                    </button>
-                    <button type="button" class="src-opt-tile is-on" data-opt-group="client" data-value="direct" aria-pressed="true">
-                        <span class="src-opt-tile__check" aria-hidden="true"></span>
-                        <span class="src-opt-tile__text">
-                            <span class="src-opt-tile__title">Kundentyp: Direktkunde</span>
-                            <span class="src-opt-tile__sub">Endkunde / Unternehmen</span>
-                        </span>
-                    </button>
-                    <button type="button" class="src-opt-tile" data-opt-group="client" data-value="agency" aria-pressed="false">
-                        <span class="src-opt-tile__check" aria-hidden="true"></span>
-                        <span class="src-opt-tile__text">
-                            <span class="src-opt-tile__title">Kundentyp: Agentur</span>
-                            <span class="src-opt-tile__sub">B2B / Vermittlung</span>
-                        </span>
-                    </button>
+                <section class="src-export-panel src-export-panel--core">
+                    <h4 class="src-export-panel__title">Exportumfang</h4>
+                    <div class="src-modal__grid src-modal__grid--compact">
+                        <button type="button" class="src-opt-tile is-on" data-opt="pdf" aria-pressed="true">
+                            <span class="src-opt-tile__check" aria-hidden="true"></span>
+                            <span class="src-opt-tile__text">
+                                <span class="src-opt-tile__title">PDF Angebot</span>
+                                <span class="src-opt-tile__sub">Zusammenfassung &amp; Details</span>
+                            </span>
+                        </button>
+                        <button type="button" class="src-opt-tile" data-opt="breakdown" aria-pressed="false">
+                            <span class="src-opt-tile__check" aria-hidden="true"></span>
+                            <span class="src-opt-tile__text">
+                                <span class="src-opt-tile__title">Rechenweg anhängen</span>
+                                <span class="src-opt-tile__sub">Detaillierte Kalkulation</span>
+                            </span>
+                        </button>
+                        <button type="button" class="src-opt-tile" data-opt="risk" aria-pressed="false">
+                            <span class="src-opt-tile__check" aria-hidden="true"></span>
+                            <span class="src-opt-tile__text">
+                                <span class="src-opt-tile__title">Hinweise anhängen</span>
+                                <span class="src-opt-tile__sub">Rechte- &amp; Risiko-Check</span>
+                            </span>
+                        </button>
+                    </div>
+                </section>
+
+                <section class="src-export-panel">
+                    <h4 class="src-export-panel__title">Angebotsdetails</h4>
+                    <div class="src-modal__grid src-modal__grid--compact">
+                        <button type="button" class="src-opt-tile is-on" data-opt-group="lang" data-value="de" aria-pressed="true">
+                            <span class="src-opt-tile__check" aria-hidden="true"></span>
+                            <span class="src-opt-tile__text">
+                                <span class="src-opt-tile__title">Sprache: Deutsch</span>
+                                <span class="src-opt-tile__sub">Standardversion</span>
+                            </span>
+                        </button>
+                        <button type="button" class="src-opt-tile" data-opt-group="lang" data-value="en" aria-pressed="false">
+                            <span class="src-opt-tile__check" aria-hidden="true"></span>
+                            <span class="src-opt-tile__text">
+                                <span class="src-opt-tile__title">Sprache: Englisch</span>
+                                <span class="src-opt-tile__sub">Internationales Angebot</span>
+                            </span>
+                        </button>
+                        <button type="button" class="src-opt-tile" data-opt-group="pricing" data-value="package" aria-pressed="false">
+                            <span class="src-opt-tile__check" aria-hidden="true"></span>
+                            <span class="src-opt-tile__text">
+                                <span class="src-opt-tile__title">Preisstrategie: Paket</span>
+                                <span class="src-opt-tile__sub">Basic, Standard, Premium</span>
+                            </span>
+                        </button>
+                        <button type="button" class="src-opt-tile is-on" data-opt-group="client" data-value="direct" aria-pressed="true">
+                            <span class="src-opt-tile__check" aria-hidden="true"></span>
+                            <span class="src-opt-tile__text">
+                                <span class="src-opt-tile__title">Kundentyp: Direktkunde</span>
+                                <span class="src-opt-tile__sub">Endkunde / Unternehmen</span>
+                            </span>
+                        </button>
+                        <button type="button" class="src-opt-tile" data-opt-group="client" data-value="agency" aria-pressed="false">
+                            <span class="src-opt-tile__check" aria-hidden="true"></span>
+                            <span class="src-opt-tile__text">
+                                <span class="src-opt-tile__title">Kundentyp: Agentur</span>
+                                <span class="src-opt-tile__sub">B2B / Vermittlung</span>
+                            </span>
+                        </button>
+                    </div>
+
                     <div class="src-opt-tile src-opt-tile--full src-opt-tile--panel" aria-hidden="true">
                         <div class="src-opt-tile__panel">
                             <div class="src-opt-panel-title">Paket auswählen (optional)</div>
@@ -953,68 +964,68 @@ function src_shortcode_output_v7() {
                             </div>
                         </div>
                     </div>
-                    <div class="src-opt-tile src-opt-tile--full src-opt-tile--panel" aria-hidden="true">
-                        <div class="src-opt-tile__panel">
-                            <div class="src-opt-panel-title">Optionale Felder</div>
-                            <div class="src-export-grid">
-                                <input type="text" id="src-export-subject" class="src-input-text" placeholder="Angebotsbetreff (editierbar)">
-                                <input type="text" id="src-export-provider-name" class="src-input-text" placeholder="Eigene Firma / Name (editierbar)">
-                                <input type="text" id="src-export-customer-name" class="src-input-text" placeholder="Kund*innenname (editierbar)">
-                                <input type="text" id="src-export-provider-address" class="src-input-text" placeholder="Eigene Adresse (editierbar)">
-                                <input type="text" id="src-export-customer-address" class="src-input-text" placeholder="Kund*innenadresse (optional)">
-                                <input type="text" id="src-export-provider-contact" class="src-input-text" placeholder="Eigene Kontaktinfos (E-Mail / Telefon)">
-                                <input type="text" id="src-export-projectname" class="src-input-text" placeholder="Projektname (optional)">
-                                <input type="text" id="src-export-date" class="src-input-text" placeholder="Angebotsdatum (TT.MM.JJJJ)">
-                                <input type="text" id="src-export-offer-id" class="src-input-text" placeholder="Angebotsnummer (optional)">
-                                <label class="src-export-inline-field" for="src-export-payment">Zahlungsfrist
-                                    <input type="text" id="src-export-payment" class="src-input-text" placeholder="Zahlungsfrist (z.B. 14 Tage)">
-                                    <small class="src-export-helper">Zahlungsfrist: Anzahl Tage bis Zahlung fällig.</small>
-                                </label>
-                                <label class="src-export-inline-field" for="src-export-currency">Währung
-                                    <select id="src-export-currency" class="src-input-text src-export-select">
-                                        <option value="EUR" selected>EUR €</option>
-                                        <option value="USD">USD $</option>
-                                        <option value="CHF">CHF CHF</option>
-                                        <option value="GBP">GBP £</option>
-                                    </select>
-                                </label>
-                                <label class="src-export-inline-field" for="src-export-theme">Angebots-Theme
-                                    <select id="src-export-theme" class="src-input-text src-export-select">
-                                        <option value="dark">Dunkel</option>
-                                        <option value="light">Hell</option>
-                                    </select>
-                                </label>
-                                <input type="text" id="src-export-disclaimer" class="src-input-text" placeholder="Rechtlicher Hinweis (optional)">
-                                <div class="src-export-logo-field">Logo für PDF-Export (nur temporär)
-                                    <input type="file" id="src-export-logo" class="src-input-text src-export-logo-input" accept="image/png,image/jpeg">
-                                    <div id="src-export-logo-dropzone" class="src-export-logo-dropzone" role="button" tabindex="0" aria-controls="src-export-logo" aria-label="Logo hochladen">
-                                        <span id="src-export-logo-name">Logo hochladen (klicken oder Datei hierher ziehen)</span>
-                                        <button type="button" id="src-export-logo-remove" class="src-export-logo-remove">Entfernen</button>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="src-opt-panel-title src-opt-panel-title--small">Lieferumfang (Text)</div>
-                            <div class="src-scope-cards">
-                                <button type="button" class="src-scope-card" data-export-scope="1 Take">
-                                    <span class="src-scope-card__icon" aria-hidden="true"><i class="fa-solid fa-microphone"></i></span>
-                                    <span class="src-scope-card__label">1 Take</span>
-                                </button>
-                                <button type="button" class="src-scope-card" data-export-scope="2 Korrekturen">
-                                    <span class="src-scope-card__icon" aria-hidden="true"><i class="fa-solid fa-rotate"></i></span>
-                                    <span class="src-scope-card__label">2 Korrekturen</span>
-                                </button>
-                                <button type="button" class="src-scope-card" data-export-scope="WAV/MP3 Lieferung">
-                                    <span class="src-scope-card__icon" aria-hidden="true"><i class="fa-solid fa-file-audio"></i></span>
-                                    <span class="src-scope-card__label">WAV/MP3 Lieferung</span>
-                                </button>
+                </section>
+
+                <section class="src-export-panel">
+                    <h4 class="src-export-panel__title">Optionale Angaben</h4>
+                    <div class="src-export-grid">
+                        <input type="text" id="src-export-subject" class="src-input-text" placeholder="Angebotsbetreff (editierbar)">
+                        <input type="text" id="src-export-provider-name" class="src-input-text" placeholder="Eigene Firma / Name (editierbar)">
+                        <input type="text" id="src-export-customer-name" class="src-input-text" placeholder="Kund*innenname (editierbar)">
+                        <input type="text" id="src-export-provider-address" class="src-input-text" placeholder="Eigene Adresse (editierbar)">
+                        <input type="text" id="src-export-customer-address" class="src-input-text" placeholder="Kund*innenadresse (optional)">
+                        <input type="text" id="src-export-provider-contact" class="src-input-text" placeholder="Eigene Kontaktinfos (E-Mail / Telefon)">
+                        <input type="text" id="src-export-projectname" class="src-input-text" placeholder="Projektname (optional)">
+                        <input type="text" id="src-export-date" class="src-input-text" placeholder="Angebotsdatum (TT.MM.JJJJ)">
+                        <input type="text" id="src-export-offer-id" class="src-input-text" placeholder="Angebotsnummer (optional)">
+                        <label class="src-export-inline-field" for="src-export-payment">Zahlungsfrist
+                            <input type="text" id="src-export-payment" class="src-input-text" placeholder="Zahlungsfrist (z.B. 14 Tage)">
+                            <small class="src-export-helper">Zahlungsfrist: Anzahl Tage bis Zahlung fällig.</small>
+                        </label>
+                        <label class="src-export-inline-field" for="src-export-currency">Währung
+                            <select id="src-export-currency" class="src-input-text src-export-select">
+                                <option value="EUR" selected>EUR €</option>
+                                <option value="USD">USD $</option>
+                                <option value="CHF">CHF CHF</option>
+                                <option value="GBP">GBP £</option>
+                            </select>
+                        </label>
+                        <label class="src-export-inline-field" for="src-export-theme">Angebots-Theme
+                            <select id="src-export-theme" class="src-input-text src-export-select">
+                                <option value="dark">Dunkel</option>
+                                <option value="light">Hell</option>
+                            </select>
+                        </label>
+                        <input type="text" id="src-export-disclaimer" class="src-input-text" placeholder="Rechtlicher Hinweis (optional)">
+                        <div class="src-export-logo-field">Logo für PDF-Export (nur temporär)
+                            <input type="file" id="src-export-logo" class="src-input-text src-export-logo-input" accept="image/png,image/jpeg">
+                            <div id="src-export-logo-dropzone" class="src-export-logo-dropzone" role="button" tabindex="0" aria-controls="src-export-logo" aria-label="Logo hochladen">
+                                <span id="src-export-logo-name">Logo hochladen (klicken oder Datei hierher ziehen)</span>
+                                <button type="button" id="src-export-logo-remove" class="src-export-logo-remove">Entfernen</button>
                             </div>
                         </div>
                     </div>
-                </div>
+
+                    <div class="src-opt-panel-title src-opt-panel-title--small">Lieferumfang</div>
+                    <div class="src-scope-cards">
+                        <button type="button" class="src-scope-card" data-export-scope="1 Take">
+                            <span class="src-scope-card__icon" aria-hidden="true"><i class="fa-solid fa-microphone"></i></span>
+                            <span class="src-scope-card__label">1 Take</span>
+                        </button>
+                        <button type="button" class="src-scope-card" data-export-scope="2 Korrekturen">
+                            <span class="src-scope-card__icon" aria-hidden="true"><i class="fa-solid fa-rotate"></i></span>
+                            <span class="src-scope-card__label">2 Korrekturen</span>
+                        </button>
+                        <button type="button" class="src-scope-card" data-export-scope="WAV/MP3 Lieferung">
+                            <span class="src-scope-card__icon" aria-hidden="true"><i class="fa-solid fa-file-audio"></i></span>
+                            <span class="src-scope-card__label">WAV/MP3 Lieferung</span>
+                        </button>
+                    </div>
+                </section>
             </div>
 
-            <div class="src-modal__footer">
-                <button type="button" class="src-btn src-btn--primary src-btn--full" id="src-export-start">Export starten</button>
+            <div class="src-modal__footer src-modal__footer--export">
+                <button type="button" class="src-btn src-btn--primary src-btn--full" id="src-export-start">PDF Angebot erstellen</button>
             </div>
         </div>
     </div>
