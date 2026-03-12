@@ -129,7 +129,6 @@ let exportModalKeyHandler = null;
 window.srcOfferLogoFile = null;
 let exportModalState = {
     pdf: true,
-    email: true,
     breakdown: false,
     risk: false,
     lang: 'de',
@@ -253,14 +252,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if(exportStartBtn) {
         exportStartBtn.addEventListener('click', () => srcHandleExportStart());
     }
-    const mailCopyBtn = document.getElementById('src-mailtext-copy');
-    if(mailCopyBtn) {
-        mailCopyBtn.addEventListener('click', async () => {
-            const text = document.getElementById('src-mailtext-textarea')?.value || '';
-            const copied = await srcCopyToClipboard(text);
-            srcSetMailtextOutput(text, copied ? 'Mailtext wurde kopiert.' : 'Kopieren fehlgeschlagen. Bitte manuell markieren.');
-        });
-    }
     srcInitExportLogoSelect();
 
     const applyEstimateBtn = document.getElementById('src-apply-estimate');
@@ -301,6 +292,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 exportModalState.selectedPackage = pkg;
                 srcSyncExportPackageCards();
             }
+        });
+    });
+    document.querySelectorAll('.src-scope-card[data-export-scope]').forEach(card => {
+        card.addEventListener('click', () => {
+            card.classList.toggle('is-active');
+            card.setAttribute('aria-pressed', card.classList.contains('is-active') ? 'true' : 'false');
         });
     });
 
@@ -357,21 +354,16 @@ document.addEventListener('DOMContentLoaded', () => {
             srcCalc();
         });
     }
-    const customFeeInput = document.getElementById('src-export-custom-fee');
-    if(customFeeInput) {
-        customFeeInput.addEventListener('input', () => srcUpdateExportFeeFields());
-        customFeeInput.addEventListener('blur', () => {
-            const value = srcParseCustomFeeInput(customFeeInput.value);
+    const finalFeeInput = document.getElementById('src-export-final-fee');
+    if(finalFeeInput) {
+        finalFeeInput.addEventListener('input', () => srcUpdateExportFeeFields());
+        finalFeeInput.addEventListener('blur', () => {
+            const value = srcParseCustomFeeInput(finalFeeInput.value);
             if(Number.isFinite(value) && value > 0) {
-                customFeeInput.value = srcFormatCurrency(value).replace(/\s*[A-Z]{3}$/, '').trim();
+                finalFeeInput.value = srcGetNumberFormatter().format(Math.round(value));
             }
             srcUpdateExportFeeFields();
         });
-    }
-
-    const outputMode = document.getElementById('src-export-output-mode');
-    if(outputMode) {
-        outputMode.addEventListener('change', () => srcSyncOutputModeToTiles());
     }
     const exportTheme = document.getElementById('src-export-theme');
     if(exportTheme) {
@@ -391,7 +383,6 @@ document.addEventListener('DOMContentLoaded', () => {
     srcUpdateDurationSliderFill();
 
     srcSyncExportTiles();
-    srcSyncOutputModeFromState();
     const exportThemeField = document.getElementById('src-export-theme');
     if(exportThemeField) exportThemeField.value = exportModalState.offerTheme === 'light' ? 'light' : 'dark';
     srcUpdateExportPackageVisibility();
@@ -1767,29 +1758,19 @@ const srcParseCustomFeeInput = function(rawValue) {
 
 const srcUpdateExportFeeFields = function() {
     const rangeEl = document.getElementById('src-export-range-display');
-    const inputEl = document.getElementById('src-export-custom-fee');
-    const hintEl = document.getElementById('src-export-custom-fee-hint');
-    if(!rangeEl || !inputEl) return;
+    if(!rangeEl) return;
     const state = srcGetStateFromUI();
     const result = srcComputeResult(state);
     rangeEl.textContent = `Von ${srcFormatCurrency(result.final[0])} bis ${srcFormatCurrency(result.final[2])}`;
-
-    const feeValue = srcParseCustomFeeInput(inputEl.value);
-    if(!hintEl) return;
-    if(Number.isFinite(feeValue) && feeValue > 0 && (feeValue < result.final[0] || feeValue > result.final[2])) {
-        hintEl.textContent = 'Hinweis: Die Gage liegt außerhalb der ermittelten Range.';
-    } else {
-        hintEl.textContent = '';
-    }
 }
 
 const srcPrefillExportCustomFee = function() {
-    const inputEl = document.getElementById('src-export-custom-fee');
+    const inputEl = document.getElementById('src-export-final-fee');
     if(!inputEl) return;
     const finalFeeInput = document.getElementById('src-final-fee-user');
     const manualValue = srcParseCustomFeeInput(finalFeeInput ? finalFeeInput.value : '');
     if(Number.isFinite(manualValue) && manualValue > 0) {
-        inputEl.value = srcFormatCurrency(manualValue).replace(/\s*[A-Z]{3}$/, '').trim();
+        inputEl.value = srcGetNumberFormatter().format(Math.round(manualValue));
     } else if(!inputEl.value.trim()) {
         inputEl.value = '';
     }
@@ -1831,18 +1812,17 @@ window.srcOpenExportModal = function(options = {}) {
     srcUpdateExportPackageVisibility();
     srcSyncExportPackageCards();
     srcSyncExportTiles();
-    srcSyncOutputModeFromState();
     const exportTheme = document.getElementById('src-export-theme');
     if(exportTheme) exportTheme.value = exportModalState.offerTheme === 'light' ? 'light' : 'dark';
     const dateField = document.getElementById('src-export-date');
+    const exportCurrencyField = document.getElementById('src-export-currency');
+    if(exportCurrencyField) exportCurrencyField.value = srcGetCurrencyCode();
     if(dateField && !dateField.value) {
         dateField.value = new Date().toLocaleDateString('de-DE');
     }
     srcSyncExportLogoSelectText(window.srcOfferLogoFile ? (window.srcOfferLogoFile.name || '') : '');
     srcSetExportLogoError('');
     srcPrefillExportCustomFee();
-    srcSetMailtextOutput('', '');
-    srcSyncMailtextOutputVisibility();
     if(!exportModalKeyHandler) {
         exportModalKeyHandler = (event) => {
             if(event.key === 'Escape') {
@@ -1861,46 +1841,6 @@ const srcCloseExportModal = function() {
     if(exportModalKeyHandler) {
         document.removeEventListener('keydown', exportModalKeyHandler);
     }
-}
-
-const srcCopyToClipboard = async function(text) {
-    if(navigator.clipboard && navigator.clipboard.writeText) {
-        try {
-            await navigator.clipboard.writeText(text);
-            return true;
-        } catch (error) {}
-    }
-    const textarea = document.createElement('textarea');
-    textarea.value = text;
-    document.body.appendChild(textarea);
-    textarea.focus();
-    textarea.select();
-    let copied = false;
-    try {
-        copied = document.execCommand('copy');
-    } catch (error) {
-        copied = false;
-    }
-    document.body.removeChild(textarea);
-    return copied;
-}
-
-const srcSetMailtextOutput = function(text = '', statusText = '') {
-    const output = document.getElementById('src-mailtext-output');
-    const textarea = document.getElementById('src-mailtext-textarea');
-    const status = document.getElementById('src-mailtext-status');
-    if(!output || !textarea) return;
-    textarea.value = text || '';
-    output.hidden = !text && !exportModalState.email;
-    if(status) status.textContent = statusText || '';
-}
-
-const srcSyncMailtextOutputVisibility = function() {
-    const output = document.getElementById('src-mailtext-output');
-    const textarea = document.getElementById('src-mailtext-textarea');
-    if(!output || !textarea) return;
-    const hasText = Boolean((textarea.value || '').trim());
-    output.hidden = !exportModalState.email && !hasText;
 }
 
 const srcReadLogoAsDataUrl = async function(file) {
@@ -2069,92 +2009,6 @@ const srcInitExportLogoSelect = function() {
         });
     }
 }
-const srcBuildOfferEmailText = function({ lang, pricingMode, selectedPackage, includeBreakdown, includeRisk, extraSettings }) {
-    const i18n = SRC_I18N[lang] || SRC_I18N.de;
-    const state = srcGetStateFromUI();
-    const result = srcComputeResult(state);
-    const projectName = state.layoutMode ? "Layout / Pitch" : srcGetProjectName(state.projectKey);
-    const linkedProjectNames = Array.from(new Set((state.linkedProjects || []).map(srcGetProjectName).filter(Boolean)));
-    const projectLabel = linkedProjectNames.length ? `${projectName} (+ ${linkedProjectNames.join(', ')})` : projectName;
-    const pricingLabel = pricingMode === 'package' ? i18n.pricingPackage : i18n.pricingMean;
-    let priceText = srcFormatCurrency(Number.isFinite(extraSettings.customFee) ? extraSettings.customFee : result.final[1]);
-    if(pricingMode === 'package') {
-        if(!packagesState) {
-            packagesState = srcBuildPackages(state);
-        }
-        const pkg = packagesState[selectedPackage] || packagesState.standard;
-        priceText = `${srcFormatCurrency(parseFloat(pkg.price) || 0)} (${pkg.label})`;
-    }
-    const parts = [];
-    parts.push(`${i18n.subjectLabel}: ${i18n.subject}`);
-    parts.push('');
-    parts.push(i18n.intro);
-    parts.push('');
-    if(extraSettings.projectName) {
-        parts.push(`${i18n.projectNameLabel}: ${extraSettings.projectName}`);
-    }
-    if(extraSettings.offerId) {
-        parts.push(`${i18n.offerNumberLabel}: ${extraSettings.offerId}`);
-    }
-    parts.push(`${i18n.project}: ${projectLabel}`);
-    if(extraSettings.customerType) {
-        const typeLabel = extraSettings.customerType === 'agency' ? i18n.customerTypeAgency : i18n.customerTypeDirect;
-        parts.push(`${i18n.customerTypeLabel}: ${typeLabel}`);
-    }
-    if(state.projectKey === 'phone') {
-        parts.push(`${i18n.modules}: ${state.phoneCount}`);
-    } else {
-        parts.push(`${i18n.length}: ${state.minutes.toFixed(2)} Min`);
-    }
-    if(['tv','online_paid','radio','cinema','pos'].includes(state.projectKey)) {
-        parts.push(`${i18n.region}: ${state.region}`);
-        parts.push(`${i18n.duration}: ${state.duration === 4 ? 'Unlimited' : `${state.duration} Jahr(e)`}`);
-    }
-    if(linkedProjectNames.length) {
-        parts.push(`Verknüpfte Projekte: ${linkedProjectNames.join(', ')}`);
-    }
-    const addons = [];
-    if(state.packageOnline) addons.push('Online Audio');
-    if(state.packageAtv) addons.push('ATV/CTV');
-    if(state.cutdown) addons.push('Cut-down');
-    if(state.expressToggle) addons.push('Express');
-    if(state.studioFee > 0) addons.push('Studio');
-    const addonEntries = srcBuildAddonSummaryEntries(state, state.projectKey);
-    if(addons.length) {
-        parts.push(`${i18n.addOns}: ${addons.join(', ')}`);
-    }
-    if(addonEntries.length) {
-        parts.push('Zusatzlizenzen:');
-        addonEntries.forEach(entry => {
-            const amount = Number.isFinite(entry.amount) ? ` (${srcFormatCurrency(entry.amount)})` : '';
-            parts.push(`- ${entry.name}${amount}`);
-        });
-        parts.push('Zusatzlizenzen.');
-    }
-    parts.push(`${pricingLabel}: ${priceText}`);
-    if(extraSettings.scope.length) {
-        parts.push(`${i18n.scope}: ${extraSettings.scope.join(', ')}`);
-    }
-    parts.push('');
-    parts.push(i18n.assumptions);
-    if(includeBreakdown && currentBreakdownData) {
-        parts.push('');
-        parts.push(`${i18n.breakdown}:`);
-        parts.push(`Basis: ${srcFormatCurrency(currentBreakdownData.base.mid)} (${srcFormatCurrency(currentBreakdownData.base.min)}–${srcFormatCurrency(currentBreakdownData.base.max)})`);
-        currentBreakdownData.steps.forEach(step => {
-            parts.push(`- ${step.label}: ${step.amountOrFactor}`);
-        });
-    }
-    if(includeRisk && currentRiskChecks.length) {
-        parts.push('');
-        parts.push(`${i18n.risks}:`);
-        currentRiskChecks.forEach(check => {
-            parts.push(`- ${check.text}`);
-        });
-    }
-    return parts.join('\n');
-}
-
 const srcHandleExportStart = async function() {
     const modal = document.getElementById('src-export-modal');
     if(!modal) return;
@@ -2163,17 +2017,15 @@ const srcHandleExportStart = async function() {
         srcCloseExportModal();
         return;
     }
+
     const lang = exportModalState.lang || 'de';
     const pricingMode = exportModalState.pricing || 'custom';
     const selectedPackage = document.getElementById('src-export-package')?.value || exportModalState.selectedPackage || 'standard';
-    const includePdf = exportModalState.pdf;
-    const includeEmail = exportModalState.email;
     const includeBreakdown = exportModalState.breakdown;
     const includeRisk = exportModalState.risk;
     const projectName = document.getElementById('src-export-projectname')?.value || '';
     const offerIdInput = document.getElementById('src-export-offer-id')?.value || '';
-    const autoOfferId = `ANG-${new Date().toISOString().slice(0,10).replace(/-/g, '')}`;
-    const offerId = offerIdInput || autoOfferId;
+    const offerId = offerIdInput.trim();
     const offerSubject = document.getElementById('src-export-subject')?.value || '';
     const customerName = document.getElementById('src-export-customer-name')?.value || '';
     const customerAddress = document.getElementById('src-export-customer-address')?.value || '';
@@ -2184,8 +2036,9 @@ const srcHandleExportStart = async function() {
     const paymentTerms = document.getElementById('src-export-payment')?.value || '';
     const offerTheme = exportModalState.offerTheme === 'light' ? 'light' : 'dark';
     const disclaimer = document.getElementById('src-export-disclaimer')?.value || '';
-    const scope = Array.from(document.querySelectorAll('.src-export-scope:checked')).map(el => el.value);
+    const scope = Array.from(document.querySelectorAll('.src-scope-card.is-active[data-export-scope]')).map(el => el.getAttribute('data-export-scope')).filter(Boolean);
     const logoFile = window.srcOfferLogoFile || document.getElementById('src-export-logo')?.files?.[0] || null;
+    const exportCurrency = document.getElementById('src-export-currency')?.value || 'EUR';
     const maxLogoSize = 10 * 1024 * 1024;
     const allowedLogoTypes = ['image/png', 'image/jpeg'];
     if(logoFile && !allowedLogoTypes.includes((logoFile.type || '').toLowerCase())) {
@@ -2208,26 +2061,14 @@ const srcHandleExportStart = async function() {
         return;
     }
     const customerType = exportModalState.client || 'direct';
-    const customFeeInput = document.getElementById('src-export-custom-fee');
-    const customFeeValue = srcParseCustomFeeInput(customFeeInput ? customFeeInput.value : '');
+    const finalFeeInput = document.getElementById('src-export-final-fee');
+    const customFeeValue = srcParseCustomFeeInput(finalFeeInput ? finalFeeInput.value : '');
     const customFee = Number.isFinite(customFeeValue) && customFeeValue > 0 ? customFeeValue : null;
-    const extraSettings = { projectName, scope, customerType, offerId, offerSubject, customerName, customerAddress, providerName, providerAddress, providerContact, offerDate, paymentTerms, disclaimer, logoDataUrl, offerTheme, customFee };
-    if(includePdf) {
-        await srcGeneratePDFv6({ lang, pricingMode, selectedPackage, includeBreakdown, includeRisk, extraSettings });
-    }
-    if(includeEmail) {
-        const emailText = srcBuildOfferEmailText({ lang, pricingMode, selectedPackage, includeBreakdown, includeRisk, extraSettings });
-        const copied = await srcCopyToClipboard(emailText);
-        srcSetMailtextOutput(emailText, copied ? 'Mailtext wurde in die Zwischenablage kopiert.' : 'Mailtext anzeigen – bitte per Button kopieren.');
-    } else {
-        srcSetMailtextOutput('', '');
-    }
-    srcSyncMailtextOutputVisibility();
+    const extraSettings = { projectName, scope, customerType, offerId, offerSubject, customerName, customerAddress, providerName, providerAddress, providerContact, offerDate, paymentTerms, disclaimer, logoDataUrl, offerTheme, customFee, exportCurrency };
+    await srcGeneratePDFv6({ lang, pricingMode, selectedPackage, includeBreakdown, includeRisk, extraSettings });
     srcResetExportLogoInput();
     srcSetExportLogoError('');
-    if(!includeEmail) {
-        srcCloseExportModal();
-    }
+    srcCloseExportModal();
 }
 
 const srcHandleExportTileToggle = function(tile) {
@@ -2245,26 +2086,6 @@ const srcHandleExportTileToggle = function(tile) {
     srcUpdateExportPackageVisibility();
 }
 
-const srcSyncOutputModeFromState = function() {
-    const outputMode = document.getElementById('src-export-output-mode');
-    if(!outputMode) return;
-    let mode = 'both';
-    if(exportModalState.pdf && !exportModalState.email) mode = 'pdf';
-    if(!exportModalState.pdf && exportModalState.email) mode = 'email';
-    outputMode.value = mode;
-    srcSyncMailtextOutputVisibility();
-}
-
-const srcSyncOutputModeToTiles = function() {
-    const outputMode = document.getElementById('src-export-output-mode');
-    if(!outputMode) return;
-    const mode = outputMode.value;
-    exportModalState.pdf = (mode === 'both' || mode === 'pdf');
-    exportModalState.email = (mode === 'both' || mode === 'email');
-    srcSyncExportTiles();
-    srcSyncMailtextOutputVisibility();
-}
-
 const srcSyncExportTiles = function() {
     document.querySelectorAll('.src-opt-tile[data-opt]').forEach(tile => {
         const key = tile.getAttribute('data-opt');
@@ -2279,7 +2100,6 @@ const srcSyncExportTiles = function() {
         tile.classList.toggle('is-on', isOn);
         tile.setAttribute('aria-pressed', isOn ? 'true' : 'false');
     });
-    srcSyncMailtextOutputVisibility();
 }
 
 window.srcSaveStateToStorage = function() {
@@ -3428,6 +3248,20 @@ window.srcCalc = function() {
     srcSaveStateToStorage();
 }
 
+const srcGetExportCurrencyMeta = function(code) {
+    if(code === 'USD') return { code: 'USD', locale: 'en-US', symbol: '$', suffix: false };
+    if(code === 'CHF') return { code: 'CHF', locale: 'de-CH', symbol: 'CHF', suffix: true };
+    if(code === 'GBP') return { code: 'GBP', locale: 'en-GB', symbol: '£', suffix: false };
+    return { code: 'EUR', locale: 'de-DE', symbol: '€', suffix: true };
+}
+
+const srcFormatCurrencyForExport = function(amount, currencyCode) {
+    if(!Number.isFinite(amount)) return '–';
+    const meta = srcGetExportCurrencyMeta(currencyCode);
+    const formatted = new Intl.NumberFormat(meta.locale, { maximumFractionDigits: 0 }).format(Math.round(amount));
+    return meta.suffix ? `${formatted} ${meta.symbol}` : `${meta.symbol}${formatted}`;
+}
+
 window.srcGeneratePDFv6 = async function(options = {}) {
     if(!window.jspdf || !window.jspdf.jsPDF) {
         console.error('SRC: jsPDF nicht verfügbar.');
@@ -3475,6 +3309,7 @@ window.srcGeneratePDFv6 = async function(options = {}) {
     const offerDate = extraSettings.offerDate || new Date().toLocaleDateString(lang === 'en' ? 'en-US' : 'de-DE');
     const subjectText = extraSettings.offerSubject || i18n.subject;
 
+    const exportCurrency = extraSettings.exportCurrency || 'EUR';
     let priceValue = Number.isFinite(extraSettings.customFee) ? extraSettings.customFee : result.final[1];
     let packageLabel = '';
     if(pricingMode === 'package') {
@@ -3634,7 +3469,7 @@ window.srcGeneratePDFv6 = async function(options = {}) {
             body: [[
                 '1',
                 { main: tableMain, secondary: tableSecondaryLines },
-                srcFormatCurrency(priceValue)
+                srcFormatCurrencyForExport(priceValue, exportCurrency)
             ]],
             headStyles: {
                 fillColor: [36, 44, 56],
@@ -3737,7 +3572,7 @@ window.srcGeneratePDFv6 = async function(options = {}) {
         rightsY += SP_4;
 
         addonEntries.forEach(entry => {
-            const amount = Number.isFinite(entry.amount) ? srcFormatCurrency(entry.amount) : '';
+            const amount = Number.isFinite(entry.amount) ? srcFormatCurrencyForExport(entry.amount, exportCurrency) : '';
             const leftText = `• ${srcStripAddonLevelLabel(entry.name)}`;
             const amountW = amount ? doc.getTextWidth(amount) + SP_2 : 0;
             const leftMax = CONTENT_W - (BOX_PAD * 2) - amountW;
@@ -3760,7 +3595,7 @@ window.srcGeneratePDFv6 = async function(options = {}) {
     const summaryX = PAGE_W - MARGIN_R - summaryW;
     const summaryPad = BOX_PAD;
     const summaryRight = summaryX + summaryW - summaryPad;
-    const totalLabel = srcFormatCurrency(priceValue);
+    const totalLabel = srcFormatCurrencyForExport(priceValue, exportCurrency);
     const vatLabel = i18n.assumptions.includes('MwSt') ? 'zzgl. MwSt.' : 'MwSt.-Hinweis laut Kalkulation';
     const grossHint = 'laut finaler Rechnungsstellung';
     const grossLines = wrapText(grossHint, 38);
@@ -3805,7 +3640,7 @@ window.srcGeneratePDFv6 = async function(options = {}) {
     currentY = alignToGrid(currentY + summaryH + SP_8);
 
     if(includeBreakdown && currentBreakdownData) {
-        const breakdownLines = [`Basis: ${srcFormatCurrency(currentBreakdownData.base.mid)}`].concat(currentBreakdownData.steps.map(step => `${srcStripAddonLevelLabel(srcStripHTML(step.label))}: ${srcStripHTML(step.amountOrFactor)}`));
+        const breakdownLines = [`Basis: ${srcFormatCurrencyForExport(currentBreakdownData.base.mid, exportCurrency)}`].concat(currentBreakdownData.steps.map(step => `${srcStripAddonLevelLabel(srcStripHTML(step.label))}: ${srcStripHTML(step.amountOrFactor)}`));
         const wrapped = wrapText(breakdownLines.join('\n'), CONTENT_W - (BOX_PAD * 2));
         const boxH = alignToGrid(BOX_PAD + SP_2 + (wrapped.length * 4.2) + BOX_PAD);
         ensurePageSpace(boxH + SP_6);

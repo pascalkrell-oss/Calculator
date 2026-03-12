@@ -872,6 +872,10 @@ function src_shortcode_output_v7() {
             <div class="src-range-box" id="src-export-range-box">
                 <div class="src-range-box__title">Ermittelte Range</div>
                 <div id="src-export-range-display" class="src-export-range-display">Von — bis —</div>
+                <div class="src-export-range-field">
+                    <input type="text" id="src-export-final-fee" class="src-input-text" placeholder="Finale Angebotsgage auf Basis der ermittelten Range eintragen">
+                    <small class="src-export-helper">Eigene Gage basierend auf der Empfehlung eingeben.</small>
+                </div>
             </div>
 
             <div class="src-modal__body">
@@ -881,13 +885,6 @@ function src_shortcode_output_v7() {
                         <span class="src-opt-tile__text">
                             <span class="src-opt-tile__title">PDF Angebot</span>
                             <span class="src-opt-tile__sub">Zusammenfassung &amp; Details</span>
-                        </span>
-                    </button>
-                    <button type="button" class="src-opt-tile is-on" data-opt="email" aria-pressed="true">
-                        <span class="src-opt-tile__check" aria-hidden="true"></span>
-                        <span class="src-opt-tile__text">
-                            <span class="src-opt-tile__title">Mailtext kopieren</span>
-                            <span class="src-opt-tile__sub">Kurztext für die E-Mail</span>
                         </span>
                     </button>
                     <button type="button" class="src-opt-tile" data-opt="breakdown" aria-pressed="false">
@@ -959,38 +956,35 @@ function src_shortcode_output_v7() {
                     <div class="src-opt-tile src-opt-tile--full src-opt-tile--panel" aria-hidden="true">
                         <div class="src-opt-tile__panel">
                             <div class="src-opt-panel-title">Optionale Felder</div>
-                            <div class="src-modal-grid">
+                            <div class="src-export-grid">
                                 <input type="text" id="src-export-subject" class="src-input-text" placeholder="Angebotsbetreff (editierbar)">
-                                <input type="text" id="src-export-customer-name" class="src-input-text" placeholder="Kund*innenname (editierbar)">
-                                <input type="text" id="src-export-customer-address" class="src-input-text" placeholder="Kund*innenadresse (optional)">
                                 <input type="text" id="src-export-provider-name" class="src-input-text" placeholder="Eigene Firma / Name (editierbar)">
+                                <input type="text" id="src-export-customer-name" class="src-input-text" placeholder="Kund*innenname (editierbar)">
                                 <input type="text" id="src-export-provider-address" class="src-input-text" placeholder="Eigene Adresse (editierbar)">
+                                <input type="text" id="src-export-customer-address" class="src-input-text" placeholder="Kund*innenadresse (optional)">
                                 <input type="text" id="src-export-provider-contact" class="src-input-text" placeholder="Eigene Kontaktinfos (E-Mail / Telefon)">
                                 <input type="text" id="src-export-projectname" class="src-input-text" placeholder="Projektname (optional)">
-                                <input type="text" id="src-export-offer-id" class="src-input-text" placeholder="Angebotsnummer (optional)">
                                 <input type="text" id="src-export-date" class="src-input-text" placeholder="Angebotsdatum (TT.MM.JJJJ)">
+                                <input type="text" id="src-export-offer-id" class="src-input-text" placeholder="Angebotsnummer (optional)">
+                                <label class="src-export-inline-field" for="src-export-payment">Zahlungsfrist
+                                    <input type="text" id="src-export-payment" class="src-input-text" placeholder="Zahlungsfrist (z.B. 14 Tage)">
+                                    <small class="src-export-helper">Zahlungsfrist: Anzahl Tage bis Zahlung fällig.</small>
+                                </label>
+                                <label class="src-export-inline-field" for="src-export-currency">Währung
+                                    <select id="src-export-currency" class="src-input-text src-export-select">
+                                        <option value="EUR" selected>EUR €</option>
+                                        <option value="USD">USD $</option>
+                                        <option value="CHF">CHF CHF</option>
+                                        <option value="GBP">GBP £</option>
+                                    </select>
+                                </label>
                                 <label class="src-export-inline-field" for="src-export-theme">Angebots-Theme
                                     <select id="src-export-theme" class="src-input-text src-export-select">
                                         <option value="dark">Dunkel</option>
                                         <option value="light">Hell</option>
                                     </select>
                                 </label>
-                                <label class="src-export-inline-field" for="src-export-payment">Zahlungsfrist
-                                    <input type="text" id="src-export-payment" class="src-input-text" placeholder="Zahlungsfrist (z.B. 14 Tage)">
-                                    <small class="src-export-helper">Zahlungsfrist: Anzahl Tage bis Zahlung fällig.</small>
-                                </label>
-                                <label class="src-export-inline-field" for="src-export-custom-fee">Deine Gage (innerhalb der Range)
-                                    <input type="text" id="src-export-custom-fee" class="src-input-text" placeholder="z.B. 1.250,00">
-                                    <small id="src-export-custom-fee-hint" class="src-export-helper"></small>
-                                </label>
                                 <input type="text" id="src-export-disclaimer" class="src-input-text" placeholder="Rechtlicher Hinweis (optional)">
-                                <label class="src-export-logo-field">PDF Ausgabe
-                                    <select id="src-export-output-mode" class="src-input-text src-export-select">
-                                        <option value="both">PDF + Mailtext</option>
-                                        <option value="pdf">Nur PDF Angebot</option>
-                                        <option value="email">Nur Mailtext kopieren</option>
-                                    </select>
-                                </label>
                                 <div class="src-export-logo-field">Logo für PDF-Export (nur temporär)
                                     <input type="file" id="src-export-logo" class="src-input-text src-export-logo-input" accept="image/png,image/jpeg">
                                     <div id="src-export-logo-dropzone" class="src-export-logo-dropzone" role="button" tabindex="0" aria-controls="src-export-logo" aria-label="Logo hochladen">
@@ -1000,22 +994,22 @@ function src_shortcode_output_v7() {
                                 </div>
                             </div>
                             <div class="src-opt-panel-title src-opt-panel-title--small">Lieferumfang (Text)</div>
-                            <div class="src-opt-panel-group src-modal-scope">
-                                <label class="src-check"><input type="checkbox" class="src-export-scope" value="1 Take"> 1 Take</label>
-                                <label class="src-check"><input type="checkbox" class="src-export-scope" value="2 Korrekturen"> 2 Korrekturen</label>
-                                <label class="src-check"><input type="checkbox" class="src-export-scope" value="WAV/MP3 Lieferung"> WAV/MP3 Lieferung</label>
+                            <div class="src-scope-cards">
+                                <button type="button" class="src-scope-card" data-export-scope="1 Take">
+                                    <span class="src-scope-card__icon" aria-hidden="true"><i class="fa-solid fa-microphone"></i></span>
+                                    <span class="src-scope-card__label">1 Take</span>
+                                </button>
+                                <button type="button" class="src-scope-card" data-export-scope="2 Korrekturen">
+                                    <span class="src-scope-card__icon" aria-hidden="true"><i class="fa-solid fa-rotate"></i></span>
+                                    <span class="src-scope-card__label">2 Korrekturen</span>
+                                </button>
+                                <button type="button" class="src-scope-card" data-export-scope="WAV/MP3 Lieferung">
+                                    <span class="src-scope-card__icon" aria-hidden="true"><i class="fa-solid fa-file-audio"></i></span>
+                                    <span class="src-scope-card__label">WAV/MP3 Lieferung</span>
+                                </button>
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>
-
-            <div id="src-mailtext-output" class="src-mailtext-output" hidden>
-                <label class="src-export-inline-field" for="src-mailtext-textarea">Mailtext</label>
-                <textarea id="src-mailtext-textarea" class="src-input-text" rows="8" readonly></textarea>
-                <div class="src-mailtext-actions">
-                    <button type="button" class="src-btn src-btn--ghost" id="src-mailtext-copy">In Zwischenablage kopieren</button>
-                    <span id="src-mailtext-status" class="src-export-helper" aria-live="polite"></span>
                 </div>
             </div>
 
