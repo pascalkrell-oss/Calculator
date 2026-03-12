@@ -172,6 +172,19 @@ function src_get_default_json() {
             "min_minutes": 0.1,
             "max_minutes": 20
         },
+        "license_multipliers": {
+            "default_advertising": {
+                "region": { "regional": 0.8, "national": 1.0, "dach": 2.5, "world": 4.0 },
+                "duration": { "1": 1.0, "2": 2.0, "3": 3.0, "4": 4.0 }
+            },
+            "projects": {
+                "tv": {},
+                "online_paid": {},
+                "radio": {},
+                "cinema": {},
+                "pos": {}
+            }
+        },
         "complexity_factors": {
             "corridor": { "min": 0.08, "max": 0.15 },
             "variants": {
