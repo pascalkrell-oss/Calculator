@@ -1851,6 +1851,56 @@
     gap: 14px;
     margin-top: 8px;
 }
+.src-export-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-top: 10px;
+}
+.src-export-grid > * {
+    width: 100%;
+}
+.src-scope-cards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 8px;
+}
+.src-scope-card {
+    border: 1px solid rgba(148, 163, 184, 0.45);
+    border-radius: 12px;
+    background: #0f172a;
+    color: #e2e8f0;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: border-color .2s, background .2s, transform .2s, box-shadow .2s;
+}
+.src-scope-card:hover {
+    transform: translateY(-1px);
+    border-color: rgba(26, 147, 238, 0.65);
+}
+.src-scope-card.is-active {
+    border-color: rgba(26, 147, 238, 0.95);
+    background: rgba(26, 147, 238, 0.2);
+    box-shadow: 0 0 0 2px rgba(26, 147, 238, 0.2);
+}
+.src-scope-card__icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 8px;
+    background: rgba(255,255,255,.1);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+}
+.src-scope-card__label {
+    font-size: 13px;
+    font-weight: 600;
+}
 .src-modal-scope {
     display: grid;
     gap: 6px;
@@ -2239,6 +2289,9 @@
         position: static;
     }
     .src-modal__grid {
+        grid-template-columns: 1fr;
+    }
+    .src-export-grid {
         grid-template-columns: 1fr;
     }
 }
@@ -3341,8 +3394,8 @@ body.src-tutorial-active #src-tutorial-panel:not(.src-tutorial-hidden) {
 
 .src-range-box {
     margin: 14px 26px 0;
-    background: #f8fafc;
-    border: 1px solid #cbd5e1;
+    background: linear-gradient(135deg, rgba(26,147,238,0.12) 0%, rgba(26,147,238,0.04) 100%);
+    border: 1px solid rgba(26,147,238,0.35);
     border-radius: 12px;
     padding: 12px 14px;
 }
@@ -3352,21 +3405,6 @@ body.src-tutorial-active #src-tutorial-panel:not(.src-tutorial-hidden) {
     font-weight: 700;
     color: #334155;
     margin-bottom: 6px;
-}
-
-.src-mailtext-output {
-    margin: 0 26px 14px;
-    border: 1px solid #cbd5e1;
-    border-radius: 12px;
-    background: #fff;
-    padding: 14px;
-}
-
-.src-mailtext-actions {
-    margin-top: 10px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
 }
 
 .src-export-logo-field {
@@ -3404,10 +3442,6 @@ body.src-tutorial-active #src-tutorial-panel:not(.src-tutorial-hidden) {
 
 .src-export-range-field {
     margin-top: 4px;
-}
-
-#src-export-custom-fee-hint {
-    color: #b45309;
 }
 
 .src-export-logo-input {
