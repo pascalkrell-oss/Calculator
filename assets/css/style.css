@@ -1706,7 +1706,7 @@
     max-width: 760px;
     width: 92vw;
     max-height: 90vh;
-    overflow: visible;
+    overflow: hidden;
     box-shadow: 0 24px 60px rgba(15, 23, 42, 0.25);
     display: flex;
     flex-direction: column;
@@ -1763,6 +1763,8 @@
 }
 .src-export-modal-dialog {
     max-width: 880px;
+    border-radius: 18px;
+    overflow: hidden;
 }
 .src-export-panel {
     border: 1px solid #e2e8f0;
@@ -1860,6 +1862,9 @@
     border-color: rgba(226, 232, 240, 0.9);
     box-shadow: none;
 }
+.src-export-package-panel {
+    margin-top: 10px;
+}
 .src-opt-tile__panel {
     width: 100%;
     display: grid;
@@ -1910,30 +1915,34 @@
     gap: 8px;
     padding: 10px 12px;
     cursor: pointer;
-    transition: border-color .2s, background .2s, transform .2s, box-shadow .2s;
+    transition: border-color .2s, background .2s, transform .2s, box-shadow .2s, color .2s;
 }
 .src-scope-card:hover {
     transform: translateY(-1px);
-    border-color: rgba(26, 147, 238, 0.65);
+    border-color: rgba(26, 147, 238, 0.68);
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.18);
 }
 .src-scope-card.is-active {
-    border-color: rgba(26, 147, 238, 0.95);
-    background: rgba(26, 147, 238, 0.2);
-    box-shadow: 0 0 0 2px rgba(26, 147, 238, 0.2);
+    border-color: #1a93ee;
+    background: linear-gradient(135deg, #0f2642 0%, #155792 100%);
+    color: #f8fbff;
+    box-shadow: 0 10px 24px rgba(26, 147, 238, 0.22);
 }
 .src-scope-card__icon {
     width: 24px;
     height: 24px;
     border-radius: 8px;
-    background: rgba(255,255,255,.1);
+    background: rgba(255,255,255,.12);
     display: inline-flex;
     align-items: center;
     justify-content: center;
     font-size: 12px;
+    color: inherit;
 }
 .src-scope-card__label {
     font-size: 13px;
     font-weight: 600;
+    color: inherit;
 }
 .src-modal-scope {
     display: grid;
@@ -3450,6 +3459,8 @@ body.src-tutorial-active #src-tutorial-panel:not(.src-tutorial-hidden) {
     align-items: center;
     padding: 18px 26px;
     border-bottom: 1px solid rgba(147, 197, 253, 0.24);
+    border-top-left-radius: inherit;
+    border-top-right-radius: inherit;
 }
 
 .src-export-modal__head .src-modal__title,
@@ -3476,6 +3487,8 @@ body.src-tutorial-active #src-tutorial-panel:not(.src-tutorial-hidden) {
     border: 1px solid rgba(26,147,238,0.35);
     border-radius: 12px;
     padding: 12px 14px;
+    position: static;
+    top: auto;
 }
 
 .src-range-box__title {
@@ -3494,12 +3507,28 @@ body.src-tutorial-active #src-tutorial-panel:not(.src-tutorial-hidden) {
     margin-top: 8px;
 }
 
+.src-export-logo-field--full {
+    grid-column: 1 / -1;
+}
+
 .src-export-inline-field {
     display: flex;
     flex-direction: column;
     gap: 6px;
     font-size: 12px;
     color: #475569;
+}
+
+.src-export-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.src-export-field-note {
+    font-size: 11px;
+    line-height: 1.35;
+    color: #64748b;
 }
 
 .src-export-helper {
@@ -3602,6 +3631,8 @@ body.src-tutorial-active #src-tutorial-panel:not(.src-tutorial-hidden) {
 .src-export-grid .src-input-text:focus,
 .src-export-grid .src-export-select:focus,
 #src-export-final-fee:focus { border-color: rgba(26,147,238,.95); box-shadow: 0 0 0 3px rgba(26,147,238,.14); outline: none; }
+#src-export-final-fee.is-invalid { border-color: #dc2626; box-shadow: 0 0 0 3px rgba(220,38,38,.16); }
+.src-export-helper--error { color: #b91c1c; min-height: 16px; }
 .src-modal__footer--export { border-top: 1px solid #e2e8f0; padding-top: 16px; }
 
 @media (max-width: 900px){ .src-export-grid { grid-template-columns: 1fr; } .src-export-modal-dialog { width: 95vw; } }

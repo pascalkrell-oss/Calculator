@@ -134,7 +134,6 @@ let exportModalState = {
     lang: 'de',
     pricing: 'custom',
     client: 'direct',
-    offerTheme: 'dark',
     selectedPackage: 'standard'
 };
 
@@ -382,19 +381,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     const finalFeeInput = document.getElementById('src-export-final-fee');
     if(finalFeeInput) {
-        finalFeeInput.addEventListener('input', () => srcUpdateExportFeeFields());
+        finalFeeInput.addEventListener('input', () => srcValidateExportFinalFee());
         finalFeeInput.addEventListener('blur', () => {
-            const value = srcParseCustomFeeInput(finalFeeInput.value);
-            if(Number.isFinite(value) && value > 0) {
-                finalFeeInput.value = srcGetNumberFormatter().format(Math.round(value));
+            const validation = srcValidateExportFinalFee();
+            if(validation.valid && Number.isFinite(validation.value) && validation.value > 0) {
+                finalFeeInput.value = srcGetNumberFormatter().format(Math.round(validation.value));
             }
-            srcUpdateExportFeeFields();
-        });
-    }
-    const exportTheme = document.getElementById('src-export-theme');
-    if(exportTheme) {
-        exportTheme.addEventListener('change', () => {
-            exportModalState.offerTheme = exportTheme.value === 'light' ? 'light' : 'dark';
+            srcValidateExportFinalFee();
         });
     }
     srcEnforceProjectTypeDropdownDownward();
@@ -409,8 +402,6 @@ document.addEventListener('DOMContentLoaded', () => {
     srcUpdateDurationSliderFill();
 
     srcSyncExportTiles();
-    const exportThemeField = document.getElementById('src-export-theme');
-    if(exportThemeField) exportThemeField.value = exportModalState.offerTheme === 'light' ? 'light' : 'dark';
     srcUpdateExportPackageVisibility();
     updateStickyOffset();
     const scheduleStickyOffsetUpdate = () => {
@@ -1858,17 +1849,87 @@ const srcUpdateDurationSliderFill = function() {
 
 
 const srcParseCustomFeeInput = function(rawValue) {
-    const normalized = String(rawValue || '').replace(/\./g, '').replace(',', '.').trim();
+    const value = String(rawValue || '').trim();
+    if(!value) return NaN;
+    const sanitized = value
+        .replace(/[ \s]/g, '')
+        .replace(/[€$£CHFUSDGBP]/gi, '')
+        .replace(/[^\d.,\-]/g, '');
+    if(!sanitized) return NaN;
+    const commaPos = sanitized.lastIndexOf(',');
+    const dotPos = sanitized.lastIndexOf('.');
+    const decimalPos = Math.max(commaPos, dotPos);
+    let normalized = sanitized;
+    if(decimalPos > -1) {
+        const intPart = sanitized.slice(0, decimalPos).replace(/[.,]/g, '');
+        const decPart = sanitized.slice(decimalPos + 1).replace(/[.,]/g, '');
+        normalized = `${intPart}.${decPart}`;
+    } else {
+        normalized = sanitized.replace(/[.,]/g, '');
+    }
     const parsed = parseFloat(normalized);
     return Number.isFinite(parsed) ? parsed : NaN;
+}
+
+const srcGetExportFeeRange = function() {
+    const state = srcGetStateFromUI();
+    const result = srcComputeResult(state);
+    const minValue = Number(result?.final?.[0]);
+    const maxValue = Number(result?.final?.[2]);
+    return {
+        min: Number.isFinite(minValue) ? srcConvertFromEUR(minValue) : NaN,
+        max: Number.isFinite(maxValue) ? srcConvertFromEUR(maxValue) : NaN
+    };
+}
+
+const srcSetExportFeeValidationState = function(valid, message = '') {
+    const input = document.getElementById('src-export-final-fee');
+    const errorEl = document.getElementById('src-export-final-fee-error');
+    if(input) {
+        input.classList.toggle('is-invalid', !valid);
+        input.setAttribute('aria-invalid', valid ? 'false' : 'true');
+    }
+    if(errorEl) {
+        errorEl.textContent = valid ? '' : message;
+    }
+}
+
+const srcValidateExportFinalFee = function() {
+    const input = document.getElementById('src-export-final-fee');
+    if(!input) return { valid: true, value: null };
+    const raw = String(input.value || '').trim();
+    if(!raw) {
+        srcSetExportFeeValidationState(true, '');
+        return { valid: true, value: null };
+    }
+
+    const parsedValue = srcParseCustomFeeInput(raw);
+    if(!Number.isFinite(parsedValue) || parsedValue <= 0) {
+        srcSetExportFeeValidationState(false, 'Bitte gib eine gültige finale Angebotsgage ein.');
+        return { valid: false, value: null };
+    }
+
+    const range = srcGetExportFeeRange();
+    if(!Number.isFinite(range.min) || !Number.isFinite(range.max)) {
+        srcSetExportFeeValidationState(true, '');
+        return { valid: true, value: parsedValue };
+    }
+
+    if(parsedValue < range.min || parsedValue > range.max) {
+        srcSetExportFeeValidationState(false, `Die finale Angebotsgage muss innerhalb der ermittelten Range (${srcFormatCurrency(range.min)} bis ${srcFormatCurrency(range.max)}) liegen.`);
+        return { valid: false, value: null };
+    }
+
+    srcSetExportFeeValidationState(true, '');
+    return { valid: true, value: parsedValue };
 }
 
 const srcUpdateExportFeeFields = function() {
     const rangeEl = document.getElementById('src-export-range-display');
     if(!rangeEl) return;
-    const state = srcGetStateFromUI();
-    const result = srcComputeResult(state);
-    rangeEl.textContent = `Von ${srcFormatCurrency(result.final[0])} bis ${srcFormatCurrency(result.final[2])}`;
+    const range = srcGetExportFeeRange();
+    rangeEl.textContent = `Von ${srcFormatCurrency(range.min)} bis ${srcFormatCurrency(range.max)}`;
+    srcValidateExportFinalFee();
 }
 
 const srcPrefillExportCustomFee = function() {
@@ -1882,6 +1943,7 @@ const srcPrefillExportCustomFee = function() {
         inputEl.value = '';
     }
     srcUpdateExportFeeFields();
+    srcValidateExportFinalFee();
 }
 
 const srcUpdateExportPackageVisibility = function() {
@@ -1919,8 +1981,6 @@ window.srcOpenExportModal = function(options = {}) {
     srcUpdateExportPackageVisibility();
     srcSyncExportPackageCards();
     srcSyncExportTiles();
-    const exportTheme = document.getElementById('src-export-theme');
-    if(exportTheme) exportTheme.value = exportModalState.offerTheme === 'light' ? 'light' : 'dark';
     const dateField = document.getElementById('src-export-date');
     const exportCurrencyField = document.getElementById('src-export-currency');
     if(exportCurrencyField) exportCurrencyField.value = srcGetCurrencyCode();
@@ -2141,7 +2201,6 @@ const srcHandleExportStart = async function() {
     const providerContact = document.getElementById('src-export-provider-contact')?.value || '';
     const offerDate = document.getElementById('src-export-date')?.value || '';
     const paymentTerms = document.getElementById('src-export-payment')?.value || '';
-    const offerTheme = exportModalState.offerTheme === 'light' ? 'light' : 'dark';
     const disclaimer = document.getElementById('src-export-disclaimer')?.value || '';
     const scope = Array.from(document.querySelectorAll('.src-scope-card.is-active[data-export-scope]')).map(el => el.getAttribute('data-export-scope')).filter(Boolean);
     const logoFile = window.srcOfferLogoFile || document.getElementById('src-export-logo')?.files?.[0] || null;
@@ -2168,10 +2227,12 @@ const srcHandleExportStart = async function() {
         return;
     }
     const customerType = exportModalState.client || 'direct';
-    const finalFeeInput = document.getElementById('src-export-final-fee');
-    const customFeeValue = srcParseCustomFeeInput(finalFeeInput ? finalFeeInput.value : '');
-    const customFee = Number.isFinite(customFeeValue) && customFeeValue > 0 ? customFeeValue : null;
-    const extraSettings = { projectName, scope, customerType, offerId, offerSubject, customerName, customerAddress, providerName, providerAddress, providerContact, offerDate, paymentTerms, disclaimer, logoDataUrl, offerTheme, customFee, exportCurrency };
+    const finalFeeValidation = srcValidateExportFinalFee();
+    if(!finalFeeValidation.valid) {
+        return;
+    }
+    const customFee = Number.isFinite(finalFeeValidation.value) ? finalFeeValidation.value : null;
+    const extraSettings = { projectName, scope, customerType, offerId, offerSubject, customerName, customerAddress, providerName, providerAddress, providerContact, offerDate, paymentTerms, disclaimer, logoDataUrl, customFee, exportCurrency };
     await srcGeneratePDFv6({ lang, pricingMode, selectedPackage, includeBreakdown, includeRisk, extraSettings });
     srcResetExportLogoInput();
     srcSetExportLogoError('');
