@@ -70,252 +70,105 @@ function src_settings_page_html() {
 
 // Hilfsfunktion: Default JSON Daten (Fallback)
 function src_get_default_json() {
-    /*
-     * Phase 0 (Bestandsaufnahme - interne Liste):
-     * - tv: admin.php src_get_default_json -> base[]; keine Tiers; keine Zusatzlizenzen (Optionen: Cut-down, Express, Studio, Rabatt).
-     * - online_paid: admin.php src_get_default_json -> base[]; keine Tiers; keine Zusatzlizenzen (Optionen: Cut-down, ATV/CTV).
-     * - radio: admin.php src_get_default_json -> base[]; keine Tiers; keine Zusatzlizenzen (Optionen: Cut-down, Online Audio Paket).
-     * - cinema: admin.php src_get_default_json -> base[]; keine Tiers; keine Zusatzlizenzen (Optionen: Cut-down).
-     * - pos: admin.php src_get_default_json -> base[] + variants (pos_spot/ladenfunk); keine Tiers; keine Zusatzlizenzen.
-     * - imagefilm: admin.php src_get_default_json -> tiers (2/5 Min) + extra; Zusatzlizenzen: social_organic/event_pos.
-     * - explainer: admin.php src_get_default_json -> tiers (2/5 Min) + extra; Zusatzlizenzen: social_organic/event_pos.
-     * - app: admin.php src_get_default_json -> tiers (2/5 Min) + extra; Zusatzlizenzen: social_organic/event_pos.
-     * - elearning: admin.php src_get_default_json -> tiers (bis 5 Min) + extra; keine Zusatzlizenzen.
-     * - audioguide: admin.php src_get_default_json -> tiers (bis 5 Min) + extra; keine Zusatzlizenzen.
-     * - podcast: admin.php src_get_default_json -> tiers (bis 5 Min) + extra; keine Zusatzlizenzen.
-     * - doku: admin.php src_get_default_json -> min/per_min (Sonderlogik), keine Tiers.
-     * - phone: admin.php src_get_default_json -> tiers (bis 3 Module) + extra; keine Zusatzlizenzen.
-     */
-    return '{
-        "tv": { "base": [600, 700, 800], "name": "TV Spot", "lic": "Lizenzen: Lineares TV-Programm im gewählten Gebiet. Laufzeit wie ausgewählt." },
-        "online_paid": { "base": [600, 700, 800], "name": "Online Paid Media", "lic": "Lizenzen: Online/Internet Paid Media (Pre-Roll/Ad). Laufzeit wie ausgewählt." },
-        "radio": { "base": [450, 500, 550], "name": "Funkspot", "lic": "Lizenzen: Lineares Radio-Programm im gewählten Gebiet. Laufzeit wie ausgewählt." },
-        "cinema": { "base": [600, 700, 800], "name": "Kino Spot", "lic": "Lizenzen: Nutzung in Kinos im gewählten Gebiet. Laufzeit wie ausgewählt." },
-        "pos": {
-            "base": [600, 700, 800],
-            "name": "POS / Ladenfunk",
-            "variants": {
-                "pos_spot": { "name": "POS Spot (mit Bild)", "base": [600, 700, 800], "lic": "Lizenzen: POS Spot (mit Bild) am Point of Sale. Laufzeit wie ausgewählt." },
-                "ladenfunk": { "name": "Ladenfunk (ohne Bild)", "base": [450, 550, 650], "lic": "Lizenzen: Ladenfunk (Audio) am Point of Sale. Laufzeit wie ausgewählt." }
-            },
-            "lic": "Lizenzen: Nutzung am Point of Sale (Ladenlokal). Laufzeit wie ausgewählt."
-        },
-        "imagefilm": {
-            "name": "Imagefilm",
-            "tier_unit": "minutes",
-            "tiers": [{ "limit": 2, "p": [300, 350, 400] }, { "limit": 5, "p": [350, 450, 500] }],
-            "extra": [50, 100, 150],
-            "extra_unit": 5,
-            "extra_after": 5,
-            "license_extras": { "social_organic": [50, 150, 250], "event_pos": 150 },
-            "lic": "Lizenzen: Internet Basic (Website, YouTube etc.) - Unpaid Media. Zeitlich unbegrenzt."
-        },
-        "explainer": {
-            "name": "Erklärvideo",
-            "tier_unit": "minutes",
-            "tiers": [{ "limit": 2, "p": [300, 350, 400] }, { "limit": 5, "p": [350, 450, 500] }],
-            "extra": [50, 100, 150],
-            "extra_unit": 5,
-            "extra_after": 5,
-            "license_extras": { "social_organic": 150, "event_pos": 150 },
-            "lic": "Lizenzen: Internet Basic (Website, interne Nutzung). Zeitlich unbegrenzt."
-        },
-        "app": {
-            "name": "App",
-            "tier_unit": "minutes",
-            "tiers": [{ "limit": 2, "p": [300, 400, 450] }, { "limit": 5, "p": [500, 550, 600] }],
-            "extra": [100, 125, 150],
-            "extra_unit": 5,
-            "extra_after": 5,
-            "license_extras": { "social_organic": 150, "event_pos": 150 },
-            "lic": "Lizenzen: Nutzung innerhalb einer App (kein TTS). Zeitlich unbegrenzt."
-        },
-        "elearning": {
-            "name": "E-Learning",
-            "tier_unit": "minutes",
-            "tiers": [{ "limit": 5, "p": [300, 350, 400] }],
-            "extra": [60, 75, 90],
-            "extra_unit": 5,
-            "extra_after": 5,
-            "lic": "Nur interne Nutzung (Schulung). Keine Veröffentlichung."
-        },
-        "audioguide": {
-            "name": "Audioguide",
-            "tier_unit": "minutes",
-            "tiers": [{ "limit": 5, "p": [300, 350, 400] }],
-            "extra": [60, 75, 90],
-            "extra_unit": 5,
-            "extra_after": 5,
-            "lic": "Nutzung im Guide-System. Zeitlich unbegrenzt."
-        },
-        "podcast": {
-            "name": "Podcast",
-            "tier_unit": "minutes",
-            "tiers": [{ "limit": 5, "p": [300, 350, 400] }],
-            "extra": [60, 75, 90],
-            "extra_unit": 5,
-            "extra_after": 5,
-            "lic": "Redaktioneller Inhalt (1 Folge). Weltweit online."
-        },
-        "doku": { "name": "Doku / Reportage", "min": [150, 250, 350], "per_min": [10, 15, 20], "lic": "TV-Ausstrahlung / Mediathek (Redaktionell)." },
-        "phone": {
-            "name": "Telefonansage",
-            "tier_unit": "modules",
-            "tiers": [{ "limit": 3, "p": [180, 240, 300] }],
-            "extra": [50, 60, 70],
-            "extra_unit": 1,
-            "extra_after": 3,
-            "lic": "Nutzung in 1 Telefonanlage. Zeitlich unbegrenzt."
-        },
-        "script_estimation": {
-            "wpm": { "de": 150, "en": 160, "other": 150 },
-            "min_minutes": 0.1,
-            "max_minutes": 20
-        },
-        "license_multipliers": {
-            "default_advertising": {
-                "region": { "regional": 0.8, "national": 1.0, "dach": 2.5, "world": 4.0 },
-                "duration": { "1": 1.0, "2": 2.0, "3": 3.0, "4": 4.0 }
-            },
-            "projects": {
-                "tv": {},
-                "online_paid": {},
-                "radio": {},
-                "cinema": {},
-                "pos": {}
-            }
-        },
-        "complexity_factors": {
-            "corridor": { "min": 0.08, "max": 0.15 },
-            "variants": {
-                "label": "Versionen/Varianten",
-                "options": [
-                    { "key": "1", "label": "1", "factor": 1.0 },
-                    { "key": "2-3", "label": "2–3", "factor": 1.05 },
-                    { "key": "4+", "label": "4+", "factor": 1.1 }
-                ]
-            },
-            "revisions": {
-                "label": "Korrekturschleifen",
-                "options": [
-                    { "key": "1", "label": "inkl. 1", "factor": 1.0 },
-                    { "key": "2", "label": "2", "factor": 1.05 },
-                    { "key": "3+", "label": "3+", "factor": 1.1 }
-                ]
-            },
-            "style": {
-                "label": "Spezialstil",
-                "options": [
-                    { "key": "normal", "label": "normal", "factor": 1.0 },
-                    { "key": "technical", "label": "technisch", "factor": 1.05 },
-                    { "key": "medical", "label": "medizinisch", "factor": 1.1 },
-                    { "key": "emotional", "label": "sehr emotional", "factor": 1.12 }
-                ]
-            },
-            "timing": {
-                "label": "Timing/Synchro",
-                "options": [
-                    { "key": "free", "label": "frei", "factor": 1.0 },
-                    { "key": "guided", "label": "an Bild grob", "factor": 1.05 },
-                    { "key": "lipsync", "label": "lipsync", "factor": 1.15 }
-                ]
-            },
-            "editing": {
-                "label": "Schnitt/Editing",
-                "options": [
-                    { "key": "none", "label": "keins", "factor": 1.0 },
-                    { "key": "basic", "label": "Basic", "factor": 1.05 },
-                    { "key": "advanced", "label": "umfangreich", "factor": 1.12 }
-                ]
-            },
-            "deliverables": {
-                "label": "Deliverables",
-                "options": [
-                    { "key": "single", "label": "ein Format", "factor": 1.0 },
-                    { "key": "multiple", "label": "mehrere", "factor": 1.03 }
-                ]
-            }
-        },
-        "field_tips": {
-            "default": {
-                "length": "Tipp: Text oder Dauer eingeben für eine präzisere Schätzung.",
-                "region": "Tipp: Größere Gebiete erhöhen Reichweite und Lizenzkosten.",
-                "duration": "Tipp: Längere Nutzungsdauer wirkt wie ein Buyout."
-            },
-            "imagefilm": {
-                "duration": "Tipp: Für interne Nutzung reicht oft 1 Jahr oder unbegrenzt ohne Paid Media.",
-                "region": "Tipp: Bei internen Projekten meist national oder DACH ausreichend."
-            },
-            "radio": {
-                "duration": "Tipp: Lokale Kampagnen bleiben oft bei 1 Jahr.",
-                "region": "Tipp: Regional reicht meist – national nur bei echter Ausspielung."
-            }
-        },
-        "packages": {
-            "basic": {
-                "label": "Basic",
-                "pricing": "min",
-                "duration": "short",
-                "extras": "minimal",
-                "meta": ["Min-Preis", "kurze Dauer", "ohne Extras"]
-            },
-            "standard": {
-                "label": "Standard",
-                "pricing": "mid",
-                "duration": "current",
-                "extras": "current",
-                "meta": ["Mittelwert", "aktuelle Dauer", "aktuelle Optionen"]
-            },
-            "premium": {
-                "label": "Premium",
-                "pricing": "max",
-                "duration": "max",
-                "extras": "full",
-                "meta": ["Max-Preis", "erweiterte Dauer", "inkl. Extras"]
-            }
-        },
-        "rights_guidance": {
-            "default": {
-                "headline": "Nutzungsrechte & Lizenzen",
-                "text": "Die Lizenz richtet sich nach Gebiet, Nutzungsdauer und Zusatzlizenzen. Bitte Projekt auswählen bzw. Konfiguration prüfen.",
-                "extras": {
-                    "social_organic": "Zusatzlizenz Social Media (organisch) gemäß VDS/Gagenkompass.",
-                    "event_pos": "Zusatzlizenz Event/Messe/POS gemäß VDS/Gagenkompass."
-                }
-            },
-            "tv": { "text": "Lizenzen: Lineares TV-Programm im gewählten Gebiet. Laufzeit wie ausgewählt." },
-            "online_paid": { "text": "Lizenzen: Online/Internet Paid Media (Pre-Roll/Ad). Laufzeit wie ausgewählt." },
-            "radio": { "text": "Lizenzen: Lineares Radio-Programm im gewählten Gebiet. Laufzeit wie ausgewählt." },
-            "cinema": { "text": "Lizenzen: Nutzung in Kinos im gewählten Gebiet. Laufzeit wie ausgewählt." },
-            "pos": { "text": "Lizenzen: Nutzung am Point of Sale (Ladenlokal). Laufzeit wie ausgewählt." },
-            "imagefilm": { "text": "Lizenzen: Internet Basic (Website, YouTube etc.) - Unpaid Media. Zeitlich unbegrenzt." },
-            "explainer": { "text": "Lizenzen: Internet Basic (Website, interne Nutzung). Zeitlich unbegrenzt." },
-            "app": { "text": "Lizenzen: Nutzung innerhalb einer App (kein TTS). Zeitlich unbegrenzt." },
-            "elearning": { "text": "Nur interne Nutzung (Schulung). Keine Veröffentlichung." },
-            "audioguide": { "text": "Nutzung im Guide-System. Zeitlich unbegrenzt." },
-            "podcast": { "text": "Redaktioneller Inhalt (1 Folge). Weltweit online." },
-            "doku": { "text": "TV-Ausstrahlung / Mediathek (Redaktionell)." },
-            "phone": { "text": "" }
-        },
-        "project_tips": {
-            "imagefilm": ["Tipp: Für interne Nutzung reicht oft Internet Basic.", "Bei Social Media Zusatzlizenz Projektumfang checken."],
-            "tv": ["Tipp: Laufzeit und Gebiet treiben den Preis stark.", "Bei Worldwide + Unlimited lieber prüfen ob nötig."],
-            "phone": ["Telefonansagen sind oft modulbasiert kalkuliert.", "Zusatzmodule sauber im Briefing aufführen."]
-        },
-        "options_by_project": {
-            "tv": { "allow_cutdown": true },
-            "online_paid": { "allow_cutdown": true },
-            "radio": { "allow_cutdown": true },
-            "cinema": { "allow_cutdown": true },
-            "pos": { "allow_cutdown": true },
-            "imagefilm": { "allow_cutdown": false },
-            "explainer": { "allow_cutdown": false },
-            "app": { "allow_cutdown": false },
-            "elearning": { "allow_cutdown": false },
-            "audioguide": { "allow_cutdown": false },
-            "podcast": { "allow_cutdown": false },
-            "doku": { "allow_cutdown": false },
-            "phone": { "allow_cutdown": false }
-        }
-    }';
+    $config = array(
+        'schema_version' => 'vds-2025.1',
+        'vds2025' => array(
+            'taxonomy' => array(
+                'werbung_mit_bild' => array('label' => 'Werbung mit Bild', 'cases' => array('tv', 'online_paid', 'cinema', 'pos')),
+                'werbung_ohne_bild' => array('label' => 'Werbung ohne Bild', 'cases' => array('radio')),
+                'corporate_web' => array('label' => 'Corporate & Web (Unpaid)', 'cases' => array('imagefilm', 'explainer')),
+                'app' => array('label' => 'App', 'cases' => array('app')),
+                'elearning_content' => array('label' => 'E-Learning & Content', 'cases' => array('elearning', 'audioguide', 'podcast', 'doku')),
+                'service' => array('label' => 'Service', 'cases' => array('phone'))
+            ),
+            'license_model' => array(
+                'region' => array('regional' => 0.8, 'national' => 1.0, 'dach' => 2.5, 'world' => 4.0),
+                'duration_years' => array('1' => 1.0, '2' => 2.0, '3' => 3.0, '4' => 4.0),
+                'language' => array('de' => 1.0, 'en' => 1.3, 'other' => 1.5)
+            ),
+            'cases' => array(
+                'tv' => array('category' => 'werbung_mit_bild', 'name' => 'TV Spot', 'pricing' => array('kind' => 'flat', 'base' => array(600, 700, 800)), 'license_type' => 'advertising', 'notes' => array('Lineares TV-Programm im gewählten Gebiet.')),
+                'online_paid' => array('category' => 'werbung_mit_bild', 'name' => 'Online Paid Media', 'pricing' => array('kind' => 'flat', 'base' => array(600, 700, 800)), 'license_type' => 'advertising', 'paid' => true, 'notes' => array('Pre-Roll, Story Ads, Social Paid.')),
+                'radio' => array('category' => 'werbung_ohne_bild', 'name' => 'Funkspot', 'pricing' => array('kind' => 'flat', 'base' => array(450, 500, 550)), 'license_type' => 'advertising'),
+                'cinema' => array('category' => 'werbung_mit_bild', 'name' => 'Kino Spot', 'pricing' => array('kind' => 'flat', 'base' => array(600, 700, 800)), 'license_type' => 'advertising'),
+                'pos' => array('category' => 'werbung_mit_bild', 'name' => 'POS / Ladenfunk', 'pricing' => array('kind' => 'flat', 'base' => array(600, 700, 800)), 'license_type' => 'advertising', 'variants' => array('pos_spot' => array('name' => 'POS Spot (mit Bild)', 'base' => array(600,700,800)), 'ladenfunk' => array('name' => 'Ladenfunk (ohne Bild)', 'base' => array(450,550,650)))),
+                'imagefilm' => array('category' => 'corporate_web', 'name' => 'Imagefilm', 'pricing' => array('kind' => 'tiered', 'unit' => 'minutes', 'tiers' => array(array('limit' => 2, 'p' => array(300,350,400)), array('limit' => 5, 'p' => array(350,450,500))), 'extra' => array(60,75,90), 'extra_unit' => 1, 'extra_after' => 5), 'license_type' => 'unpaid'),
+                'explainer' => array('category' => 'corporate_web', 'name' => 'Erklärvideo', 'pricing' => array('kind' => 'tiered', 'unit' => 'minutes', 'tiers' => array(array('limit' => 2, 'p' => array(300,350,400)), array('limit' => 5, 'p' => array(350,450,500))), 'extra' => array(60,75,90), 'extra_unit' => 1, 'extra_after' => 5), 'license_type' => 'unpaid'),
+                'app' => array('category' => 'app', 'name' => 'App Voiceover', 'pricing' => array('kind' => 'tiered', 'unit' => 'minutes', 'tiers' => array(array('limit' => 2, 'p' => array(300,350,400)), array('limit' => 5, 'p' => array(350,450,500))), 'extra' => array(60,75,90), 'extra_unit' => 1, 'extra_after' => 5), 'license_type' => 'mixed'),
+                'elearning' => array('category' => 'elearning_content', 'name' => 'E-Learning', 'pricing' => array('kind' => 'tiered', 'unit' => 'minutes', 'tiers' => array(array('limit' => 5, 'p' => array(300,350,400))), 'extra' => array(60,75,90), 'extra_unit' => 5, 'extra_after' => 5), 'license_type' => 'unpaid'),
+                'audioguide' => array('category' => 'elearning_content', 'name' => 'Audioguide', 'pricing' => array('kind' => 'tiered', 'unit' => 'minutes', 'tiers' => array(array('limit' => 5, 'p' => array(300,350,400))), 'extra' => array(60,75,90), 'extra_unit' => 5, 'extra_after' => 5), 'license_type' => 'unpaid'),
+                'podcast' => array('category' => 'elearning_content', 'name' => 'Podcast', 'pricing' => array('kind' => 'tiered', 'unit' => 'minutes', 'tiers' => array(array('limit' => 5, 'p' => array(300,350,400))), 'extra' => array(60,75,90), 'extra_unit' => 5, 'extra_after' => 5), 'license_type' => 'unpaid'),
+                'doku' => array('category' => 'elearning_content', 'name' => 'Doku / Reportage', 'pricing' => array('kind' => 'per_minute', 'min' => array(150,250,350), 'per_min' => array(10,15,20)), 'license_type' => 'editorial'),
+                'phone' => array('category' => 'service', 'name' => 'Telefonansage', 'pricing' => array('kind' => 'tiered', 'unit' => 'modules', 'tiers' => array(array('limit' => 3, 'p' => array(180,240,300))), 'extra' => array(50,60,70), 'extra_unit' => 1, 'extra_after' => 3), 'license_type' => 'unpaid')
+            ),
+            'addons' => array(
+                'social_organic' => array('levels' => array('low' => 50, 'mid' => 150, 'high' => 250)),
+                'event_pos' => array('levels' => array('low' => 50, 'mid' => 150, 'high' => 250)),
+                'internal_use' => array('flat' => 120)
+            )
+        ),
+        'script_estimation' => array(
+            'wpm' => array('de' => 150, 'en' => 160, 'other' => 150),
+            'min_minutes' => 0.1,
+            'max_minutes' => 20
+        ),
+        'license_multipliers' => array(
+            'default_advertising' => array(
+                'region' => array('regional' => 0.8, 'national' => 1.0, 'dach' => 2.5, 'world' => 4.0),
+                'duration' => array('1' => 1.0, '2' => 2.0, '3' => 3.0, '4' => 4.0)
+            )
+        ),
+        'complexity_factors' => array(
+            'corridor' => array('min' => 0.08, 'max' => 0.15),
+            'variants' => array('label' => 'Versionen/Varianten', 'options' => array(array('key' => '1', 'label' => '1', 'factor' => 1.0), array('key' => '2-3', 'label' => '2–3', 'factor' => 1.05), array('key' => '4+', 'label' => '4+', 'factor' => 1.1))),
+            'revisions' => array('label' => 'Korrekturschleifen', 'options' => array(array('key' => '1', 'label' => 'inkl. 1', 'factor' => 1.0), array('key' => '2', 'label' => '2', 'factor' => 1.05), array('key' => '3+', 'label' => '3+', 'factor' => 1.1))),
+            'style' => array('label' => 'Spezialstil', 'options' => array(array('key' => 'normal', 'label' => 'normal', 'factor' => 1.0), array('key' => 'technical', 'label' => 'technisch', 'factor' => 1.05), array('key' => 'medical', 'label' => 'medizinisch', 'factor' => 1.1), array('key' => 'emotional', 'label' => 'sehr emotional', 'factor' => 1.12))),
+            'timing' => array('label' => 'Timing/Synchro', 'options' => array(array('key' => 'free', 'label' => 'frei', 'factor' => 1.0), array('key' => 'guided', 'label' => 'an Bild grob', 'factor' => 1.05), array('key' => 'lipsync', 'label' => 'lipsync', 'factor' => 1.15))),
+            'editing' => array('label' => 'Schnitt/Editing', 'options' => array(array('key' => 'none', 'label' => 'keins', 'factor' => 1.0), array('key' => 'basic', 'label' => 'Basic', 'factor' => 1.05), array('key' => 'advanced', 'label' => 'umfangreich', 'factor' => 1.12))),
+            'deliverables' => array('label' => 'Deliverables', 'options' => array(array('key' => 'single', 'label' => 'ein Format', 'factor' => 1.0), array('key' => 'multiple', 'label' => 'mehrere', 'factor' => 1.03)))
+        ),
+        'field_tips' => array(
+            'default' => array(
+                'length' => 'Tipp: Text oder Dauer eingeben für eine präzisere Schätzung.',
+                'region' => 'Tipp: Größere Gebiete erhöhen Reichweite und Lizenzkosten.',
+                'duration' => 'Tipp: Längere Nutzungsdauer wirkt wie ein Buyout.'
+            )
+        ),
+        'rights_guidance' => array(
+            'default' => array(
+                'headline' => 'Nutzungsrechte & Lizenzen',
+                'text' => 'Lizenzkosten ergeben sich aus Nutzungsszenario, Gebiet, Dauer und Zusatzmodulen gemäß VDS/Gagenkompass 2025.',
+                'extras' => array(
+                    'social_organic' => 'Social-Media-Organik wird als Zusatznutzung geführt.',
+                    'event_pos' => 'Event/POS-Nutzung ist eine zusätzliche Auswertung.',
+                    'internal_use' => 'Interne Nutzung darf nicht mit Paid-Werbung verwechselt werden.'
+                )
+            )
+        ),
+        'packages' => array(
+            'basic' => array('label' => 'Basic', 'pricing' => 'min', 'duration' => 'short', 'extras' => 'minimal', 'meta' => array('Min-Preis', 'kurze Dauer', 'ohne Extras')),
+            'standard' => array('label' => 'Standard', 'pricing' => 'mid', 'duration' => 'current', 'extras' => 'current', 'meta' => array('Mittelwert', 'aktuelle Dauer', 'aktuelle Optionen')),
+            'premium' => array('label' => 'Premium', 'pricing' => 'max', 'duration' => 'max', 'extras' => 'full', 'meta' => array('Max-Preis', 'erweiterte Dauer', 'inkl. Extras'))
+        )
+    );
+
+    foreach ($config['vds2025']['cases'] as $case_key => $case_config) {
+        $pricing = isset($case_config['pricing']) ? $case_config['pricing'] : array();
+        $config[$case_key] = array(
+            'name' => $case_config['name'],
+            'base' => isset($pricing['base']) ? $pricing['base'] : array(0,0,0),
+            'tier_unit' => isset($pricing['unit']) ? $pricing['unit'] : 'minutes',
+            'tiers' => isset($pricing['tiers']) ? $pricing['tiers'] : array(),
+            'extra' => isset($pricing['extra']) ? $pricing['extra'] : array(0,0,0),
+            'extra_unit' => isset($pricing['extra_unit']) ? $pricing['extra_unit'] : 1,
+            'extra_after' => isset($pricing['extra_after']) ? $pricing['extra_after'] : 0,
+            'min' => isset($pricing['min']) ? $pricing['min'] : array(0,0,0),
+            'per_min' => isset($pricing['per_min']) ? $pricing['per_min'] : array(0,0,0),
+            'variants' => isset($case_config['variants']) ? $case_config['variants'] : array(),
+            'lic' => implode(' ', isset($case_config['notes']) ? $case_config['notes'] : array())
+        );
+    }
+
+    return wp_json_encode($config, JSON_UNESCAPED_UNICODE);
 }
+

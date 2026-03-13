@@ -60,6 +60,66 @@ const SRC_PROJECT_HIERARCHY = [
     }
 ];
 
+const srcClone = function(payload) {
+    return JSON.parse(JSON.stringify(payload || {}));
+}
+
+const srcGetVdsConfig = function() {
+    return srcRatesData && srcRatesData.vds2025 ? srcRatesData.vds2025 : null;
+}
+
+const srcNormalizeRatesData = function(rawData) {
+    const safe = rawData && typeof rawData === 'object' ? srcClone(rawData) : {};
+    if(safe.vds2025 && safe.vds2025.cases) {
+        return safe;
+    }
+
+    const fallbackCases = {};
+    SRC_PROJECT_HIERARCHY.forEach(group => {
+        (group.projects || []).forEach(key => {
+            if(safe[key]) {
+                fallbackCases[key] = {
+                    category: group.key,
+                    name: safe[key].name || key,
+                    pricing: {
+                        kind: Array.isArray(safe[key].tiers) && safe[key].tiers.length ? 'tiered' : (Array.isArray(safe[key].per_min) && safe[key].per_min.some(v => Number(v) > 0) ? 'per_minute' : 'flat'),
+                        base: safe[key].base || [0,0,0],
+                        tiers: safe[key].tiers || [],
+                        unit: safe[key].tier_unit || 'minutes',
+                        extra: safe[key].extra || [0,0,0],
+                        extra_unit: safe[key].extra_unit || 1,
+                        extra_after: safe[key].extra_after || 0,
+                        min: safe[key].min || [0,0,0],
+                        per_min: safe[key].per_min || [0,0,0]
+                    },
+                    variants: safe[key].variants || {},
+                    notes: [safe[key].lic || '']
+                };
+            }
+        });
+    });
+
+    safe.vds2025 = {
+        taxonomy: SRC_PROJECT_HIERARCHY.reduce((acc, group) => {
+            acc[group.key] = { label: group.label, cases: group.projects || [] };
+            return acc;
+        }, {}),
+        license_model: {
+            region: (((safe.license_multipliers || {}).default_advertising || {}).region) || { regional: 0.8, national: 1, dach: 2.5, world: 4 },
+            duration_years: (((safe.license_multipliers || {}).default_advertising || {}).duration) || { 1: 1, 2: 2, 3: 3, 4: 4 },
+            language: { de: 1, en: 1.3, other: 1.5 }
+        },
+        addons: {
+            social_organic: { levels: { low: 50, mid: 150, high: 250 } },
+            event_pos: { levels: { low: 50, mid: 150, high: 250 } },
+            internal_use: { flat: 120 }
+        },
+        cases: fallbackCases
+    };
+
+    return safe;
+}
+
 const srcGetCurrencyCode = function() {
     return (window.srcCurrencyCode === 'CHF' || window.srcCurrencyCode === 'USD') ? window.srcCurrencyCode : 'EUR';
 }
@@ -201,7 +261,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // DATEN IMPORTIEREN (Vom PHP übergeben)
     if(typeof srcPluginData !== 'undefined' && srcPluginData.rates) {
-        srcRatesData = srcPluginData.rates;
+        srcRatesData = srcNormalizeRatesData(srcPluginData.rates);
     } else {
         console.error("SRC: Keine Preisdaten geladen.");
     }
@@ -748,35 +808,42 @@ const srcNormalizeAddonPriceTriple = function(value, addonKey) {
 
 
 const srcGetAdvertisingMultipliers = function(projectKey) {
-    const config = srcRatesData.license_multipliers || {};
-    const defaults = config.default_advertising || {};
-    const projectCfg = (config.projects && config.projects[projectKey]) ? config.projects[projectKey] : {};
-    const regionDefaults = defaults.region || {};
-    const durationDefaults = defaults.duration || {};
+    const vds = srcGetVdsConfig();
+    const licenseModel = vds && vds.license_model ? vds.license_model : null;
+    const regionModel = (licenseModel && licenseModel.region) || ((((srcRatesData.license_multipliers || {}).default_advertising || {}).region) || {});
+    const durationModel = (licenseModel && licenseModel.duration_years) || ((((srcRatesData.license_multipliers || {}).default_advertising || {}).duration) || {});
 
-    const region = {
-        regional: Number.isFinite(Number(projectCfg.region?.regional)) ? Number(projectCfg.region.regional) : (Number.isFinite(Number(regionDefaults.regional)) ? Number(regionDefaults.regional) : 0.8),
-        national: Number.isFinite(Number(projectCfg.region?.national)) ? Number(projectCfg.region.national) : (Number.isFinite(Number(regionDefaults.national)) ? Number(regionDefaults.national) : 1.0),
-        dach: Number.isFinite(Number(projectCfg.region?.dach)) ? Number(projectCfg.region.dach) : (Number.isFinite(Number(regionDefaults.dach)) ? Number(regionDefaults.dach) : 2.5),
-        world: Number.isFinite(Number(projectCfg.region?.world)) ? Number(projectCfg.region.world) : (Number.isFinite(Number(regionDefaults.world)) ? Number(regionDefaults.world) : 4.0)
+    return {
+        region: {
+            regional: Number(regionModel.regional || 0.8),
+            national: Number(regionModel.national || 1.0),
+            dach: Number(regionModel.dach || 2.5),
+            world: Number(regionModel.world || 4.0)
+        },
+        duration: {
+            1: Number(durationModel['1'] || 1),
+            2: Number(durationModel['2'] || 2),
+            3: Number(durationModel['3'] || 3),
+            4: Number(durationModel['4'] || 4)
+        }
     };
-
-    const duration = {
-        1: Number.isFinite(Number(projectCfg.duration?.['1'])) ? Number(projectCfg.duration['1']) : (Number.isFinite(Number(durationDefaults['1'])) ? Number(durationDefaults['1']) : 1.0),
-        2: Number.isFinite(Number(projectCfg.duration?.['2'])) ? Number(projectCfg.duration['2']) : (Number.isFinite(Number(durationDefaults['2'])) ? Number(durationDefaults['2']) : 2.0),
-        3: Number.isFinite(Number(projectCfg.duration?.['3'])) ? Number(projectCfg.duration['3']) : (Number.isFinite(Number(durationDefaults['3'])) ? Number(durationDefaults['3']) : 3.0),
-        4: Number.isFinite(Number(projectCfg.duration?.['4'])) ? Number(projectCfg.duration['4']) : (Number.isFinite(Number(durationDefaults['4'])) ? Number(durationDefaults['4']) : 4.0)
-    };
-
-    return { region, duration };
 }
 
 const srcGetAddonPriceConfig = function(projectKey) {
+    const vds = srcGetVdsConfig();
+    const globalAddons = vds && vds.addons ? vds.addons : {};
+    const social = globalAddons.social_organic && globalAddons.social_organic.levels
+        ? [globalAddons.social_organic.levels.low || 0, globalAddons.social_organic.levels.mid || 0, globalAddons.social_organic.levels.high || 0]
+        : null;
+    const event = globalAddons.event_pos && globalAddons.event_pos.levels
+        ? [globalAddons.event_pos.levels.low || 0, globalAddons.event_pos.levels.mid || 0, globalAddons.event_pos.levels.high || 0]
+        : null;
+
     const projectData = (projectKey && srcRatesData && srcRatesData[projectKey]) ? srcRatesData[projectKey] : {};
     const extras = projectData.license_extras || {};
     return {
-        social_organic: srcNormalizeAddonPriceTriple(extras.social_organic, 'social_organic'),
-        event_pos: srcNormalizeAddonPriceTriple(extras.event_pos, 'event_pos')
+        social_organic: srcNormalizeAddonPriceTriple(extras.social_organic || social, 'social_organic'),
+        event_pos: srcNormalizeAddonPriceTriple(extras.event_pos || event, 'event_pos')
     };
 }
 
@@ -810,8 +877,20 @@ const srcGetFormatSelect = function() {
     return document.getElementById('src-format-type');
 }
 
+const srcGetProjectHierarchy = function() {
+    const vds = srcGetVdsConfig();
+    if(vds && vds.taxonomy) {
+        return Object.keys(vds.taxonomy).map(key => ({
+            key,
+            label: vds.taxonomy[key].label || key,
+            projects: Array.isArray(vds.taxonomy[key].cases) ? vds.taxonomy[key].cases : []
+        }));
+    }
+    return SRC_PROJECT_HIERARCHY;
+}
+
 const srcGetFormatConfigByProject = function(projectKey) {
-    return SRC_PROJECT_HIERARCHY.find(group => Array.isArray(group.projects) && group.projects.includes(projectKey)) || null;
+    return srcGetProjectHierarchy().find(group => Array.isArray(group.projects) && group.projects.includes(projectKey)) || null;
 }
 
 const srcBuildProjectOptionLabel = function(projectKey) {
@@ -826,7 +905,7 @@ const srcPopulateFormatDropdown = function(selectedFormat = '') {
     if(!formatSelect) return;
     const current = selectedFormat || formatSelect.value || '';
     const options = ['<option value="" selected>Bitte auswählen...</option>'].concat(
-        SRC_PROJECT_HIERARCHY.map(group => `<option value="${group.key}">${group.label}</option>`)
+        srcGetProjectHierarchy().map(group => `<option value="${group.key}">${group.label}</option>`)
     );
     formatSelect.innerHTML = options.join('');
     formatSelect.value = current;
@@ -837,7 +916,7 @@ const srcPopulateGenreDropdownByFormat = function(formatKey, selectedGenre = '',
     const genreSelect = document.getElementById('src-genre');
     if(!genreSelect) return;
 
-    const formatConfig = SRC_PROJECT_HIERARCHY.find(group => group.key === formatKey);
+    const formatConfig = srcGetProjectHierarchy().find(group => group.key === formatKey);
     const previous = keepExisting ? (selectedGenre || genreSelect.value || '') : (selectedGenre || '');
 
     if(!formatConfig) {
@@ -2948,15 +3027,81 @@ const srcComputeGlobalAddons = function(state, projectKeys) {
     return result;
 }
 
+
+const srcResolveCaseConfig = function(projectKey) {
+    const vds = srcGetVdsConfig();
+    if(vds && vds.cases && vds.cases[projectKey]) {
+        return vds.cases[projectKey];
+    }
+    return null;
+}
+
+const srcResolvePricingRange = function(caseConfig, state) {
+    if(!caseConfig || !caseConfig.pricing) return { range: [0,0,0], label: '', steps: [] };
+    const pricing = caseConfig.pricing;
+    const langModel = ((srcGetVdsConfig() || {}).license_model || {}).language || { de: 1, en: 1.3, other: 1.5 };
+    const langFactor = Number(langModel[state.language] || 1);
+    const steps = [];
+
+    const applyLanguage = (arr) => srcEnsurePriceTriple(arr, [0,0,0]).map(v => Math.round(Number(v || 0) * langFactor));
+
+    if(pricing.kind === 'flat') {
+        const base = applyLanguage(pricing.base || [0,0,0]);
+        steps.push({ label: 'Basis', effectOnRange: 'base' });
+        return { range: base, label: caseConfig.name || '', steps };
+    }
+
+    if(pricing.kind === 'tiered') {
+        const unitValue = pricing.unit === 'modules' ? Number(state.phoneCount || 1) : Number(state.minutes || 0);
+        const tiers = Array.isArray(pricing.tiers) ? pricing.tiers : [];
+        const tier = srcGetTierForUnits(tiers, unitValue);
+        let base = applyLanguage(tier ? tier.p : [0,0,0]);
+        const extraChunks = srcGetExtraChunks({ extra_after: pricing.extra_after, extra_unit: pricing.extra_unit }, unitValue, pricing.extra_after || 0, pricing.extra_unit || 1);
+        if(extraChunks > 0) {
+            const extra = applyLanguage(pricing.extra || [0,0,0]);
+            base = base.map((v, i) => v + (extra[i] * extraChunks));
+            steps.push({ label: `Staffel +${extraChunks}x`, effectOnRange: 'add' });
+        }
+        return { range: base, label: caseConfig.name || '', steps };
+    }
+
+    if(pricing.kind === 'per_minute') {
+        const mins = Number(state.minutes || 0);
+        const minimum = applyLanguage(pricing.min || [0,0,0]);
+        const perMin = applyLanguage(pricing.per_min || [0,0,0]);
+        const resolved = minimum.map((minV, i) => Math.max(minV, Math.round(minV + (Math.max(0, mins - 1) * perMin[i]))));
+        return { range: resolved, label: caseConfig.name || '', steps };
+    }
+
+    return { range: [0,0,0], label: caseConfig.name || '', steps };
+}
+
 const srcComputeSingleProjectResult = function(state, projectKey, options = {}) {
     const applyAddons = options.applyAddons !== false;
     const genre = projectKey;
     if(!genre) {
         return { final: [0,0,0], info: [], licenseText: "", breakdown: null, licMeta: [], guidanceText: '', extraBlock: '', projectName: '' };
     }
-    const data = srcRatesData[genre];
-    if(!data) {
+    let data = srcRatesData[genre];
+    const caseConfig = srcResolveCaseConfig(genre);
+    if(!data && !caseConfig) {
         return { final: [0,0,0], info: [], licenseText: "", breakdown: null, licMeta: [], guidanceText: '', extraBlock: '', projectName: '' };
+    }
+    if(!data && caseConfig) {
+        const pricing = caseConfig.pricing || {};
+        data = {
+            name: caseConfig.name || genre,
+            base: pricing.base || [0,0,0],
+            tiers: pricing.tiers || [],
+            tier_unit: pricing.unit || 'minutes',
+            extra: pricing.extra || [0,0,0],
+            extra_unit: pricing.extra_unit || 1,
+            extra_after: pricing.extra_after || 0,
+            min: pricing.min || [0,0,0],
+            per_min: pricing.per_min || [0,0,0],
+            variants: caseConfig.variants || {},
+            lic: Array.isArray(caseConfig.notes) ? caseConfig.notes.join(' ') : ''
+        };
     }
     let base = [0,0,0];
     let final = [0,0,0];
@@ -2970,11 +3115,12 @@ const srcComputeSingleProjectResult = function(state, projectKey, options = {}) 
         info.push({ label, amount, formula, tone });
     };
     const lang = state.language;
-    let langFactor = 1.0;
+    const languageModel = ((srcGetVdsConfig() || {}).license_model || {}).language || { de: 1, en: 1.3, other: 1.5 };
+    let langFactor = Number(languageModel[lang] || 1);
     let langLabel = "";
     const projectName = srcGetProjectDisplayLabel(genre, state.projectFormatKey);
-    if(lang === 'en') { langFactor = 1.3; langLabel = " (Englisch)"; }
-    if(lang === 'other') { langFactor = 1.5; langLabel = " (Fremdsprache)"; }
+    if(lang === 'en') { langLabel = " (Englisch)"; }
+    if(lang === 'other') { langLabel = " (Fremdsprache)"; }
 
     if(state.layoutMode) {
         final = [250, 300, 350];
