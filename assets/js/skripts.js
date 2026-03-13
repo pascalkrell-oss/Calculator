@@ -27,6 +27,39 @@ window.srcFxRates = { CHF: 1, USD: 1 };
 const SRC_CURRENCY_STORAGE_KEY = 'src_currency';
 const SRC_CURRENCY_FORMAT_LOCALE = 'de-DE';
 
+const SRC_PROJECT_HIERARCHY = [
+    {
+        key: 'werbung_mit_bild',
+        label: 'Werbung mit Bild',
+        projects: ['tv', 'online_paid', 'cinema', 'pos']
+    },
+    {
+        key: 'werbung_ohne_bild',
+        label: 'Werbung ohne Bild',
+        projects: ['radio']
+    },
+    {
+        key: 'corporate_web',
+        label: 'Corporate & Web (Unpaid)',
+        projects: ['imagefilm', 'explainer']
+    },
+    {
+        key: 'app',
+        label: 'App',
+        projects: ['app']
+    },
+    {
+        key: 'elearning_content',
+        label: 'E-Learning & Content',
+        projects: ['elearning', 'audioguide', 'podcast', 'doku']
+    },
+    {
+        key: 'service',
+        label: 'Service',
+        projects: ['phone']
+    }
+];
+
 const srcGetCurrencyCode = function() {
     return (window.srcCurrencyCode === 'CHF' || window.srcCurrencyCode === 'USD') ? window.srcCurrencyCode : 'EUR';
 }
@@ -390,10 +423,13 @@ document.addEventListener('DOMContentLoaded', () => {
             srcValidateExportFinalFee();
         });
     }
+    srcPopulateFormatDropdown();
+    srcEnsureHierarchySelection();
     srcEnforceProjectTypeDropdownDownward();
     const genreSelect = document.getElementById('src-genre');
     if(genreSelect) {
         genreSelect.addEventListener('change', () => {
+            srcEnsureHierarchySelection();
             srcUpdateSocialLevelAvailability(genreSelect.value);
             srcUpdateInternalUseToggleAvailability(genreSelect.value);
             srcCalc();
@@ -769,9 +805,108 @@ const srcStripAddonLevelLabel = function(text) {
     return String(text || '').replace(/\s*[–-]\s*(LOW|MID|HIGH)\b/gi, '').trim();
 }
 
+
+const srcGetFormatSelect = function() {
+    return document.getElementById('src-format-type');
+}
+
+const srcGetFormatConfigByProject = function(projectKey) {
+    return SRC_PROJECT_HIERARCHY.find(group => Array.isArray(group.projects) && group.projects.includes(projectKey)) || null;
+}
+
+const srcBuildProjectOptionLabel = function(projectKey) {
+    if(projectKey === 'app') return 'App-Vertonung';
+    if(projectKey === 'elearning') return 'E-Learning / WBT';
+    if(projectKey === 'doku') return 'TV-Doku / Reportage';
+    return srcGetProjectName(projectKey);
+}
+
+const srcPopulateFormatDropdown = function(selectedFormat = '') {
+    const formatSelect = srcGetFormatSelect();
+    if(!formatSelect) return;
+    const current = selectedFormat || formatSelect.value || '';
+    const options = ['<option value="" selected>Bitte auswählen...</option>'].concat(
+        SRC_PROJECT_HIERARCHY.map(group => `<option value="${group.key}">${group.label}</option>`)
+    );
+    formatSelect.innerHTML = options.join('');
+    formatSelect.value = current;
+}
+
+const srcPopulateGenreDropdownByFormat = function(formatKey, selectedGenre = '', options = {}) {
+    const { keepExisting = false } = options;
+    const genreSelect = document.getElementById('src-genre');
+    if(!genreSelect) return;
+
+    const formatConfig = SRC_PROJECT_HIERARCHY.find(group => group.key === formatKey);
+    const previous = keepExisting ? (selectedGenre || genreSelect.value || '') : (selectedGenre || '');
+
+    if(!formatConfig) {
+        genreSelect.innerHTML = '<option value="" disabled selected>Bitte zuerst Format / Art auswählen...</option>';
+        genreSelect.value = '';
+        genreSelect.disabled = true;
+        return;
+    }
+
+    const projectOptions = Array.isArray(formatConfig.projects) ? formatConfig.projects : [];
+    const optionHtml = ['<option value="" disabled selected>Bitte auswählen...</option>'];
+    projectOptions.forEach((projectKey) => {
+        optionHtml.push(`<option value="${projectKey}">${srcBuildProjectOptionLabel(projectKey)}</option>`);
+    });
+    genreSelect.innerHTML = optionHtml.join('');
+    genreSelect.disabled = false;
+
+    if(previous && projectOptions.includes(previous)) {
+        genreSelect.value = previous;
+    } else {
+        genreSelect.selectedIndex = 0;
+    }
+}
+
+const srcEnsureHierarchySelection = function() {
+    const formatSelect = srcGetFormatSelect();
+    const genreSelect = document.getElementById('src-genre');
+    if(!genreSelect || !formatSelect) return;
+
+    const genreValue = genreSelect.value;
+    const currentFormat = formatSelect.value;
+    const expectedFormat = srcGetFormatConfigByProject(genreValue);
+
+    if(expectedFormat && currentFormat !== expectedFormat.key) {
+        formatSelect.value = expectedFormat.key;
+        srcPopulateGenreDropdownByFormat(expectedFormat.key, genreValue, { keepExisting: true });
+        return;
+    }
+
+    if(!currentFormat) {
+        srcPopulateGenreDropdownByFormat('', '', { keepExisting: false });
+        return;
+    }
+
+    srcPopulateGenreDropdownByFormat(currentFormat, genreValue, { keepExisting: true });
+}
+
+window.srcHandleFormatChange = function() {
+    const formatSelect = srcGetFormatSelect();
+    if(!formatSelect) return;
+
+    srcPopulateGenreDropdownByFormat(formatSelect.value, '');
+    srcUIUpdate();
+    srcCalc();
+}
+
 const srcGetProjectName = function(projectKey) {
     if(!projectKey) return '';
     return srcRatesData[projectKey] ? srcRatesData[projectKey].name : projectKey;
+}
+
+
+const srcGetProjectDisplayLabel = function(projectKey, formatKey = '') {
+    const projectName = srcGetProjectName(projectKey);
+    const formatConfig = SRC_PROJECT_HIERARCHY.find(group => group.key === formatKey) || srcGetFormatConfigByProject(projectKey);
+    if(formatConfig && formatConfig.label) {
+        return `${formatConfig.label} · ${projectName}`;
+    }
+    return projectName;
 }
 
 const srcBuildLicenseMetaMarkup = function(metaItems = []) {
@@ -870,7 +1005,10 @@ const srcGetStateFromUI = function() {
         periods: parseInt(document.getElementById('src-adv-periods')?.value, 10) || 1,
         versions: parseInt(document.getElementById('src-adv-versions')?.value, 10) || 1
     };
+    const formatSelect = srcGetFormatSelect();
+    const formatKey = formatSelect ? formatSelect.value : '';
     return {
+        projectFormatKey: formatKey,
         projectKey: genre,
         linkedProjects,
         language: document.getElementById('src-language').value,
@@ -940,7 +1078,7 @@ const srcRenderLicenseSidebar = function(state, result = null) {
     const licSection = document.getElementById('src-license-section');
     if(!licBox) return;
 
-    const projectName = state.layoutMode ? 'Layout / Pitch' : srcGetProjectName(state.projectKey);
+    const projectName = state.layoutMode ? 'Layout / Pitch' : srcGetProjectDisplayLabel(state.projectKey, state.projectFormatKey);
     const linkedProjectNames = Array.from(new Set((state.linkedProjects || []).map(srcGetProjectName).filter(Boolean)));
     const projectLabel = linkedProjectNames.length ? `${projectName} (+ ${linkedProjectNames.join(', ')})` : projectName;
     const regionLabel = srcGetRegionLabel(state.region);
@@ -2316,6 +2454,13 @@ window.srcRestoreStateFromStorage = function() {
     const calcRoot = document.getElementById('src-calc-v6');
     if(!calcRoot || !parsedState || typeof parsedState !== 'object') return false;
 
+    if(!parsedState['src-format-type'] && parsedState['src-genre']) {
+        const legacyFormat = srcGetFormatConfigByProject(String(parsedState['src-genre'] || '').trim());
+        if(legacyFormat) {
+            parsedState['src-format-type'] = legacyFormat.key;
+        }
+    }
+
     Object.entries(parsedState).forEach(([id, value]) => {
         const el = calcRoot.querySelector(`#${CSS.escape(id)}`);
         if(!el) return;
@@ -2333,6 +2478,7 @@ window.srcRestoreStateFromStorage = function() {
         }
     });
 
+    srcEnsureHierarchySelection();
     srcUIUpdate();
     srcRenderSocialBadges();
     srcCalc();
@@ -2367,6 +2513,9 @@ window.toggleAccordion = function(head) {
 }
 
 window.srcReset = function() {
+    const formatSelect = srcGetFormatSelect();
+    if(formatSelect) formatSelect.value = '';
+    srcPopulateGenreDropdownByFormat('', '');
     document.getElementById('src-genre').selectedIndex = 0;
     document.getElementById('src-language').selectedIndex = 0;
     document.getElementById('src-text').value = '';
@@ -2494,10 +2643,12 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 window.srcUIUpdate = function() {
+    srcEnsureHierarchySelection();
     const genre = document.getElementById('src-genre').value;
+    const formatKey = srcGetFormatSelect() ? srcGetFormatSelect().value : '';
     const layoutMode = document.getElementById('src-layout-mode').checked;
     const hasGenre = Boolean(genre) && genre !== "0";
-    const hasProject = Boolean(genre);
+    const hasProject = Boolean(formatKey) || Boolean(genre);
     const calcRoot = document.getElementById('src-calc-v6');
     const complexityGroup = document.getElementById('src-complexity-group');
     const linkedInputs = document.querySelectorAll('.src-linked-project');
@@ -2821,7 +2972,7 @@ const srcComputeSingleProjectResult = function(state, projectKey, options = {}) 
     const lang = state.language;
     let langFactor = 1.0;
     let langLabel = "";
-    const projectName = srcGetProjectName(genre);
+    const projectName = srcGetProjectDisplayLabel(genre, state.projectFormatKey);
     if(lang === 'en') { langFactor = 1.3; langLabel = " (Englisch)"; }
     if(lang === 'other') { langFactor = 1.5; langLabel = " (Fremdsprache)"; }
 
@@ -3278,7 +3429,7 @@ const srcComputeResult = function(state) {
     }
     if(uniqueKeys.length === 1) {
         const result = srcComputeSingleProjectResult(state, uniqueKeys[0], { applyAddons: false });
-        const projectLabel = `Projekt: ${result.projectName || srcGetProjectName(uniqueKeys[0])}`;
+        const projectLabel = `Projekt: ${result.projectName || srcGetProjectDisplayLabel(uniqueKeys[0], state.projectFormatKey)}`;
         const headerMeta = srcBuildLicenseMetaMarkup([projectLabel]);
         const addons = srcComputeGlobalAddons(state, uniqueKeys);
         const addonMarkup = srcBuildGlobalAddonMarkup(addons);
@@ -3304,15 +3455,15 @@ const srcComputeResult = function(state) {
     }
     let final = [0,0,0];
     let info = [];
-    const projectNames = uniqueKeys.map(key => srcGetProjectName(key));
+    const projectNames = uniqueKeys.map(key => srcGetProjectDisplayLabel(key, state.projectFormatKey));
     const headerMeta = srcBuildLicenseMetaMarkup([`Projekt(e): ${projectNames.join(' + ')}`]);
     const licenseSections = [];
     uniqueKeys.forEach((key) => {
         const result = srcComputeSingleProjectResult(state, key, { applyAddons: false });
         final = final.map((value, idx) => value + (result.final[idx] || 0));
-        info.push({ label: `Projektblock: ${result.projectName || srcGetProjectName(key)}`, amount: '', formula: '', tone: 'muted' });
+        info.push({ label: `Projektblock: ${result.projectName || srcGetProjectDisplayLabel(key, state.projectFormatKey)}`, amount: '', formula: '', tone: 'muted' });
         info = info.concat(result.info || []);
-        licenseSections.push(`<div class="src-license-project">${result.projectName || srcGetProjectName(key)}</div>${result.licenseText}`);
+        licenseSections.push(`<div class="src-license-project">${result.projectName || srcGetProjectDisplayLabel(key, state.projectFormatKey)}</div>${result.licenseText}`);
     });
     const addons = srcComputeGlobalAddons(state, uniqueKeys);
     const addonMarkup = srcBuildGlobalAddonMarkup(addons);
@@ -3469,7 +3620,7 @@ window.srcGeneratePDFv6 = async function(options = {}) {
 
     const state = srcGetStateFromUI();
     const result = srcComputeResult(state);
-    const projectName = state.layoutMode ? 'Layout / Pitch (Intern)' : srcGetProjectName(state.projectKey);
+    const projectName = state.layoutMode ? 'Layout / Pitch (Intern)' : srcGetProjectDisplayLabel(state.projectKey, state.projectFormatKey);
     const linkedProjectNames = Array.from(new Set((state.linkedProjects || []).map(srcGetProjectName).filter(Boolean)));
     const projectLabel = linkedProjectNames.length ? `${projectName} (+ ${linkedProjectNames.join(', ')})` : projectName;
     const offerDate = extraSettings.offerDate || new Date().toLocaleDateString(lang === 'en' ? 'en-US' : 'de-DE');
@@ -4148,8 +4299,11 @@ function srcBuildTutorialSteps() {
 
 window.srcStartTutorial = function() {
     srcTutorialMountLayers();
+    const formatSelect = srcGetFormatSelect();
     const genreSelect = document.getElementById('src-genre');
-    if (genreSelect) {
+    if (formatSelect && genreSelect) {
+        formatSelect.value = 'werbung_mit_bild';
+        srcPopulateGenreDropdownByFormat('werbung_mit_bild', 'tv', { keepExisting: true });
         genreSelect.value = 'tv';
         srcUIUpdate();
         srcCalc();
