@@ -31,7 +31,21 @@ const SRC_PROJECT_HIERARCHY = [
     {
         key: 'werbung_mit_bild',
         label: 'Werbung mit Bild',
-        projects: ['tv', 'online_paid', 'cinema', 'pos']
+        projects: [
+            'online_video_spot',
+            'atv_ctv_video_spot',
+            'linearer_tv_spot',
+            'linearer_tv_reminder',
+            'tv_patronat',
+            'atv_ctv_patronat',
+            'kino_spot',
+            'pos_spot',
+            'zusaetzliches_territorium',
+            'zusaetzliches_jahr',
+            'zusaetzliches_motiv',
+            'animatic_narrative_moodfilm',
+            'layout'
+        ]
     },
     {
         key: 'werbung_ohne_bild',
@@ -90,6 +104,168 @@ const SRC_PROJECT_HIERARCHY = [
     }
 ];
 
+
+
+const SRC_PRICE_LEVEL_INDEX = { lower: 0, middle: 1, upper: 2 };
+
+const SRC_WERBUNG_MIT_BILD_CONFIG = {
+    online_video_spot: {
+        key: 'online_video_spot',
+        projectKey: 'online_paid',
+        label: 'Online Video Spot',
+        priceModel: 'fixed',
+        variants: [
+            {
+                key: 'paid_media',
+                label: 'Paid Media',
+                lower: 600,
+                middle: 700,
+                upper: 800,
+                notes: ['Paid Media Nutzung gemäß VDS 1.1.']
+            },
+            {
+                key: 'archivgage',
+                label: 'Archivgage',
+                lower: 325,
+                middle: 385,
+                upper: 450,
+                notes: ['Archivgage gemäß VDS 1.1.']
+            }
+        ],
+        notes: ['Unpaid Media: Verweis auf 1.3 Imagefilm / Webvideo (kein regulärer Paid-/Archiv-Preis).']
+    },
+    atv_ctv_video_spot: {
+        key: 'atv_ctv_video_spot',
+        projectKey: 'online_paid',
+        label: 'ATV/CTV Video Spot',
+        priceModel: 'fixed',
+        variants: [
+            { key: 'national', label: 'national', lower: 600, middle: 700, upper: 800 }
+        ],
+        notes: ['ATV/CTV Nutzung national.']
+    },
+    linearer_tv_spot: {
+        key: 'linearer_tv_spot',
+        projectKey: 'tv',
+        label: 'Linearer TV Spot',
+        priceModel: 'fixed',
+        variants: [
+            { key: 'national', label: 'national', lower: 600, middle: 700, upper: 800 },
+            { key: 'regional', label: 'regional', lower: 500, middle: 550, upper: 600 }
+        ],
+        notes: ['Lineare TV-Auswertung je nach Gebiet.']
+    },
+    linearer_tv_reminder: {
+        key: 'linearer_tv_reminder',
+        projectKey: 'tv',
+        label: 'Linearer TV Reminder',
+        priceModel: 'percent_rule',
+        specialRule: { type: 'percent_range', value: '50 % – 100 %' },
+        notes: ['Sonderregel: 50 % – 100 % der zugrunde liegenden Spotgage.']
+    },
+    tv_patronat: {
+        key: 'tv_patronat',
+        projectKey: 'tv',
+        label: 'TV Patronat',
+        priceModel: 'fixed',
+        variants: [
+            { key: 'national', label: 'national', lower: 600, middle: 700, upper: 800 }
+        ],
+        notes: ['TV Patronat national.']
+    },
+    atv_ctv_patronat: {
+        key: 'atv_ctv_patronat',
+        projectKey: 'online_paid',
+        label: 'ATV/CTV Patronat',
+        priceModel: 'fixed',
+        variants: [
+            { key: 'national', label: 'national', lower: 600, middle: 700, upper: 800 }
+        ],
+        notes: ['ATV/CTV Patronat national.']
+    },
+    kino_spot: {
+        key: 'kino_spot',
+        projectKey: 'cinema',
+        label: 'Kino Spot',
+        priceModel: 'fixed',
+        variants: [
+            { key: 'national', label: 'national', lower: 600, middle: 700, upper: 800 },
+            { key: 'regional', label: 'regional', lower: 500, middle: 550, upper: 600 }
+        ],
+        notes: ['Kino Spot je nach Gebiet.']
+    },
+    pos_spot: {
+        key: 'pos_spot',
+        projectKey: 'pos',
+        label: 'POS Spot',
+        priceModel: 'fixed',
+        lower: 600,
+        middle: 700,
+        upper: 800,
+        notes: ['POS Spot gemäß VDS 1.1.']
+    },
+    zusaetzliches_territorium: {
+        key: 'zusaetzliches_territorium',
+        projectKey: 'tv',
+        label: 'Ein zusätzliches Territorium',
+        priceModel: 'percent_addon',
+        specialRule: { type: 'percent_addon', value: '100 %' },
+        notes: ['Zuschlag: +100 % auf zugrunde liegende Gage.']
+    },
+    zusaetzliches_jahr: {
+        key: 'zusaetzliches_jahr',
+        projectKey: 'tv',
+        label: 'Ein zusätzliches Jahr',
+        priceModel: 'percent_addon',
+        specialRule: { type: 'percent_addon', value: '100 %' },
+        notes: ['Zuschlag: +100 % pro zusätzliches Jahr.']
+    },
+    zusaetzliches_motiv: {
+        key: 'zusaetzliches_motiv',
+        projectKey: 'tv',
+        label: 'Ein zusätzliches Motiv',
+        priceModel: 'percent_addon',
+        specialRule: { type: 'percent_addon', value: '100 %' },
+        notes: ['Zuschlag: +100 % pro zusätzlichem Motiv.']
+    },
+    animatic_narrative_moodfilm: {
+        key: 'animatic_narrative_moodfilm',
+        projectKey: 'online_paid',
+        label: 'Animatic / Narrative / Moodfilm',
+        priceModel: 'fixed',
+        lower: 250,
+        middle: 300,
+        upper: 350,
+        notes: ['Animatic/Narrative/Moodfilm gemäß VDS 1.1.']
+    },
+    layout: {
+        key: 'layout',
+        projectKey: 'online_paid',
+        label: 'Layout',
+        priceModel: 'fixed',
+        lower: 250,
+        middle: 300,
+        upper: 350,
+        notes: ['Layout gemäß VDS 1.1.']
+    }
+};
+
+const SRC_WERBUNG_MIT_BILD_ORDER = [
+    'online_video_spot',
+    'atv_ctv_video_spot',
+    'linearer_tv_spot',
+    'linearer_tv_reminder',
+    'tv_patronat',
+    'atv_ctv_patronat',
+    'kino_spot',
+    'pos_spot',
+    'zusaetzliches_territorium',
+    'zusaetzliches_jahr',
+    'zusaetzliches_motiv',
+    'animatic_narrative_moodfilm',
+    'layout'
+];
+
 const srcClone = function(payload) {
     return JSON.parse(JSON.stringify(payload || {}));
 }
@@ -139,9 +315,10 @@ const srcNormalizeRatesData = function(rawData) {
             safe.vds2025.cases[caseKey] = caseConfig;
         });
         safe.vds2025.taxonomy = SRC_PROJECT_HIERARCHY.reduce((acc, group) => {
+            const isWerbungMitBild = group.key === 'werbung_mit_bild';
             acc[group.key] = {
                 label: group.label,
-                cases: (group.projects || []).filter(projectKey => safe.vds2025.cases[projectKey])
+                cases: (group.projects || []).filter(projectKey => isWerbungMitBild || safe.vds2025.cases[projectKey])
             };
             return acc;
         }, {});
@@ -566,8 +743,17 @@ document.addEventListener('DOMContentLoaded', () => {
             srcEnsureHierarchySelection();
             srcUpdateSocialLevelAvailability(genreSelect.value);
             srcUpdateInternalUseToggleAvailability(genreSelect.value);
+            srcUpdateWerbungMitBildDependentFields();
             srcCalc();
         });
+    }
+    const caseVariantSelect = document.getElementById('src-case-variant');
+    if(caseVariantSelect) {
+        caseVariantSelect.addEventListener('change', () => srcCalc());
+    }
+    const priceLevelSelect = document.getElementById('src-price-level');
+    if(priceLevelSelect) {
+        priceLevelSelect.addEventListener('change', () => srcCalc());
     }
     srcUpdateDurationSliderFill();
 
@@ -980,6 +1166,77 @@ const srcBuildProjectOptionLabel = function(projectKey) {
     return srcGetProjectName(projectKey);
 }
 
+const srcGetWerbungMitBildCaseConfig = function(caseKey) {
+    if(!caseKey) return null;
+    return SRC_WERBUNG_MIT_BILD_CONFIG[caseKey] || null;
+}
+
+const srcGetCurrentPriceLevel = function() {
+    const select = document.getElementById('src-price-level');
+    return (select && SRC_PRICE_LEVEL_INDEX[select.value] !== undefined) ? select.value : 'middle';
+}
+
+const srcResetWerbungMitBildDependents = function() {
+    const variantWrap = document.getElementById('src-case-variant-wrap');
+    const variantSelect = document.getElementById('src-case-variant');
+    const priceWrap = document.getElementById('src-price-level-wrap');
+    const priceSelect = document.getElementById('src-price-level');
+    if(variantSelect) {
+        variantSelect.innerHTML = '<option value="" disabled selected>Bitte auswählen...</option>';
+        variantSelect.value = '';
+        variantSelect.disabled = true;
+    }
+    if(variantWrap) variantWrap.style.display = 'none';
+    if(priceSelect) priceSelect.value = 'middle';
+    if(priceWrap) priceWrap.style.display = 'none';
+}
+
+const srcUpdateWerbungMitBildDependentFields = function() {
+    const genre = document.getElementById('src-genre')?.value || '';
+    const formatKey = srcGetFormatSelect()?.value || '';
+    const variantWrap = document.getElementById('src-case-variant-wrap');
+    const variantSelect = document.getElementById('src-case-variant');
+    const priceWrap = document.getElementById('src-price-level-wrap');
+    const priceSelect = document.getElementById('src-price-level');
+
+    if(formatKey !== 'werbung_mit_bild' || !genre) {
+        srcResetWerbungMitBildDependents();
+        return;
+    }
+
+    const caseConfig = srcGetWerbungMitBildCaseConfig(genre);
+    if(!caseConfig) {
+        srcResetWerbungMitBildDependents();
+        return;
+    }
+
+    if(priceWrap) priceWrap.style.display = '';
+    if(priceSelect && SRC_PRICE_LEVEL_INDEX[priceSelect.value] === undefined) {
+        priceSelect.value = 'middle';
+    }
+
+    const variants = Array.isArray(caseConfig.variants) ? caseConfig.variants : [];
+    if(variants.length > 0 && variantWrap && variantSelect) {
+        const previous = variantSelect.value;
+        const options = ['<option value="" disabled selected>Bitte auswählen...</option>'];
+        variants.forEach(variant => {
+            options.push(`<option value="${variant.key}">${variant.label}</option>`);
+        });
+        variantSelect.innerHTML = options.join('');
+        variantWrap.style.display = '';
+        variantSelect.disabled = false;
+        if(previous && variants.some(variant => variant.key === previous)) {
+            variantSelect.value = previous;
+        }
+    } else {
+        if(variantWrap) variantWrap.style.display = 'none';
+        if(variantSelect) {
+            variantSelect.value = '';
+            variantSelect.disabled = true;
+        }
+    }
+}
+
 const srcPopulateFormatDropdown = function(selectedFormat = '') {
     const formatSelect = srcGetFormatSelect();
     if(!formatSelect) return;
@@ -994,6 +1251,7 @@ const srcPopulateFormatDropdown = function(selectedFormat = '') {
 const srcPopulateGenreDropdownByFormat = function(formatKey, selectedGenre = '', options = {}) {
     const { keepExisting = false } = options;
     const genreSelect = document.getElementById('src-genre');
+    const genreWrap = document.getElementById('src-genre-wrap');
     if(!genreSelect) return;
 
     const formatConfig = srcGetProjectHierarchy().find(group => group.key === formatKey);
@@ -1003,22 +1261,33 @@ const srcPopulateGenreDropdownByFormat = function(formatKey, selectedGenre = '',
         genreSelect.innerHTML = '<option value="" disabled selected>Bitte zuerst Format / Art auswählen...</option>';
         genreSelect.value = '';
         genreSelect.disabled = true;
+        if(genreWrap) genreWrap.style.display = 'none';
+        srcResetWerbungMitBildDependents();
         return;
     }
 
-    const projectOptions = Array.isArray(formatConfig.projects) ? formatConfig.projects : [];
+    let projectOptions = Array.isArray(formatConfig.projects) ? formatConfig.projects : [];
+    if(formatKey === 'werbung_mit_bild') {
+        projectOptions = SRC_WERBUNG_MIT_BILD_ORDER.filter(key => SRC_WERBUNG_MIT_BILD_CONFIG[key]);
+    }
+
     const optionHtml = ['<option value="" disabled selected>Bitte auswählen...</option>'];
     projectOptions.forEach((projectKey) => {
-        optionHtml.push(`<option value="${projectKey}">${srcBuildProjectOptionLabel(projectKey)}</option>`);
+        const caseCfg = srcGetWerbungMitBildCaseConfig(projectKey);
+        const label = caseCfg ? caseCfg.label : srcBuildProjectOptionLabel(projectKey);
+        optionHtml.push(`<option value="${projectKey}">${label}</option>`);
     });
     genreSelect.innerHTML = optionHtml.join('');
     genreSelect.disabled = false;
+    if(genreWrap) genreWrap.style.display = '';
 
     if(previous && projectOptions.includes(previous)) {
         genreSelect.value = previous;
     } else {
         genreSelect.selectedIndex = 0;
     }
+
+    srcUpdateWerbungMitBildDependentFields();
 }
 
 const srcEnsureHierarchySelection = function() {
@@ -1049,12 +1318,15 @@ window.srcHandleFormatChange = function() {
     if(!formatSelect) return;
 
     srcPopulateGenreDropdownByFormat(formatSelect.value, '');
+    srcResetWerbungMitBildDependents();
     srcUIUpdate();
     srcCalc();
 }
 
 const srcGetProjectName = function(projectKey) {
     if(!projectKey) return '';
+    const werbungCase = srcGetWerbungMitBildCaseConfig(projectKey);
+    if(werbungCase && werbungCase.label) return werbungCase.label;
     return srcRatesData[projectKey] ? srcRatesData[projectKey].name : projectKey;
 }
 
@@ -1169,6 +1441,8 @@ const srcGetStateFromUI = function() {
     return {
         projectFormatKey: formatKey,
         projectKey: genre,
+        caseVariantKey: document.getElementById('src-case-variant')?.value || '',
+        priceLevelKey: srcGetCurrentPriceLevel(),
         linkedProjects,
         language: document.getElementById('src-language').value,
         layoutMode: document.getElementById('src-layout-mode').checked,
@@ -1234,6 +1508,7 @@ const updateLicenseMetaText = function(state = null) {
 
 const srcRenderLicenseSidebar = function(state, result = null) {
     const licBox = document.getElementById('src-license-text');
+    const dynamicNotesBox = document.getElementById('src-license-dynamic-notes');
     const licSection = document.getElementById('src-license-section');
     if(!licBox) return;
 
@@ -1278,6 +1553,26 @@ const srcRenderLicenseSidebar = function(state, result = null) {
     `;
     licBox.classList.remove('hidden');
     licBox.style.display = '';
+
+    if(dynamicNotesBox) {
+        const werbungCase = srcResolveWerbungMitBildCase(state);
+        const dynamicNotes = werbungCase && werbungCase.valid
+            ? [
+                werbungCase.config?.notes || [],
+                werbungCase.variant?.notes || [],
+                werbungCase.specialRule?.value ? [`Sonderregel: ${werbungCase.specialRule.value}`] : []
+            ].flat().filter(Boolean)
+            : [];
+        if(dynamicNotes.length) {
+            dynamicNotesBox.style.display = '';
+            dynamicNotesBox.classList.remove('hidden');
+            dynamicNotesBox.innerHTML = `<ul class="src-license-list">${dynamicNotes.map(line => `<li>${line}</li>`).join('')}</ul>`;
+        } else {
+            dynamicNotesBox.style.display = 'none';
+            dynamicNotesBox.innerHTML = '';
+        }
+    }
+
     if(licSection) srcToggleCollapse(licSection, true);
 }
 
@@ -2668,11 +2963,16 @@ window.srcReset = function() {
     const formatSelect = srcGetFormatSelect();
     if(formatSelect) formatSelect.value = '';
     srcPopulateGenreDropdownByFormat('', '');
+    srcResetWerbungMitBildDependents();
     document.getElementById('src-genre').selectedIndex = 0;
     document.getElementById('src-language').selectedIndex = 0;
     document.getElementById('src-text').value = '';
     const posType = document.getElementById('src-pos-type');
     if(posType) posType.selectedIndex = 0;
+    const caseVariant = document.getElementById('src-case-variant');
+    if(caseVariant) caseVariant.value = '';
+    const priceLevel = document.getElementById('src-price-level');
+    if(priceLevel) priceLevel.value = 'middle';
     const complexityDefaults = {
         'src-complexity-variants': '1',
         'src-complexity-revisions': '1',
@@ -2806,6 +3106,8 @@ window.srcUIUpdate = function() {
     const linkedInputs = document.querySelectorAll('.src-linked-project');
     const advancedAccordion = document.getElementById('src-advanced-accordion');
     const advancedWrap = document.querySelector('.src-advanced');
+
+    srcUpdateWerbungMitBildDependentFields();
 
     if (calcRoot) {
         calcRoot.classList.toggle('src-has-project', hasGenre);
@@ -3114,6 +3416,52 @@ const srcResolveCaseConfig = function(projectKey) {
     return null;
 }
 
+
+
+const srcGetWerbungMitBildVariantConfig = function(caseConfig, state) {
+    const variants = Array.isArray(caseConfig?.variants) ? caseConfig.variants : [];
+    if(!variants.length) return null;
+    const selected = String(state?.caseVariantKey || '').trim();
+    return variants.find(variant => variant.key === selected) || null;
+}
+
+const srcResolveWerbungMitBildCase = function(state) {
+    if((state?.projectFormatKey || '') !== 'werbung_mit_bild') return null;
+    const caseConfig = srcGetWerbungMitBildCaseConfig(state?.projectKey || '');
+    if(!caseConfig) return null;
+
+    const variant = srcGetWerbungMitBildVariantConfig(caseConfig, state);
+    const levelKey = srcGetCurrentPriceLevel();
+    const levelIdx = SRC_PRICE_LEVEL_INDEX[levelKey] ?? 1;
+
+    if((caseConfig.priceModel === 'fixed' || caseConfig.priceModel === 'range') && Array.isArray(caseConfig.variants) && caseConfig.variants.length && !variant) {
+        return {
+            valid: false,
+            reason: 'missing_variant',
+            config: caseConfig
+        };
+    }
+
+    let triple = [0,0,0];
+    if(caseConfig.priceModel === 'fixed' || caseConfig.priceModel === 'range') {
+        const source = variant || caseConfig;
+        triple = [Number(source.lower || 0), Number(source.middle || 0), Number(source.upper || 0)];
+    }
+
+    return {
+        valid: true,
+        config: caseConfig,
+        variant,
+        triple,
+        levelKey,
+        levelIdx,
+        selectedValue: Number(triple[levelIdx] || 0),
+        isPercentRule: caseConfig.priceModel === 'percent_rule' || caseConfig.priceModel === 'percent_addon',
+        specialRule: caseConfig.specialRule || null,
+        notes: ([]).concat(caseConfig.notes || [], variant && Array.isArray(variant.notes) ? variant.notes : []).filter(Boolean)
+    };
+}
+
 const srcResolvePricingRange = function(caseConfig, state) {
     if(!caseConfig || !caseConfig.pricing) return { range: [0,0,0], label: '', steps: [] };
     const pricing = caseConfig.pricing;
@@ -3162,7 +3510,8 @@ const srcComputeSingleProjectResult = function(state, projectKey, options = {}) 
     }
     let data = srcRatesData[genre];
     const caseConfig = srcResolveCaseConfig(genre);
-    if(!data && !caseConfig) {
+    const werbungCaseConfig = srcGetWerbungMitBildCaseConfig(genre);
+    if(!data && !caseConfig && !werbungCaseConfig) {
         return { final: [0,0,0], info: [], licenseText: "", breakdown: null, licMeta: [], guidanceText: '', extraBlock: '', projectName: '' };
     }
     if(!data && caseConfig) {
@@ -3197,6 +3546,7 @@ const srcComputeSingleProjectResult = function(state, projectKey, options = {}) 
     let langFactor = Number(languageModel[lang] || 1);
     let langLabel = "";
     const projectName = srcGetProjectDisplayLabel(genre, state.projectFormatKey);
+    const werbungCase = srcResolveWerbungMitBildCase(state);
     if(lang === 'en') { langLabel = " (Englisch)"; }
     if(lang === 'other') { langLabel = " (Fremdsprache)"; }
 
@@ -3209,7 +3559,43 @@ const srcComputeSingleProjectResult = function(state, projectKey, options = {}) 
     } else {
         licParts.push("Projekt: " + projectName);
         licBaseText = data.lic || "";
-        if(['tv','online_paid','radio','cinema','pos'].includes(genre)) {
+
+        if(werbungCase && werbungCase.valid) {
+            const wc = werbungCase;
+            const caseLabel = wc.config.label || data.name || projectName;
+            if(wc.isPercentRule) {
+                final = [0,0,0];
+                breakdownBase = { min: 0, mid: 0, max: 0 };
+                const ruleText = wc.specialRule && wc.specialRule.value ? wc.specialRule.value : 'Sonderregel';
+                addInfo(`Sonderregel (${caseLabel})`, ruleText, 'Prozentregel laut VDS 1.1');
+                breakdownSteps.push({ label: 'Sonderregel', amountOrFactor: ruleText, effectOnRange: 'special' });
+                licMeta.push(`Preislogik: ${ruleText}`);
+            } else {
+                base = srcEnsurePriceTriple(wc.triple, [0,0,0]).map(v => Math.round(v * langFactor));
+                final = [...base];
+                breakdownBase = { min: base[0], mid: base[1], max: base[2] };
+                const chosen = Number.isFinite(base[wc.levelIdx]) ? base[wc.levelIdx] : base[1];
+                const variantText = wc.variant ? ` · ${wc.variant.label}` : '';
+                addInfo(`Grundhonorar (${caseLabel}${variantText}${langLabel})`, srcFormatCurrency(chosen), `Preisniveau: ${wc.levelKey}`);
+                breakdownSteps.push({ label: 'Preisniveau', amountOrFactor: wc.levelKey, effectOnRange: 'select' });
+                licMeta.push(`Preisniveau: ${wc.levelKey}`);
+            }
+            if(wc.variant && wc.variant.label) {
+                licMeta.push(`Untervariante: ${wc.variant.label}`);
+            }
+            if(wc.notes && wc.notes.length) {
+                licMeta = licMeta.concat(wc.notes);
+            }
+            licBaseText = '';
+        }
+        else if(werbungCase && !werbungCase.valid && werbungCase.reason === 'missing_variant') {
+            final = [0,0,0];
+            breakdownBase = { min: 0, mid: 0, max: 0 };
+            addInfo('Untervariante', '—', 'Bitte Untervariante wählen');
+            licMeta.push('Bitte Untervariante wählen.');
+            licBaseText = '';
+        }
+        else if(['tv','online_paid','radio','cinema','pos'].includes(genre)) {
             let adName = data.name;
             let adBase = data.base;
 
@@ -3728,6 +4114,8 @@ window.srcCalc = function() {
         );
         srcPulseTargets(['.src-result-card', '.src-price-main-box']);
         document.getElementById('src-license-text').classList.remove('hidden');
+        const dynamicNotesBox = document.getElementById('src-license-dynamic-notes');
+        if(dynamicNotesBox) { dynamicNotesBox.style.display = 'none'; dynamicNotesBox.innerHTML = ''; }
         const licSection = document.getElementById('src-license-section');
         if(licSection) licSection.classList.remove('is-open');
         if(finalFeeWrap) finalFeeWrap.style.display = 'none'; // Hide if no genre
@@ -3765,11 +4153,15 @@ window.srcCalc = function() {
     srcUpdateDurationSliderFill();
     updateLicenseMetaText(state);
 
-    updateMainAmountAnimated(srcFormatRange(final[0], final[2]));
+    const activeWerbungCase = srcResolveWerbungMitBildCase(state);
+    const isPercentDisplay = Boolean(activeWerbungCase && activeWerbungCase.valid && activeWerbungCase.isPercentRule);
+    const percentDisplayValue = activeWerbungCase && activeWerbungCase.specialRule ? activeWerbungCase.specialRule.value : 'Sonderregel';
+
+    updateMainAmountAnimated(isPercentDisplay ? percentDisplayValue : srcFormatRange(final[0], final[2]));
     srcUpdateMeanValue(
         document.getElementById('src-mean-fade'),
         document.getElementById('src-display-range'),
-        `Ø Mittelwert: ${srcFormatCurrency(final[1])}`
+        isPercentDisplay ? `Preisregel: ${percentDisplayValue}` : `Ø Mittelwert: ${srcFormatCurrency(final[1])}`
     );
     srcPulseTargets(['.src-result-card', '.src-price-main-box']);
     
@@ -4503,7 +4895,7 @@ function srcTutorialSetSpotlight(targetEl) {
 
 function srcBuildTutorialSteps() {
     const steps = [
-        { element: '.src-top-grid > div:nth-child(1)', title: '1. Projektart', desc: 'Wähle hier aus, welche Art von Projekt kalkuliert wird.' },
+        { element: '.src-top-grid > div:nth-child(1)', title: '1. Format/Projekt', desc: 'Wähle hier aus, welche Art von Projekt kalkuliert wird.' },
         { element: '.src-top-grid > div:nth-child(2)', title: '2. Sprache', desc: 'Hier legst Du die Sprachvariante fest, die in die Berechnung einfließt.' },
         { element: '.src-advanced', title: '3. Erweitert', desc: 'Zusätzliche Vertrags- und Leistungsparameter für eine präzisere Kalkulation.' },
         { element: '#src-group-text', title: '4. Skript / Länge', desc: 'Skript einfügen und die geschätzte Sprechdauer automatisch ermitteln lassen.' },
@@ -4527,7 +4919,7 @@ window.srcStartTutorial = function() {
     const genreSelect = document.getElementById('src-genre');
     if (formatSelect && genreSelect) {
         formatSelect.value = 'werbung_mit_bild';
-        srcPopulateGenreDropdownByFormat('werbung_mit_bild', 'tv', { keepExisting: true });
+        srcPopulateGenreDropdownByFormat('werbung_mit_bild', 'online_video_spot', { keepExisting: true });
         genreSelect.value = 'tv';
         srcUIUpdate();
         srcCalc();

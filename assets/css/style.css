@@ -3636,3 +3636,7 @@ body.src-tutorial-active #src-tutorial-panel:not(.src-tutorial-hidden) {
 .src-modal__footer--export { border-top: 1px solid #e2e8f0; padding-top: 16px; }
 
 @media (max-width: 900px){ .src-export-grid { grid-template-columns: 1fr; } .src-export-modal-dialog { width: 95vw; } }
+
+#src-calc-v6 .src-dependent-field-wrap + .src-dependent-field-wrap {
+    margin-top: 12px;
+}

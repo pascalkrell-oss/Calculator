@@ -176,14 +176,28 @@ function src_shortcode_output_v7() {
             <div class="src-layout-block">
                 <div class="src-top-grid">
                 <div>
-                    <div class="src-section-title"><i class="fa-solid fa-briefcase" aria-hidden="true"></i> Projektart</div>
+                    <div class="src-section-title"><i class="fa-solid fa-briefcase" aria-hidden="true"></i> Format/Projekt</div>
                     <select id="src-format-type" class="src-select" onchange="srcHandleFormatChange()">
                         <option value="" selected>Bitte auswählen...</option>
                     </select>
-                    <select id="src-genre" class="src-select" onchange="srcUIUpdate()" disabled>
-                        <option value="" disabled selected>Bitte auswählen...</option>
-                        <option value="" disabled>Bitte zuerst Format / Art auswählen...</option>
-                    </select>
+                    <div id="src-genre-wrap" class="src-dependent-field-wrap" style="display:none;">
+                        <select id="src-genre" class="src-select" onchange="srcUIUpdate()" disabled>
+                            <option value="" disabled selected>Bitte auswählen...</option>
+                            <option value="" disabled>Bitte zuerst Format / Art auswählen...</option>
+                        </select>
+                    </div>
+                    <div id="src-case-variant-wrap" class="src-dependent-field-wrap" style="display:none;">
+                        <select id="src-case-variant" class="src-select" onchange="srcCalc()" disabled>
+                            <option value="" disabled selected>Bitte auswählen...</option>
+                        </select>
+                    </div>
+                    <div id="src-price-level-wrap" class="src-dependent-field-wrap" style="display:none;">
+                        <select id="src-price-level" class="src-select" onchange="srcCalc()">
+                            <option value="lower">unterer Bereich</option>
+                            <option value="middle" selected>mittlerer Bereich</option>
+                            <option value="upper">hoher Bereich</option>
+                        </select>
+                    </div>
                     <span class="src-top-sub">Was wird produziert?</span>
                 </div>
                 
@@ -749,6 +763,7 @@ function src_shortcode_output_v7() {
                         </div>
                         <div class="src-license-sidebar__body">
                             <div id="src-license-text" class="src-license-box src-license-sidebar__text"></div>
+                            <div id="src-license-dynamic-notes" class="src-license-box src-license-sidebar__text" style="display:none;"></div>
                         </div>
                     </section>
 
