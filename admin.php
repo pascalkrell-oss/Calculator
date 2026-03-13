@@ -76,10 +76,16 @@ function src_get_default_json() {
             'taxonomy' => array(
                 'werbung_mit_bild' => array('label' => 'Werbung mit Bild', 'cases' => array('tv', 'online_paid', 'cinema', 'pos')),
                 'werbung_ohne_bild' => array('label' => 'Werbung ohne Bild', 'cases' => array('radio')),
-                'corporate_web' => array('label' => 'Corporate & Web (Unpaid)', 'cases' => array('imagefilm', 'explainer')),
+                'webvideo_imagefilm_praesentation_unpaid' => array('label' => 'Webvideo, Imagefilm, Präsentation – Unpaid Media', 'cases' => array('imagefilm', 'explainer', 'webvideo_unpaid', 'presentation_unpaid')),
                 'app' => array('label' => 'App', 'cases' => array('app')),
-                'elearning_content' => array('label' => 'E-Learning & Content', 'cases' => array('elearning', 'audioguide', 'podcast', 'doku')),
-                'service' => array('label' => 'Service', 'cases' => array('phone'))
+                'telefonansage' => array('label' => 'Telefonansage', 'cases' => array('phone')),
+                'elearning_audioguide' => array('label' => 'E-Learning, Audioguide', 'cases' => array('elearning', 'audioguide')),
+                'podcast' => array('label' => 'Podcast', 'cases' => array('podcast')),
+                'hoerbuch' => array('label' => 'Hörbuch', 'cases' => array('audiobook')),
+                'games' => array('label' => 'Games', 'cases' => array('games')),
+                'redaktionelle_inhalte_doku_tv_reportagen' => array('label' => 'Redaktionelle Inhalte, Dokumentarfilme, TV-Reportagen', 'cases' => array('doku', 'editorial_tv')),
+                'audiodeskription_ad' => array('label' => 'Audiodeskription (AD)', 'cases' => array('audiodescription')),
+                'kleinraeumig' => array('label' => 'Kleinräumig', 'cases' => array('kleinraeumig'))
             ),
             'license_model' => array(
                 'region' => array('regional' => 0.8, 'national' => 1.0, 'dach' => 2.5, 'world' => 4.0),
@@ -92,14 +98,21 @@ function src_get_default_json() {
                 'radio' => array('category' => 'werbung_ohne_bild', 'name' => 'Funkspot', 'pricing' => array('kind' => 'flat', 'base' => array(450, 500, 550)), 'license_type' => 'advertising'),
                 'cinema' => array('category' => 'werbung_mit_bild', 'name' => 'Kino Spot', 'pricing' => array('kind' => 'flat', 'base' => array(600, 700, 800)), 'license_type' => 'advertising'),
                 'pos' => array('category' => 'werbung_mit_bild', 'name' => 'POS / Ladenfunk', 'pricing' => array('kind' => 'flat', 'base' => array(600, 700, 800)), 'license_type' => 'advertising', 'variants' => array('pos_spot' => array('name' => 'POS Spot (mit Bild)', 'base' => array(600,700,800)), 'ladenfunk' => array('name' => 'Ladenfunk (ohne Bild)', 'base' => array(450,550,650)))),
-                'imagefilm' => array('category' => 'corporate_web', 'name' => 'Imagefilm', 'pricing' => array('kind' => 'tiered', 'unit' => 'minutes', 'tiers' => array(array('limit' => 2, 'p' => array(300,350,400)), array('limit' => 5, 'p' => array(350,450,500))), 'extra' => array(60,75,90), 'extra_unit' => 1, 'extra_after' => 5), 'license_type' => 'unpaid'),
-                'explainer' => array('category' => 'corporate_web', 'name' => 'Erklärvideo', 'pricing' => array('kind' => 'tiered', 'unit' => 'minutes', 'tiers' => array(array('limit' => 2, 'p' => array(300,350,400)), array('limit' => 5, 'p' => array(350,450,500))), 'extra' => array(60,75,90), 'extra_unit' => 1, 'extra_after' => 5), 'license_type' => 'unpaid'),
+                'imagefilm' => array('category' => 'webvideo_imagefilm_praesentation_unpaid', 'name' => 'Imagefilm', 'pricing' => array('kind' => 'tiered', 'unit' => 'minutes', 'tiers' => array(array('limit' => 2, 'p' => array(300,350,400)), array('limit' => 5, 'p' => array(350,450,500))), 'extra' => array(60,75,90), 'extra_unit' => 1, 'extra_after' => 5), 'license_type' => 'unpaid'),
+                'explainer' => array('category' => 'webvideo_imagefilm_praesentation_unpaid', 'name' => 'Erklärvideo', 'pricing' => array('kind' => 'tiered', 'unit' => 'minutes', 'tiers' => array(array('limit' => 2, 'p' => array(300,350,400)), array('limit' => 5, 'p' => array(350,450,500))), 'extra' => array(60,75,90), 'extra_unit' => 1, 'extra_after' => 5), 'license_type' => 'unpaid'),
+                'webvideo_unpaid' => array('category' => 'webvideo_imagefilm_praesentation_unpaid', 'name' => 'Webvideo (Unpaid)', 'pricing' => array('kind' => 'tiered', 'unit' => 'minutes', 'tiers' => array(array('limit' => 2, 'p' => array(300,350,400)), array('limit' => 5, 'p' => array(350,450,500))), 'extra' => array(60,75,90), 'extra_unit' => 1, 'extra_after' => 5), 'license_type' => 'unpaid'),
+                'presentation_unpaid' => array('category' => 'webvideo_imagefilm_praesentation_unpaid', 'name' => 'Präsentation (Unpaid)', 'pricing' => array('kind' => 'tiered', 'unit' => 'minutes', 'tiers' => array(array('limit' => 2, 'p' => array(300,350,400)), array('limit' => 5, 'p' => array(350,450,500))), 'extra' => array(60,75,90), 'extra_unit' => 1, 'extra_after' => 5), 'license_type' => 'unpaid'),
                 'app' => array('category' => 'app', 'name' => 'App Voiceover', 'pricing' => array('kind' => 'tiered', 'unit' => 'minutes', 'tiers' => array(array('limit' => 2, 'p' => array(300,350,400)), array('limit' => 5, 'p' => array(350,450,500))), 'extra' => array(60,75,90), 'extra_unit' => 1, 'extra_after' => 5), 'license_type' => 'mixed'),
-                'elearning' => array('category' => 'elearning_content', 'name' => 'E-Learning', 'pricing' => array('kind' => 'tiered', 'unit' => 'minutes', 'tiers' => array(array('limit' => 5, 'p' => array(300,350,400))), 'extra' => array(60,75,90), 'extra_unit' => 5, 'extra_after' => 5), 'license_type' => 'unpaid'),
-                'audioguide' => array('category' => 'elearning_content', 'name' => 'Audioguide', 'pricing' => array('kind' => 'tiered', 'unit' => 'minutes', 'tiers' => array(array('limit' => 5, 'p' => array(300,350,400))), 'extra' => array(60,75,90), 'extra_unit' => 5, 'extra_after' => 5), 'license_type' => 'unpaid'),
-                'podcast' => array('category' => 'elearning_content', 'name' => 'Podcast', 'pricing' => array('kind' => 'tiered', 'unit' => 'minutes', 'tiers' => array(array('limit' => 5, 'p' => array(300,350,400))), 'extra' => array(60,75,90), 'extra_unit' => 5, 'extra_after' => 5), 'license_type' => 'unpaid'),
-                'doku' => array('category' => 'elearning_content', 'name' => 'Doku / Reportage', 'pricing' => array('kind' => 'per_minute', 'min' => array(150,250,350), 'per_min' => array(10,15,20)), 'license_type' => 'editorial'),
-                'phone' => array('category' => 'service', 'name' => 'Telefonansage', 'pricing' => array('kind' => 'tiered', 'unit' => 'modules', 'tiers' => array(array('limit' => 3, 'p' => array(180,240,300))), 'extra' => array(50,60,70), 'extra_unit' => 1, 'extra_after' => 3), 'license_type' => 'unpaid')
+                'elearning' => array('category' => 'elearning_audioguide', 'name' => 'E-Learning', 'pricing' => array('kind' => 'tiered', 'unit' => 'minutes', 'tiers' => array(array('limit' => 5, 'p' => array(300,350,400))), 'extra' => array(60,75,90), 'extra_unit' => 5, 'extra_after' => 5), 'license_type' => 'unpaid'),
+                'audioguide' => array('category' => 'elearning_audioguide', 'name' => 'Audioguide', 'pricing' => array('kind' => 'tiered', 'unit' => 'minutes', 'tiers' => array(array('limit' => 5, 'p' => array(300,350,400))), 'extra' => array(60,75,90), 'extra_unit' => 5, 'extra_after' => 5), 'license_type' => 'unpaid'),
+                'podcast' => array('category' => 'podcast', 'name' => 'Podcast', 'pricing' => array('kind' => 'tiered', 'unit' => 'minutes', 'tiers' => array(array('limit' => 5, 'p' => array(300,350,400))), 'extra' => array(60,75,90), 'extra_unit' => 5, 'extra_after' => 5), 'license_type' => 'unpaid'),
+                'audiobook' => array('category' => 'hoerbuch', 'name' => 'Hörbuch', 'pricing' => array('kind' => 'tiered', 'unit' => 'minutes', 'tiers' => array(array('limit' => 5, 'p' => array(300,350,400))), 'extra' => array(60,75,90), 'extra_unit' => 5, 'extra_after' => 5), 'license_type' => 'unpaid'),
+                'games' => array('category' => 'games', 'name' => 'Games', 'pricing' => array('kind' => 'tiered', 'unit' => 'minutes', 'tiers' => array(array('limit' => 5, 'p' => array(300,350,400))), 'extra' => array(60,75,90), 'extra_unit' => 5, 'extra_after' => 5), 'license_type' => 'mixed'),
+                'doku' => array('category' => 'redaktionelle_inhalte_doku_tv_reportagen', 'name' => 'Doku / Reportage', 'pricing' => array('kind' => 'per_minute', 'min' => array(150,250,350), 'per_min' => array(10,15,20)), 'license_type' => 'editorial'),
+                'editorial_tv' => array('category' => 'redaktionelle_inhalte_doku_tv_reportagen', 'name' => 'Redaktioneller TV-Beitrag', 'pricing' => array('kind' => 'per_minute', 'min' => array(150,250,350), 'per_min' => array(10,15,20)), 'license_type' => 'editorial'),
+                'audiodescription' => array('category' => 'audiodeskription_ad', 'name' => 'Audiodeskription (AD)', 'pricing' => array('kind' => 'per_minute', 'min' => array(150,250,350), 'per_min' => array(10,15,20)), 'license_type' => 'editorial'),
+                'kleinraeumig' => array('category' => 'kleinraeumig', 'name' => 'Kleinräumige Nutzung', 'pricing' => array('kind' => 'tiered', 'unit' => 'minutes', 'tiers' => array(array('limit' => 2, 'p' => array(180,240,300)), array('limit' => 5, 'p' => array(240,300,360))), 'extra' => array(40,55,70), 'extra_unit' => 1, 'extra_after' => 5), 'license_type' => 'unpaid'),
+                'phone' => array('category' => 'telefonansage', 'name' => 'Telefonansage', 'pricing' => array('kind' => 'tiered', 'unit' => 'modules', 'tiers' => array(array('limit' => 3, 'p' => array(180,240,300))), 'extra' => array(50,60,70), 'extra_unit' => 1, 'extra_after' => 3), 'license_type' => 'unpaid')
             ),
             'addons' => array(
                 'social_organic' => array('levels' => array('low' => 50, 'mid' => 150, 'high' => 250)),
@@ -171,4 +184,3 @@ function src_get_default_json() {
 
     return wp_json_encode($config, JSON_UNESCAPED_UNICODE);
 }
-

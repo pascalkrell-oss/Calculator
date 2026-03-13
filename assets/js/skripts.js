@@ -39,9 +39,9 @@ const SRC_PROJECT_HIERARCHY = [
         projects: ['radio']
     },
     {
-        key: 'corporate_web',
-        label: 'Corporate & Web (Unpaid)',
-        projects: ['imagefilm', 'explainer']
+        key: 'webvideo_imagefilm_praesentation_unpaid',
+        label: 'Webvideo, Imagefilm, Präsentation – Unpaid Media',
+        projects: ['imagefilm', 'explainer', 'webvideo_unpaid', 'presentation_unpaid']
     },
     {
         key: 'app',
@@ -49,14 +49,44 @@ const SRC_PROJECT_HIERARCHY = [
         projects: ['app']
     },
     {
-        key: 'elearning_content',
-        label: 'E-Learning & Content',
-        projects: ['elearning', 'audioguide', 'podcast', 'doku']
+        key: 'telefonansage',
+        label: 'Telefonansage',
+        projects: ['phone']
     },
     {
-        key: 'service',
-        label: 'Service',
-        projects: ['phone']
+        key: 'elearning_audioguide',
+        label: 'E-Learning, Audioguide',
+        projects: ['elearning', 'audioguide']
+    },
+    {
+        key: 'podcast',
+        label: 'Podcast',
+        projects: ['podcast']
+    },
+    {
+        key: 'hoerbuch',
+        label: 'Hörbuch',
+        projects: ['audiobook']
+    },
+    {
+        key: 'games',
+        label: 'Games',
+        projects: ['games']
+    },
+    {
+        key: 'redaktionelle_inhalte_doku_tv_reportagen',
+        label: 'Redaktionelle Inhalte, Dokumentarfilme, TV-Reportagen',
+        projects: ['doku', 'editorial_tv']
+    },
+    {
+        key: 'audiodeskription_ad',
+        label: 'Audiodeskription (AD)',
+        projects: ['audiodescription']
+    },
+    {
+        key: 'kleinraeumig',
+        label: 'Kleinräumig',
+        projects: ['kleinraeumig']
     }
 ];
 
@@ -68,9 +98,53 @@ const srcGetVdsConfig = function() {
     return srcRatesData && srcRatesData.vds2025 ? srcRatesData.vds2025 : null;
 }
 
+const srcGetVdsCaseConfig = function(projectKey) {
+    const vds = srcGetVdsConfig();
+    if(!vds || !vds.cases || !projectKey) return null;
+    return vds.cases[projectKey] || null;
+}
+
 const srcNormalizeRatesData = function(rawData) {
     const safe = rawData && typeof rawData === 'object' ? srcClone(rawData) : {};
+
+    const normalizeCaseCategory = function(caseKey, existingCategory) {
+        const fallbackCategoryByCase = {
+            imagefilm: 'webvideo_imagefilm_praesentation_unpaid',
+            explainer: 'webvideo_imagefilm_praesentation_unpaid',
+            webvideo_unpaid: 'webvideo_imagefilm_praesentation_unpaid',
+            presentation_unpaid: 'webvideo_imagefilm_praesentation_unpaid',
+            phone: 'telefonansage',
+            elearning: 'elearning_audioguide',
+            audioguide: 'elearning_audioguide',
+            podcast: 'podcast',
+            audiobook: 'hoerbuch',
+            games: 'games',
+            doku: 'redaktionelle_inhalte_doku_tv_reportagen',
+            editorial_tv: 'redaktionelle_inhalte_doku_tv_reportagen',
+            audiodescription: 'audiodeskription_ad',
+            kleinraeumig: 'kleinraeumig'
+        };
+        const categoryAlias = {
+            corporate_web: 'webvideo_imagefilm_praesentation_unpaid',
+            elearning_content: fallbackCategoryByCase[caseKey] || 'elearning_audioguide',
+            service: 'telefonansage'
+        };
+        return categoryAlias[existingCategory] || fallbackCategoryByCase[caseKey] || existingCategory;
+    };
+
     if(safe.vds2025 && safe.vds2025.cases) {
+        Object.keys(safe.vds2025.cases).forEach(caseKey => {
+            const caseConfig = safe.vds2025.cases[caseKey] || {};
+            caseConfig.category = normalizeCaseCategory(caseKey, caseConfig.category || '');
+            safe.vds2025.cases[caseKey] = caseConfig;
+        });
+        safe.vds2025.taxonomy = SRC_PROJECT_HIERARCHY.reduce((acc, group) => {
+            acc[group.key] = {
+                label: group.label,
+                cases: (group.projects || []).filter(projectKey => safe.vds2025.cases[projectKey])
+            };
+            return acc;
+        }, {});
         return safe;
     }
 
@@ -897,6 +971,12 @@ const srcBuildProjectOptionLabel = function(projectKey) {
     if(projectKey === 'app') return 'App-Vertonung';
     if(projectKey === 'elearning') return 'E-Learning / WBT';
     if(projectKey === 'doku') return 'TV-Doku / Reportage';
+    if(projectKey === 'webvideo_unpaid') return 'Webvideo (Unpaid)';
+    if(projectKey === 'presentation_unpaid') return 'Präsentation (Unpaid)';
+    if(projectKey === 'editorial_tv') return 'Redaktioneller TV-Beitrag';
+    if(projectKey === 'audiodescription') return 'Audiodeskription (AD)';
+    if(projectKey === 'audiobook') return 'Hörbuch';
+    if(projectKey === 'kleinraeumig') return 'Kleinräumige Nutzung';
     return srcGetProjectName(projectKey);
 }
 
@@ -981,7 +1061,7 @@ const srcGetProjectName = function(projectKey) {
 
 const srcGetProjectDisplayLabel = function(projectKey, formatKey = '') {
     const projectName = srcGetProjectName(projectKey);
-    const formatConfig = SRC_PROJECT_HIERARCHY.find(group => group.key === formatKey) || srcGetFormatConfigByProject(projectKey);
+    const formatConfig = srcGetProjectHierarchy().find(group => group.key === formatKey) || srcGetFormatConfigByProject(projectKey);
     if(formatConfig && formatConfig.label) {
         return `${formatConfig.label} · ${projectName}`;
     }
@@ -1629,10 +1709,9 @@ const srcUpdateCutdownVisibility = function(genre, layoutMode) {
 
 const srcHasRightsControls = function(genre) {
     if(!genre) return false;
-    if(['tv','online_paid','radio','cinema','pos'].includes(genre)) return true;
-    if(['imagefilm','explainer','app'].includes(genre)) return true;
-    if(['elearning','podcast','audioguide','doku'].includes(genre)) return true;
-    return false;
+    const caseConfig = srcGetVdsCaseConfig(genre);
+    if(caseConfig && caseConfig.license_type) return true;
+    return Boolean(srcRatesData[genre]);
 }
 
 const shouldShowRightsSection = function(projectKey, config, state) {
@@ -1642,12 +1721,6 @@ const shouldShowRightsSection = function(projectKey, config, state) {
         ? rightsGuidance[projectKey].text.trim()
         : '';
     const hasControls = srcHasRightsControls(projectKey);
-    if(['elearning','podcast','audioguide','doku'].includes(projectKey)) {
-        return Boolean(guidance) || hasControls;
-    }
-    if(projectKey === 'phone') {
-        return Boolean(guidance) || hasControls;
-    }
     return Boolean(guidance) || hasControls;
 }
 
@@ -2746,8 +2819,13 @@ window.srcUIUpdate = function() {
         toggleElement('mod-ads', false); toggleElement('mod-image', false); toggleElement('mod-phone', false);
         toggleElement('src-pos-type-wrap', false);
     } else {
-        toggleElement('mod-ads', ['tv','online_paid','radio','cinema','pos','elearning','podcast','audioguide','doku'].includes(genre));
-        toggleElement('mod-image', ['imagefilm','explainer','app','elearning','podcast','audioguide','doku'].includes(genre));
+        const caseConfig = srcGetVdsCaseConfig(genre) || {};
+        const pricingUnit = caseConfig.pricing && caseConfig.pricing.unit ? caseConfig.pricing.unit : '';
+        const pricingKind = caseConfig.pricing && caseConfig.pricing.kind ? caseConfig.pricing.kind : '';
+        const usesAdControls = caseConfig.license_type === 'advertising';
+        const usesLengthControls = pricingUnit === 'minutes' || pricingKind === 'per_minute';
+        toggleElement('mod-ads', usesAdControls);
+        toggleElement('mod-image', usesLengthControls);
         toggleElement('mod-phone', genre === 'phone');
         toggleElement('src-pos-type-wrap', genre === 'pos');
         
