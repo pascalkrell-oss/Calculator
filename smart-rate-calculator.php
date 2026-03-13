@@ -177,29 +177,12 @@ function src_shortcode_output_v7() {
                 <div class="src-top-grid">
                 <div>
                     <div class="src-section-title"><i class="fa-solid fa-briefcase" aria-hidden="true"></i> Projektart</div>
-                    <select id="src-genre" class="src-select" onchange="srcUIUpdate()">
+                    <select id="src-format-type" class="src-select" onchange="srcHandleFormatChange()">
+                        <option value="" selected>Bitte auswählen...</option>
+                    </select>
+                    <select id="src-genre" class="src-select" onchange="srcUIUpdate()" disabled>
                         <option value="" disabled selected>Bitte auswählen...</option>
-                        <optgroup label="Werbung & Kampagne (Paid Media)">
-                            <option value="tv">TV Spot</option>
-                            <option value="online_paid">Online Paid Media (Pre-Roll/Ad)</option>
-                            <option value="radio">Funkspot</option>
-                            <option value="cinema">Kino Spot</option>
-                            <option value="pos">POS / Ladenfunk</option>
-                        </optgroup>
-                        <optgroup label="Corporate & Web (Unpaid)">
-                            <option value="imagefilm">Imagefilm / Webvideo</option>
-                            <option value="explainer">Erklärvideo / Produktfilm</option>
-                            <option value="app">App-Vertonung</option>
-                        </optgroup>
-                        <optgroup label="E-Learning & Content">
-                            <option value="elearning">E-Learning / WBT</option>
-                            <option value="audioguide">Audioguide</option>
-                            <option value="podcast">Podcast (Redaktionell)</option>
-                            <option value="doku">TV-Doku / Reportage</option>
-                        </optgroup>
-                        <optgroup label="Service">
-                            <option value="phone">Telefonansage / IVR</option>
-                        </optgroup>
+                        <option value="" disabled>Bitte zuerst Format / Art auswählen...</option>
                     </select>
                     <span class="src-top-sub">Was wird produziert?</span>
                 </div>
