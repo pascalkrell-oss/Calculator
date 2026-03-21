@@ -32,7 +32,7 @@ function src_enqueue_assets_v7() {
     );
     wp_enqueue_style(
         'src-font-awesome',
-        'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css',
+        content_url( 'assets/fontawesome/css/all.min.css' ),
         array(),
         '6.7.2'
     );
@@ -45,9 +45,21 @@ function src_enqueue_assets_v7() {
         SRC_PLUGIN_VERSION
     );
 
-    // Externe PDF Libraries
-    wp_enqueue_script('jspdf', 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', array(), '2.5.1', true);
-    wp_enqueue_script('jspdf-autotable', 'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js', array('jspdf'), '3.5.28', true);
+    // Lokale PDF Libraries
+    wp_enqueue_script(
+        'jspdf',
+        content_url( 'assets/jspdf/jspdf.umd.min.js' ),
+        array(),
+        '2.5.1',
+        true
+    );
+    wp_enqueue_script(
+        'jspdf-autotable',
+        content_url( 'assets/jspdf/jspdf.plugin.autotable.js' ),
+        array( 'jspdf' ),
+        '3.5.28',
+        true
+    );
 
     // Unser eigenes JS laden
     wp_enqueue_script(
