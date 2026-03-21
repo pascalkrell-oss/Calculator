@@ -11,6 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 // Pfade definieren
 define( 'SRC_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'SRC_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
+define( 'SRC_PLUGIN_VERSION', '7.0.0' );
 
 // Admin-Interface laden
 require_once SRC_PLUGIN_DIR . 'admin.php';
@@ -29,12 +30,19 @@ function src_enqueue_assets_v7() {
         array(),
         null
     );
+    wp_enqueue_style(
+        'src-font-awesome',
+        'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css',
+        array(),
+        '6.7.2'
+    );
+
     // CSS laden
     wp_enqueue_style(
         'src-styles', 
         SRC_PLUGIN_URL . 'assets/css/style.css', 
-        array('src-rubik-font'), 
-        '7.0.0'
+        array('src-rubik-font', 'src-font-awesome'), 
+        SRC_PLUGIN_VERSION
     );
 
     // Externe PDF Libraries
@@ -46,7 +54,7 @@ function src_enqueue_assets_v7() {
         'src-script', 
         SRC_PLUGIN_URL . 'assets/js/skripts.js', 
         array('jquery', 'jspdf', 'jspdf-autotable'), 
-        '7.0.0', 
+        SRC_PLUGIN_VERSION, 
         true
     );
 
@@ -56,12 +64,7 @@ function src_enqueue_assets_v7() {
         $saved_rates = src_get_default_json(); // Fallback aus admin.php
     }
 
-    wp_localize_script('src-script', 'srcPluginData', array(
-        'rates' => json_decode($saved_rates),
-        'vdsExpected' => json_decode(src_get_default_json()),
-        'ajaxUrl' => admin_url('admin-ajax.php'),
-        'checkIconUrl' => wp_get_attachment_url(407) ?: ''
-    ));
+    wp_localize_script('src-script', 'srcPluginData', src_get_frontend_bootstrap_data( $saved_rates ));
 
     $src_calc_data = array(
         'rest_fx_url' => esc_url_raw( rest_url('src-calc/v1/fx') ),
@@ -127,6 +130,32 @@ function src_calc_get_fx_rates_rest(WP_REST_Request $request) {
     return rest_ensure_response($data);
 }
 
+
+function src_get_frontend_bootstrap_data( $saved_rates ) {
+    return array(
+        'rates'        => json_decode( (string) $saved_rates ),
+        'vdsExpected'  => json_decode( src_get_default_json() ),
+        'ajaxUrl'      => admin_url( 'admin-ajax.php' ),
+        'checkIconUrl' => src_get_check_icon_url(),
+    );
+}
+
+function src_get_check_icon_url() {
+    $option_value = get_option( 'src_check_icon_url', '' );
+    $icon_url     = is_string( $option_value ) ? trim( $option_value ) : '';
+
+    if ( '' === $icon_url ) {
+        $legacy_icon_url = wp_get_attachment_url( 407 );
+        if ( is_string( $legacy_icon_url ) ) {
+            $icon_url = trim( $legacy_icon_url );
+        }
+    }
+
+    $icon_url = apply_filters( 'src_check_icon_url', $icon_url );
+
+    return is_string( $icon_url ) ? esc_url_raw( $icon_url ) : '';
+}
+
 function src_is_calculator_page() {
     if ( is_admin() ) {
         return false;
@@ -150,22 +179,22 @@ function src_shortcode_output_v7() {
     ?>
     <div class="src-reset-header src-header-flex">
         <div class="src-header-left">
-            <button class="src-action-link" onclick="srcStartTutorial()">
+            <button class="src-action-link" data-src-click="srcStartTutorial">
                 <i class="fa-solid fa-graduation-cap" aria-hidden="true"></i> Tutorial starten
             </button>
             <span class="src-divider">|</span>
-            <button class="src-action-link" onclick="srcOpenGuide()">
+            <button class="src-action-link" data-src-click="srcOpenGuide">
                 <i class="fa-solid fa-book" aria-hidden="true"></i> Anleitung
             </button>
             <span class="src-divider">|</span>
             <span class="src-currency-label">Währung wählen</span>
             <div class="src-currency-toggle" id="src-currency-toggle" role="group" aria-label="Währung">
-                <button type="button" class="src-currency-btn is-active" data-currency="EUR" onclick="srcSetCurrency('EUR')">EUR</button>
-                <button type="button" class="src-currency-btn" data-currency="CHF" onclick="srcSetCurrency('CHF')">CHF</button>
-                <button type="button" class="src-currency-btn" data-currency="USD" onclick="srcSetCurrency('USD')">USD</button>
+                <button type="button" class="src-currency-btn is-active" data-currency="EUR">EUR</button>
+                <button type="button" class="src-currency-btn" data-currency="CHF">CHF</button>
+                <button type="button" class="src-currency-btn" data-currency="USD">USD</button>
             </div>
         </div>
-        <button class="src-reset-btn" onclick="srcReset()">
+        <button class="src-reset-btn" data-src-click="srcReset">
             <i class="fa-solid fa-rotate-left" aria-hidden="true"></i> Gagenrechner zurücksetzen
         </button>
     </div>
@@ -177,22 +206,22 @@ function src_shortcode_output_v7() {
                 <div class="src-top-grid">
                 <div>
                     <div class="src-section-title"><i class="fa-solid fa-briefcase" aria-hidden="true"></i> Format/Projekt</div>
-                    <select id="src-format-type" class="src-select" onchange="srcHandleFormatChange()">
+                    <select id="src-format-type" class="src-select" data-src-change="srcHandleFormatChange">
                         <option value="" selected>Bitte auswählen...</option>
                     </select>
                     <div id="src-genre-wrap" class="src-dependent-field-wrap" style="display:none;">
-                        <select id="src-genre" class="src-select" onchange="srcUIUpdate()" disabled>
+                        <select id="src-genre" class="src-select" data-src-change="srcUIUpdate" disabled>
                             <option value="" disabled selected>Bitte auswählen...</option>
                             <option value="" disabled>Bitte zuerst Format / Art auswählen...</option>
                         </select>
                     </div>
                     <div id="src-case-variant-wrap" class="src-dependent-field-wrap" style="display:none;">
-                        <select id="src-case-variant" class="src-select" onchange="srcCalc()" disabled>
+                        <select id="src-case-variant" class="src-select" data-src-change="srcCalc" disabled>
                             <option value="" disabled selected>Bitte auswählen...</option>
                         </select>
                     </div>
                     <div id="src-price-level-wrap" class="src-dependent-field-wrap" style="display:none;">
-                        <select id="src-price-level" class="src-select" onchange="srcCalc()">
+                        <select id="src-price-level" class="src-select" data-src-change="srcCalc">
                             <option value="lower">unterer Bereich</option>
                             <option value="middle" selected>mittlerer Bereich</option>
                             <option value="upper">hoher Bereich</option>
@@ -203,7 +232,7 @@ function src_shortcode_output_v7() {
                 
                 <div>
                     <div class="src-section-title"><i class="fa-solid fa-language" aria-hidden="true"></i> Sprache</div>
-                    <select id="src-language" class="src-select" onchange="srcAnalyzeText()">
+                    <select id="src-language" class="src-select" data-src-change="srcAnalyzeText">
                         <option value="de">Deutsch (Standard)</option>
                         <option value="en">Englisch (+30%)</option>
                         <option value="other">Fremdsprache (+50%)</option>
@@ -261,7 +290,7 @@ function src_shortcode_output_v7() {
                         <div class="src-advanced-grid">
                             <div class="src-advanced-item">
                                 <label class="src-advanced-label" for="src-adv-exclusivity">Exklusivität / Konkurrenzklausel</label>
-                                <select id="src-adv-exclusivity" class="src-select" onchange="srcCalc()">
+                                <select id="src-adv-exclusivity" class="src-select" data-src-change="srcCalc">
                                     <option value="none">Keine (0%)</option>
                                     <option value="low">Low (+10%)</option>
                                     <option value="medium">Medium (+20%)</option>
@@ -270,7 +299,7 @@ function src_shortcode_output_v7() {
                             </div>
                             <div class="src-advanced-item">
                                 <label class="src-advanced-label" for="src-adv-buyout-mode">Buyout vs. Staffel</label>
-                                <select id="src-adv-buyout-mode" class="src-select" onchange="srcUIUpdate(); srcCalc();">
+                                <select id="src-adv-buyout-mode" class="src-select" data-src-change="srcHandleBuyoutModeChange">
                                     <option value="standard">Standard (wie bisher)</option>
                                     <option value="buyout">Buyout (einmalig) (+25%)</option>
                                     <option value="staffel">Staffel (ab 2. Nutzungsperiode)</option>
@@ -278,14 +307,14 @@ function src_shortcode_output_v7() {
                                 <div id="src-adv-periods-wrap" class="src-slide-wrap">
                                     <div class="src-advanced-inline">
                                         <label class="src-advanced-label" for="src-adv-periods">Anzahl Perioden</label>
-                                        <input type="number" id="src-adv-periods" class="src-input-compact" min="1" max="6" value="1" oninput="srcCalc()">
+                                        <input type="number" id="src-adv-periods" class="src-input-compact" min="1" max="6" value="1" data-src-input="srcCalc">
                                         <span class="src-advanced-sub">Zuschlag je Extra-Periode: +12%</span>
                                     </div>
                                 </div>
                             </div>
                             <div class="src-advanced-item">
                                 <label class="src-advanced-label" for="src-adv-versions">Sprachversionen</label>
-                                <input type="number" id="src-adv-versions" class="src-input-compact" min="1" max="10" value="1" oninput="srcCalc()">
+                                <input type="number" id="src-adv-versions" class="src-input-compact" min="1" max="10" value="1" data-src-input="srcCalc">
                                 <span class="src-advanced-sub">Jede zusätzliche Version: +35% der Sprecherleistung</span>
                             </div>
                         </div>
@@ -308,7 +337,7 @@ function src_shortcode_output_v7() {
                     <i class="fa-solid fa-align-left" aria-hidden="true"></i> Skript / Länge
                     <span class="src-tooltip-icon src-field-tip" data-field-tip="length" data-default-tip="Tipp: Mit Skript kann die Dauer genauer geschätzt werden.">?</span>
                 </div>
-                <textarea id="src-text" class="src-textarea" placeholder="Skript hier einfügen für automatische Berechnung..." oninput="srcAnalyzeText()"></textarea>
+                <textarea id="src-text" class="src-textarea" placeholder="Skript hier einfügen für automatische Berechnung..." data-src-input="srcAnalyzeText"></textarea>
                 
                 <div class="src-stats">
                     <span><span id="src-char-count">0</span> Zeichen</span>
@@ -331,7 +360,7 @@ function src_shortcode_output_v7() {
                         </div>
                     </div>
                     <div id="src-manual-input-wrap" class="src-slide-wrap" style="margin-top:0;">
-                         <input type="text" id="src-manual-minutes" class="src-input-text" style="margin-top:5px;" placeholder="Länge in Minuten (z.B. 1,5)" oninput="srcAnalyzeText()">
+                         <input type="text" id="src-manual-minutes" class="src-input-text" style="margin-top:5px;" placeholder="Länge in Minuten (z.B. 1,5)" data-src-input="srcAnalyzeText">
                     </div>
                 </div>
             </div>
@@ -339,7 +368,7 @@ function src_shortcode_output_v7() {
             <div id="mod-phone" class="src-slide-wrap">
                 <div class="src-light-box-wrapper">
                     <label style="font-size:13px; font-weight:700; color:var(--src-primary); display:block; margin-bottom:5px;">Anzahl der Module / Ansagen</label>
-                    <input type="number" id="src-phone-count" class="src-input-text" value="1" min="1" oninput="srcCalc()">
+                    <input type="number" id="src-phone-count" class="src-input-text" value="1" min="1" data-src-input="srcCalc">
                     <div style="font-size:11px; color:#64748b; margin-top:5px;">Bis zu 3 Module sind in der Pauschale enthalten. Jedes weitere Modul kostet extra.</div>
                 </div>
             </div>
@@ -355,7 +384,7 @@ function src_shortcode_output_v7() {
                         <div class="src-light-box-wrapper">
                             <div id="src-pos-type-wrap" class="src-slide-wrap">
                                 <div class="src-section-title"><i class="fa-solid fa-store" aria-hidden="true"></i> POS Typ</div>
-                                <select id="src-pos-type" class="src-select" onchange="srcCalc()">
+                                <select id="src-pos-type" class="src-select" data-src-change="srcCalc">
                                     <option value="pos_spot">POS Spot (mit Bild)</option>
                                     <option value="ladenfunk">Ladenfunk (ohne Bild)</option>
                                 </select>
@@ -368,28 +397,28 @@ function src_shortcode_output_v7() {
                                 </div>
                                 <div class="src-tiles-grid">
                                     <label>
-                                        <input type="radio" name="region" value="regional" class="src-tile-input" onchange="srcCalc()">
+                                        <input type="radio" name="region" value="regional" class="src-tile-input" data-src-change="srcCalc">
                                         <div class="src-tile">
                                             <i class="fa-solid fa-location-dot src-tile-icon" aria-hidden="true"></i>
                                             <div class="src-tile-label">Regional</div>
                                         </div>
                                     </label>
                                     <label>
-                                        <input type="radio" name="region" value="national" class="src-tile-input" checked onchange="srcCalc()">
+                                        <input type="radio" name="region" value="national" class="src-tile-input" checked data-src-change="srcCalc">
                                         <div class="src-tile">
                                             <i class="fa-solid fa-flag src-tile-icon" aria-hidden="true"></i>
                                             <div class="src-tile-label">National</div>
                                         </div>
                                     </label>
                                     <label>
-                                        <input type="radio" name="region" value="dach" class="src-tile-input" onchange="srcCalc()">
+                                        <input type="radio" name="region" value="dach" class="src-tile-input" data-src-change="srcCalc">
                                         <div class="src-tile">
                                             <span style="font-weight:800; font-size:16px; color:#94a3b8; margin-bottom:4px; display:block;">DACH</span>
                                             <div class="src-tile-label">D-A-CH</div>
                                         </div>
                                     </label>
                                     <label>
-                                        <input type="radio" name="region" value="world" class="src-tile-input" onchange="srcCalc()">
+                                        <input type="radio" name="region" value="world" class="src-tile-input" data-src-change="srcCalc">
                                         <div class="src-tile">
                                             <i class="fa-solid fa-earth-europe src-tile-icon" aria-hidden="true"></i>
                                             <div class="src-tile-label">Weltweit</div>
@@ -407,7 +436,7 @@ function src_shortcode_output_v7() {
                                 <div id="src-slider-val" class="src-slider-val">1 Jahr</div>
                             </div>
                                 <div class="src-slider-container src-range-wrap">
-                                    <input type="range" id="src-time-slider" min="1" max="4" value="1" step="1" class="src-slider" oninput="srcCalc()">
+                                    <input type="range" id="src-time-slider" min="1" max="4" value="1" step="1" class="src-slider" data-src-input="srcCalc">
                                     <div class="src-range-dots" aria-hidden="true">
                                         <span class="src-range-dot" data-step="0"></span>
                                         <span class="src-range-dot" data-step="1"></span>
@@ -520,7 +549,7 @@ function src_shortcode_output_v7() {
                 <div class="src-complexity-grid">
                     <label class="src-complexity-field">
                         <span>Anzahl Versionen/Varianten</span>
-                        <select id="src-complexity-variants" class="src-select" onchange="srcCalc()">
+                        <select id="src-complexity-variants" class="src-select" data-src-change="srcCalc">
                             <option value="1">1</option>
                             <option value="2-3">2–3</option>
                             <option value="4+">4+</option>
@@ -528,7 +557,7 @@ function src_shortcode_output_v7() {
                     </label>
                     <label class="src-complexity-field">
                         <span>Korrekturschleifen</span>
-                        <select id="src-complexity-revisions" class="src-select" onchange="srcCalc()">
+                        <select id="src-complexity-revisions" class="src-select" data-src-change="srcCalc">
                             <option value="1">inkl. 1</option>
                             <option value="2">2</option>
                             <option value="3+">3+</option>
@@ -536,7 +565,7 @@ function src_shortcode_output_v7() {
                     </label>
                     <label class="src-complexity-field">
                         <span>Spezialstil/Schwierigkeit</span>
-                        <select id="src-complexity-style" class="src-select" onchange="srcCalc()">
+                        <select id="src-complexity-style" class="src-select" data-src-change="srcCalc">
                             <option value="normal">normal</option>
                             <option value="technical">technisch</option>
                             <option value="medical">medizinisch</option>
@@ -545,7 +574,7 @@ function src_shortcode_output_v7() {
                     </label>
                     <label class="src-complexity-field">
                         <span>Timing/Synchro</span>
-                        <select id="src-complexity-timing" class="src-select" onchange="srcCalc()">
+                        <select id="src-complexity-timing" class="src-select" data-src-change="srcCalc">
                             <option value="free">frei</option>
                             <option value="guided">an Bild grob</option>
                             <option value="lipsync">lipsync</option>
@@ -553,7 +582,7 @@ function src_shortcode_output_v7() {
                     </label>
                     <label class="src-complexity-field">
                         <span>Schnitt/Editing</span>
-                        <select id="src-complexity-editing" class="src-select" onchange="srcCalc()">
+                        <select id="src-complexity-editing" class="src-select" data-src-change="srcCalc">
                             <option value="none">keins</option>
                             <option value="basic">Basic</option>
                             <option value="advanced">umfangreich</option>
@@ -561,7 +590,7 @@ function src_shortcode_output_v7() {
                     </label>
                     <label class="src-complexity-field">
                         <span>Dateiformate/Deliverables</span>
-                        <select id="src-complexity-deliverables" class="src-select" onchange="srcCalc()">
+                        <select id="src-complexity-deliverables" class="src-select" data-src-change="srcCalc">
                             <option value="single">ein Format</option>
                             <option value="multiple">mehrere</option>
                         </select>
@@ -660,7 +689,7 @@ function src_shortcode_output_v7() {
                     </div>
                     <div class="src-opt-body" data-opt-body>
                         <div class="src-opt-body-row">
-                            <input type="number" id="src-studio-fee" value="150" class="src-input-compact" style="padding-right:10px;" oninput="srcCalc()">
+                            <input type="number" id="src-studio-fee" value="150" class="src-input-compact" style="padding-right:10px;" data-src-input="srcCalc">
                             <div class="src-opt-body-help">Betrag in gewählter Währung</div>
                         </div>
                     </div>
@@ -684,7 +713,7 @@ function src_shortcode_output_v7() {
                     </div>
                     <div class="src-opt-body" data-opt-body>
                         <div class="src-opt-body-row">
-                            <select id="src-express-type" class="src-select src-input-compact" onchange="srcCalc()">
+                            <select id="src-express-type" class="src-select src-input-compact" data-src-change="srcCalc">
                                 <option value="24h">Innerhalb 24h (+50%)</option>
                                 <option value="4h">Innerhalb 4h (+100%)</option>
                             </select>
@@ -710,8 +739,8 @@ function src_shortcode_output_v7() {
                     </div>
                     <div class="src-opt-body" data-opt-body>
                         <div class="src-discount-grid">
-                            <input type="number" id="src-discount-percent" class="src-input-text src-discount-percent" placeholder="%" min="0" max="100" oninput="srcCalc()">
-                            <input type="text" id="src-discount-reason" class="src-input-text src-discount-reason" placeholder="Grund (z.B. Neukunde)" oninput="srcCalc()">
+                            <input type="number" id="src-discount-percent" class="src-input-text src-discount-percent" placeholder="%" min="0" max="100" data-src-input="srcCalc">
+                            <input type="text" id="src-discount-reason" class="src-input-text src-discount-reason" placeholder="Grund (z.B. Neukunde)" data-src-input="srcCalc">
                         </div>
                         <span class="src-hint-text">Der Rabatt wird vom Netto-Gesamtbetrag abgezogen.</span>
                     </div>
@@ -748,7 +777,7 @@ function src_shortcode_output_v7() {
                                     Dein Angebotspreis (Netto)
                                     <span class="src-tooltip-icon" data-tip="Der eingetragene Angebotspreis wird im fertigen Angebot übernommen.">?</span>
                                 </label>
-                                <input type="number" id="src-final-fee-user" class="src-final-fee-input" placeholder="z.B. 650" oninput="srcValidateFinalFee()">
+                                <input type="number" id="src-final-fee-user" class="src-final-fee-input" placeholder="z.B. 650" data-src-input="srcValidateFinalFee">
                                 <div id="src-final-fee-msg" class="src-final-fee-msg">Betrag liegt außerhalb der kalkulierten Spanne!</div>
                             </div>
                         </div>
@@ -799,42 +828,42 @@ function src_shortcode_output_v7() {
                         <div class="src-sidebar-title src-sidebar-title--knowledge"><span class="src-title-main"><span class="src-title-icon" aria-hidden="true"><i class="fa-solid fa-circle-info"></i></span><span class="src-title-text">Wissenswertes</span></span></div>
                         <div class="src-info-box">
                             <div class="src-acc-item">
-                                <div class="src-acc-head" onclick="toggleAccordion(this)">Berechnungsgrundlage</div>
+                                <div class="src-acc-head" data-src-click="toggleAccordion">Berechnungsgrundlage</div>
                                 <div class="src-acc-body">
                                     Anders als bei stundenbasierten Jobs bezahlst du hier primär für die Nutzung der Aufnahme. Die "Verwertungsrechte" definieren den Preis. Entscheidend sind: Wo läuft es (Medium)? Wie lange (Zeitraum)? Und wo (Gebiet)? Je mehr Reichweite, desto höher die Gage.
                                 </div>
                             </div>
                             
                             <div class="src-acc-item">
-                                <div class="src-acc-head" onclick="toggleAccordion(this)">Textlänge & Dauer</div>
+                                <div class="src-acc-head" data-src-click="toggleAccordion">Textlänge & Dauer</div>
                                 <div class="src-acc-body">
                                     Als Faustregel gilt: 900 Zeichen (inkl. Leerzeichen) entsprechen ca. 1 Minute gesprochenem Text. Zahlen und Abkürzungen sollten ausgeschrieben gezählt werden, da sie beim Sprechen länger sind als im geschriebenen Text.
                                 </div>
                             </div>
 
                             <div class="src-acc-item">
-                                <div class="src-acc-head" onclick="toggleAccordion(this)">Buyouts & Unlimited</div>
+                                <div class="src-acc-head" data-src-click="toggleAccordion">Buyouts & Unlimited</div>
                                 <div class="src-acc-body">
                                     Ein "Buyout" ist der Einkauf der Nutzungsrechte. Willst du eine Aufnahme zeitlich unbegrenzt nutzen, vervielfacht sich der Basispreis (oft x3 oder x4), da der Sprecher durch die dauerhafte Bindung seine Stimme für Konkurrenzprodukte in diesem Zeitraum oft nicht mehr zur Verfügung stellen kann.
                                 </div>
                             </div>
 
                             <div class="src-acc-item">
-                                <div class="src-acc-head" onclick="toggleAccordion(this)">Studio & Technik</div>
+                                <div class="src-acc-head" data-src-click="toggleAccordion">Studio & Technik</div>
                                 <div class="src-acc-body">
                                     Die reine Sprechergage deckt die kreative Leistung und die Lizenz ab. Technische Leistungen wie Aufnahmeleitung, Schnitt, Cleaning und Datei-Export sind oft separat als Studiokosten ausgewiesen, wenn der Sprecher dies im eigenen Studio übernimmt.
                                 </div>
                             </div>
 
                             <div class="src-acc-item">
-                                <div class="src-acc-head" onclick="toggleAccordion(this)">Korrekturen & Revisionen</div>
+                                <div class="src-acc-head" data-src-click="toggleAccordion">Korrekturen & Revisionen</div>
                                 <div class="src-acc-body">
                                     Planbare Korrekturschleifen (z.B. 1–2 Takes) sind oft inklusive. Größere Textänderungen oder zusätzliche Versionen sollten jedoch neu kalkuliert werden, da sie zusätzlichen Produktionsaufwand bedeuten.
                                 </div>
                             </div>
 
                             <div class="src-acc-item">
-                                <div class="src-acc-head" onclick="toggleAccordion(this)">Exklusivität & Konkurrenzschutz</div>
+                                <div class="src-acc-head" data-src-click="toggleAccordion">Exklusivität & Konkurrenzschutz</div>
                                 <div class="src-acc-body">
                                     Bei längeren Nutzungsrechten oder exklusiven Kampagnen kann ein Konkurrenzschutz gelten. Das verhindert parallele Aufträge in derselben Branche und beeinflusst die Gage entsprechend.
                                 </div>
@@ -844,7 +873,7 @@ function src_shortcode_output_v7() {
 
                     <div id="src-save-section">
                     <div class="src-footer-actions">
-                        <button class="src-btn" id="src-offer-save-btn" onclick="srcOpenExportModal()">
+                        <button class="src-btn" id="src-offer-save-btn" data-src-click="srcOpenExportModal">
                             <i class="fa-solid fa-file-pdf" aria-hidden="true"></i> Angebot speichern
                         </button>
                         <div class="src-note-text">
@@ -1150,14 +1179,14 @@ function src_shortcode_output_v7() {
             <div class="src-tutorial-header">
                 <span class="src-tutorial-step-badge" id="src-tut-badge">1 / 8</span>
                 <h3 id="src-tut-title">Titel</h3>
-                <button type="button" class="src-tut-close" onclick="srcEndTutorial()" aria-label="Beenden">×</button>
+                <button type="button" class="src-tut-close" data-src-click="srcEndTutorial" aria-label="Beenden">×</button>
             </div>
             <p id="src-tut-desc">Beschreibungstext...</p>
             <div class="src-tutorial-footer">
                 <div class="src-tutorial-dots" id="src-tut-dots"></div>
                 <div class="src-tutorial-nav">
-                    <button type="button" id="src-tut-prev" class="src-tut-btn src-tut-btn-secondary" onclick="srcTutPrev()">Zurück</button>
-                    <button type="button" id="src-tut-next" class="src-tut-btn src-tut-btn-primary" onclick="srcTutNext()">Weiter <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></button>
+                    <button type="button" id="src-tut-prev" class="src-tut-btn src-tut-btn-secondary" data-src-click="srcTutPrev">Zurück</button>
+                    <button type="button" id="src-tut-next" class="src-tut-btn src-tut-btn-primary" data-src-click="srcTutNext">Weiter <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></button>
                 </div>
             </div>
         </div>
