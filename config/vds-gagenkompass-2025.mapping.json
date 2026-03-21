@@ -4,8 +4,8 @@
     "version": "2025.1-foundation",
     "source": "VDS Gagenkompass 2025",
     "purpose": "Fachliches Mapping- und Regelmodell für Schritt 2 der technischen Integration.",
-    "status": "foundation_only",
-    "integration_mode": "prepared_not_enforced"
+    "status": "primary_enforced",
+    "integration_mode": "primary_authoritative"
   },
   "unit_types": {
     "motiv": {

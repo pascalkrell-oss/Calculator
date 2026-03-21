@@ -320,23 +320,154 @@ const srcGetVdsCaseConfig = function(projectKey) {
 }
 
 const SRC_VDS_DEFAULT_EXTRAS = {
-    socialEligible: ['imagefilm', 'explainer', 'webvideo_unpaid', 'presentation_unpaid', 'app', 'elearning', 'audioguide', 'podcast'],
-    internalEligible: ['imagefilm', 'webvideo_unpaid', 'presentation_unpaid', 'elearning', 'audioguide', 'app'],
+    socialEligible: ['imagefilm', 'explainer', 'webvideo_unpaid', 'presentation_unpaid', 'mitarbeiterfilm', 'awardfilm', 'praesentation', 'app', 'elearning', 'elearning_intern', 'audioguide', 'podcast', 'podcast_verpackung'],
+    internalEligible: ['imagefilm', 'webvideo_unpaid', 'presentation_unpaid', 'mitarbeiterfilm', 'elearning', 'elearning_intern', 'audioguide', 'app'],
     presentationAddon: [80, 150, 250],
     archiveAddon: [325, 385, 450],
-    followupAddonFactor: 0.35,
-    packageDiscountSteps: { 2: 0.95, 3: 0.9, 4: 0.87, 5: 0.85 },
-    unlimitedMultipliers: { time: 4, territory: 1.6, media: 1.5, combo: 6 },
-    games: { firstHour: [350, 450, 600], followHour: [175, 225, 300], extraDayFactor: 0.85 },
+    unlimitedMultipliers: { time: 3, territory: 4, media: 4 },
+    games: { firstHour: [350, 450, 600], followHour: [175, 225, 300] },
+    sessionFee: { firstHour: [350, 450, 600], followHour: [175, 225, 300] },
     audiobook: { perFah: [220, 280, 360], minimum: [350, 450, 600] },
     podcastPackaging: { base: [250, 350, 450], extraEpisode: [75, 100, 130] },
-    doku: { minimum: [150, 250, 350], perMinute: [10, 15, 20] }
+    doku: { minimum: [150, 250, 350], perMinute: [10, 15, 20] },
+    packageMultipliers: {
+        dach: { low: 2.5, mid: 2.65, high: 2.8 },
+        online_atv_ctv: { low: 1.5, mid: 1.65, high: 1.8 },
+        funk_online: { low: 1.5, mid: 1.65, high: 1.8 }
+    }
 };
 
 const srcGetVdsBlueprint = function() {
     const vds = srcGetVdsConfig();
     return vds && vds.mapping_blueprint ? vds.mapping_blueprint : null;
 }
+
+const SRC_VDS_BLUEPRINT_CASE_ALIASES = {
+    tv_spot: 'linearer_tv_spot',
+    tv_reminder: 'linearer_tv_reminder',
+    telefonansage: 'phone',
+    elearning_intern: 'elearning',
+    hoerbuch_fah: 'audiobook',
+    games_recording: 'games',
+    doku_kommentar: 'doku',
+    tv_reportage: 'editorial_tv',
+    audiodeskription: 'audiodescription',
+    kleinraeumige_nutzung: 'kleinraeumig',
+    app_voiceover: 'app',
+    praesentation: 'presentation_unpaid'
+};
+
+const srcGetBlueprintProjectKey = function(caseId) {
+    return SRC_VDS_BLUEPRINT_CASE_ALIASES[caseId] || caseId;
+}
+
+const srcBuildVdsCaseFromBlueprint = function(caseId, blueprintCase, familyId) {
+    if(!blueprintCase || typeof blueprintCase !== 'object') return null;
+    const projectKey = srcGetBlueprintProjectKey(caseId);
+    const baseRates = blueprintCase.base_rates || {};
+    const rateTiers = blueprintCase.rate_tiers || {};
+    const durations = Array.isArray(blueprintCase.durations) ? blueprintCase.durations : [];
+    const firstBaseKey = Object.keys(baseRates)[0] || 'default';
+    const firstBase = baseRates[firstBaseKey] || {};
+    const fallbackTrip = [Number(firstBase.low || 0), Number(firstBase.mid || 0), Number(firstBase.high || 0)];
+    const caseConfig = {
+        blueprint_case_id: caseId,
+        category: familyId,
+        name: blueprintCase.title || projectKey,
+        pricing: { kind: 'flat', base: fallbackTrip },
+        license_type: familyId.includes('werbung') ? 'advertising' : 'unpaid',
+        notes: []
+    };
+
+    if(blueprintCase.pricing_mode === 'fixed_plus_license_multipliers' || blueprintCase.pricing_mode === 'fixed') {
+        const variants = Object.keys(baseRates).map((variantKey) => ({
+            key: variantKey,
+            label: variantKey.replace(/_/g, ' '),
+            lower: Number(baseRates[variantKey]?.low || 0),
+            middle: Number(baseRates[variantKey]?.mid || 0),
+            upper: Number(baseRates[variantKey]?.high || 0)
+        }));
+        caseConfig.pricing = { kind: 'flat', base: fallbackTrip };
+        if(variants.length === 1 && variants[0].key === 'default') {
+            caseConfig.pricing.base = [variants[0].lower, variants[0].middle, variants[0].upper];
+        } else if(variants.length) {
+            caseConfig.variants = variants;
+        }
+    } else if(blueprintCase.pricing_mode === 'tiered_duration') {
+        caseConfig.pricing = {
+            kind: 'tiered',
+            unit: 'minutes',
+            tiers: durations.map((entry) => ({
+                limit: Number(entry.up_to || 0),
+                p: [Number(entry.rates?.low || 0), Number(entry.rates?.mid || 0), Number(entry.rates?.high || 0)]
+            })),
+            extra: [Number(rateTiers.je_weitere_5_min?.low || rateTiers.je_weitere_minute?.low || 0), Number(rateTiers.je_weitere_5_min?.mid || rateTiers.je_weitere_minute?.mid || 0), Number(rateTiers.je_weitere_5_min?.high || rateTiers.je_weitere_minute?.high || 0)],
+            extra_unit: rateTiers.je_weitere_5_min ? 5 : 1,
+            extra_after: durations.length ? Number(durations[durations.length - 1].up_to || 0) : 0
+        };
+    } else if(blueprintCase.pricing_mode === 'tiered_modules') {
+        caseConfig.pricing = {
+            kind: 'tiered',
+            unit: 'modules',
+            tiers: [{
+                limit: 3,
+                p: [Number(baseRates.bis_3_module?.low || 0), Number(baseRates.bis_3_module?.mid || 0), Number(baseRates.bis_3_module?.high || 0)]
+            }],
+            extra: [Number(rateTiers.je_weiteres_modul?.low || 0), Number(rateTiers.je_weiteres_modul?.mid || 0), Number(rateTiers.je_weiteres_modul?.high || 0)],
+            extra_unit: 1,
+            extra_after: 3
+        };
+    } else if(blueprintCase.pricing_mode === 'minimum_plus_per_unit') {
+        caseConfig.pricing = {
+            kind: 'per_minute',
+            min: [Number(baseRates.minimum?.low || SRC_VDS_DEFAULT_EXTRAS.doku.minimum[0]), Number(baseRates.minimum?.mid || SRC_VDS_DEFAULT_EXTRAS.doku.minimum[1]), Number(baseRates.minimum?.high || SRC_VDS_DEFAULT_EXTRAS.doku.minimum[2])],
+            per_min: [Number(rateTiers.per_net_minute?.low || SRC_VDS_DEFAULT_EXTRAS.doku.perMinute[0]), Number(rateTiers.per_net_minute?.mid || SRC_VDS_DEFAULT_EXTRAS.doku.perMinute[1]), Number(rateTiers.per_net_minute?.high || SRC_VDS_DEFAULT_EXTRAS.doku.perMinute[2])]
+        };
+        caseConfig.license_type = 'editorial';
+    } else if(blueprintCase.pricing_mode === 'proposal_required' || blueprintCase.pricing_mode === 'expert_matrix' || blueprintCase.pricing_mode === 'session_fee_plus_followup_hour') {
+        caseConfig.pricing = { kind: 'expert', base: fallbackTrip };
+        caseConfig.notes.push('VDS-Fall mit Vorschlags- bzw. Expertenkalkulation.');
+    } else if(blueprintCase.pricing_mode === 'cross_reference_only') {
+        caseConfig.pricing = { kind: 'cross_reference', base: [0, 0, 0] };
+        caseConfig.notes.push('VDS-Querverweisfall ohne eigene harte Preisautomatik.');
+    }
+
+    return [projectKey, caseConfig];
+}
+
+const srcBuildVdsConfigFromBlueprint = function(blueprint) {
+    if(!blueprint || !Array.isArray(blueprint.families)) return null;
+    const taxonomy = {};
+    const cases = {};
+    blueprint.families.forEach((family) => {
+        const familyId = family.id || '';
+        const projectKeys = [];
+        (family.cases || []).forEach((blueprintCase) => {
+            const result = srcBuildVdsCaseFromBlueprint(blueprintCase.id, blueprintCase, familyId);
+            if(!result) return;
+            const [projectKey, caseConfig] = result;
+            cases[projectKey] = caseConfig;
+            projectKeys.push(projectKey);
+        });
+        taxonomy[familyId] = { label: family.title || family.label || familyId.replace(/_/g, ' '), cases: projectKeys };
+    });
+    return {
+        taxonomy,
+        cases,
+        mapping_blueprint: blueprint,
+        license_model: {
+            region: { regional: 0.8, national: 1, dach: 2.5, world: 4 },
+            duration_years: { 1: 1, 2: 2, 3: 3, 4: 4 },
+            language: { de: 1, en: 1.3, other: 1.5 }
+        },
+        addons: {
+            social_organic: { levels: { low: 50, mid: 150, high: 250 } },
+            event_pos: { levels: { low: 50, mid: 150, high: 250 } },
+            internal_use: { flat: 120 }
+        }
+    };
+}
+
 
 const srcGetVdsSpecialState = function() {
     return {
@@ -363,6 +494,7 @@ const srcGetVdsSpecialState = function() {
 
 const srcResolveVdsScenario = function(state, projectKey) {
     const special = state?.vdsSpecial || {};
+    const blueprint = srcGetVdsBlueprint();
     const scenario = {
         originalProjectKey: projectKey,
         effectiveProjectKey: projectKey,
@@ -411,14 +543,31 @@ const srcResolveVdsScenario = function(state, projectKey) {
     if(projectKey === 'games') {
         scenario.experts.push('Games-Sessions werden als Session-/Stundenmodell vorgeschlagen; Rollenanzahl, Schreilast und Pickups sollten individuell verhandelt werden.');
     }
+    if(projectKey === 'session_fee_recording') {
+        scenario.experts.push('Session Fee ist ein eigener VDS-Fall ohne öffentliche Nutzungslizenz; spätere Verwertung wird zusätzlich kalkuliert.');
+    }
+    if(projectKey === 'buyout_unlimited') {
+        scenario.experts.push('Unlimited-Nutzung folgt den VDS-Faktoren ohne Anrechnung zuvor erworbener Teilrechte.');
+    }
+    if(projectKey === 'podcast_verpackung') {
+        scenario.experts.push('Podcast-Verpackung ist ein VDS-Vorschlagsfall; Serien- und Marketing-Umfang bitte fachlich prüfen.');
+    }
+    if(projectKey === 'kleinraeumig' || projectKey === 'kleinraeumige_nutzung') {
+        scenario.experts.push('Kleinräumige Nutzung gilt nur für lokale/kleine Auswertungen; Paid Online bleibt auf die definierten VDS-Fälle beschränkt.');
+    }
     if(special.unlimitedTime || special.unlimitedTerritory || special.unlimitedMedia) {
-        scenario.experts.push('Unlimited-Nutzung ist als Expertenfall markiert; der Rechner liefert eine Vorschlagskalkulation ohne Scheingenauigkeit.');
+        scenario.experts.push('Unlimited-Nutzung ist als Expertenfall markiert; der Rechner liefert eine transparente Vorschlagskalkulation gemäß VDS-Faktoren.');
+    }
+    if(blueprint?.meta?.integration_mode) {
+        scenario.labels.push(`Blueprint: ${blueprint.meta.integration_mode}`);
     }
     return scenario;
 }
 
 const srcNormalizeRatesData = function(rawData) {
     const safe = rawData && typeof rawData === 'object' ? srcClone(rawData) : {};
+    const blueprintFromInput = safe?.vds2025?.mapping_blueprint || safe?.mapping_blueprint || null;
+    const blueprintConfig = srcBuildVdsConfigFromBlueprint(blueprintFromInput);
 
     const normalizeCaseCategory = function(caseKey, existingCategory) {
         const fallbackCategoryByCase = {
@@ -487,7 +636,19 @@ const srcNormalizeRatesData = function(rawData) {
         });
     });
 
-    safe.vds2025 = {
+    safe.vds2025 = blueprintConfig ? Object.assign({}, blueprintConfig, {
+        license_model: Object.assign({}, blueprintConfig.license_model || {}, {
+            region: (((safe.license_multipliers || {}).default_advertising || {}).region) || (blueprintConfig.license_model || {}).region || { regional: 0.8, national: 1, dach: 2.5, world: 4 },
+            duration_years: (((safe.license_multipliers || {}).default_advertising || {}).duration) || (blueprintConfig.license_model || {}).duration_years || { 1: 1, 2: 2, 3: 3, 4: 4 },
+            language: ((blueprintConfig.license_model || {}).language) || { de: 1, en: 1.3, other: 1.5 }
+        }),
+        addons: Object.assign({}, blueprintConfig.addons || {}, {
+            social_organic: { levels: { low: 50, mid: 150, high: 250 } },
+            event_pos: { levels: { low: 50, mid: 150, high: 250 } },
+            internal_use: { flat: 120 }
+        }),
+        cases: Object.assign({}, fallbackCases, blueprintConfig.cases || {})
+    }) : {
         taxonomy: SRC_PROJECT_HIERARCHY.reduce((acc, group) => {
             acc[group.key] = { label: group.label, cases: group.projects || [] };
             return acc;
@@ -1376,6 +1537,8 @@ const srcGetFormatConfigByProject = function(projectKey) {
 }
 
 const srcBuildProjectOptionLabel = function(projectKey) {
+    const vdsCase = srcGetVdsCaseConfig(projectKey);
+    if(vdsCase && vdsCase.name) return vdsCase.name;
     if(projectKey === 'app') return 'App-Vertonung';
     if(projectKey === 'elearning') return 'E-Learning / WBT';
     if(projectKey === 'doku') return 'TV-Doku / Reportage';
@@ -3361,7 +3524,12 @@ window.srcUIUpdate = function() {
         toggleElement('src-pos-type-wrap', genre === 'pos');
         
         toggleElement('src-pkg-online-wrap', effectiveGenre === 'radio');
-        toggleElement('src-pkg-atv-wrap', effectiveGenre === 'online_paid');
+        toggleElement('src-pkg-atv-wrap', effectiveGenre === 'online_paid' || effectiveGenre === 'online_video_spot' || effectiveGenre === 'atv_ctv_video_spot');
+        const packageCountField = document.getElementById('src-vds-package-count');
+        if(packageCountField && packageCountField.parentElement) {
+            packageCountField.parentElement.style.display = 'none';
+            packageCountField.value = '1';
+        }
     }
     srcUpdateCutdownVisibility(genre, layoutMode);
     srcSyncOptionRowStates();
@@ -3712,10 +3880,10 @@ const srcResolvePricingRange = function(caseConfig, state) {
         const tier = srcGetTierForUnits(tiers, unitValue);
         let base = applyLanguage(tier ? tier.p : [0,0,0]);
         const extraChunks = srcGetExtraChunks({ extra_after: pricing.extra_after, extra_unit: pricing.extra_unit }, unitValue, pricing.extra_after || 0, pricing.extra_unit || 1);
-        if(extraChunks > 0) {
+        if(extraChunks && extraChunks.chunks > 0) {
             const extra = applyLanguage(pricing.extra || [0,0,0]);
-            base = base.map((v, i) => v + (extra[i] * extraChunks));
-            steps.push({ label: `Staffel +${extraChunks}x`, effectOnRange: 'add' });
+            base = base.map((v, i) => v + (extra[i] * extraChunks.chunks));
+            steps.push({ label: `Staffel +${extraChunks.chunks}x`, effectOnRange: 'add' });
         }
         return { range: base, label: caseConfig.name || '', steps };
     }
@@ -4034,25 +4202,27 @@ const srcComputeSingleProjectResult = function(state, projectKey, options = {}) 
         }
     };
 
-    if(effectiveGenre === 'games') {
-        const first = SRC_VDS_DEFAULT_EXTRAS.games.firstHour;
-        const follow = SRC_VDS_DEFAULT_EXTRAS.games.followHour;
+    if(effectiveGenre === 'games' || effectiveGenre === 'session_fee_recording') {
+        const sessionConfig = effectiveGenre === 'session_fee_recording' ? SRC_VDS_DEFAULT_EXTRAS.sessionFee : SRC_VDS_DEFAULT_EXTRAS.games;
+        const first = sessionConfig.firstHour;
+        const follow = sessionConfig.followHour;
         const hours = Math.max(1, Number(special.sessionHours || 1));
         const days = Math.max(1, Number(special.recordingDays || 1));
         const followHours = Math.max(0, hours - 1);
-        final = first.map((value, idx) => Math.round(value + (follow[idx] * followHours)));
-        if(days > 1) {
-            const dayFactor = 1 + ((days - 1) * SRC_VDS_DEFAULT_EXTRAS.games.extraDayFactor);
-            final = final.map(v => Math.round(v * dayFactor));
-            breakdownSteps.push({ label: 'Mehrtagelogik Games', amountOrFactor: `x${dayFactor.toFixed(2)}`, effectOnRange: 'multiply' });
-        }
+        final = first.map((value, idx) => Math.round((value + (follow[idx] * followHours)) * days));
         breakdownBase = { min: first[0], mid: first[1], max: first[2] };
-        breakdownSteps.push({ label: '1. Stunde Games', amountOrFactor: srcFormatCurrency(first[1]), effectOnRange: 'base' });
+        breakdownSteps.push({ label: effectiveGenre === 'session_fee_recording' ? 'Session Fee – 1. Stunde' : 'Games – 1. Stunde', amountOrFactor: srcFormatCurrency(first[1]), effectOnRange: 'base' });
         if(followHours > 0) {
             breakdownSteps.push({ label: `Folgestunden (${followHours}x)`, amountOrFactor: srcFormatSignedCurrency(follow[1] * followHours), effectOnRange: 'add' });
         }
-        addInfo('Games Session Fee', srcFormatCurrency(first[1]), 'Erste Stunde');
-        if(followHours > 0) addInfo('Games Folgestunden', srcFormatSignedCurrency(follow[1] * followHours), `${followHours} × ${srcFormatCurrency(follow[1])}`);
+        if(days > 1) {
+            breakdownSteps.push({ label: `Aufnahmetage (${days}x)`, amountOrFactor: `x${days}`, effectOnRange: 'multiply' });
+        }
+        addInfo(effectiveGenre === 'session_fee_recording' ? 'Session Fee' : 'Games Session', srcFormatCurrency(first[1]), 'Erste Stunde');
+        if(followHours > 0) addInfo('Folgestunden', srcFormatSignedCurrency(follow[1] * followHours), `${followHours} × ${srcFormatCurrency(follow[1])}`);
+        if(effectiveGenre === 'session_fee_recording') {
+            licMeta.push('Session Fee enthält keine öffentliche Nutzungslizenz.');
+        }
     }
 
     if(effectiveGenre === 'audiobook') {
@@ -4077,7 +4247,8 @@ const srcComputeSingleProjectResult = function(state, projectKey, options = {}) 
         applyRangeMultiplier(1.2, 'Patronat / Sponsor-Integration');
     }
     if(special.followup) {
-        applyRangeMultiplier(1 + SRC_VDS_DEFAULT_EXTRAS.followupAddonFactor, 'spätere Zusatzverwertung / Nachgage');
+        const followupBase = [...final];
+        applyRangeAddition(followupBase, 'Nachgage / spätere Zusatzverwertung', 'Volle zusätzliche Verwertungsgage ohne erneute Layout-Anrechnung');
     }
     if(['tv','online_paid','radio','cinema','pos','online_video_spot'].includes(effectiveGenre) || scenario.effectiveFormatKey === 'werbung_mit_bild') {
         if(special.addonTerritories > 0) {
@@ -4093,23 +4264,26 @@ const srcComputeSingleProjectResult = function(state, projectKey, options = {}) 
     if(state.cutdown && special.reminderFactor && special.reminderFactor !== 0.5) {
         applyRangeMultiplier(special.reminderFactor / 0.5, 'Reminder-Regel');
     }
-    if(special.packageCount > 1) {
-        const discountMap = SRC_VDS_DEFAULT_EXTRAS.packageDiscountSteps;
-        const packageDiscount = discountMap[special.packageCount] || Math.max(0.8, 1 - (Math.min(8, special.packageCount) * 0.03));
-        applyRangeMultiplier(packageDiscount, `Paketlogik (${special.packageCount} Motive)`);
-        scenario.experts.push('Paketpreise sind als konservative Vorschlagskalkulation ausgewiesen; große Kampagnen sollten individuell verhandelt werden.');
+    if((effectiveGenre === 'online_paid' || effectiveGenre === 'online_video_spot' || effectiveGenre === 'atv_ctv_video_spot') && state.packageAtv) {
+        const levelIdx = SRC_PRICE_LEVEL_INDEX[state.priceLevelKey || 'middle'] ?? 1;
+        const m = [SRC_VDS_DEFAULT_EXTRAS.packageMultipliers.online_atv_ctv.low, SRC_VDS_DEFAULT_EXTRAS.packageMultipliers.online_atv_ctv.mid, SRC_VDS_DEFAULT_EXTRAS.packageMultipliers.online_atv_ctv.high][levelIdx] || SRC_VDS_DEFAULT_EXTRAS.packageMultipliers.online_atv_ctv.mid;
+        applyRangeMultiplier(m, 'Paket Online & ATV/CTV');
+        scenario.experts.push('Paket Online & ATV/CTV ist als VDS-Vorschlagskorridor abgebildet.');
+    }
+    if(effectiveGenre === 'radio' && state.packageOnline) {
+        const levelIdx = SRC_PRICE_LEVEL_INDEX[state.priceLevelKey || 'middle'] ?? 1;
+        const m = [SRC_VDS_DEFAULT_EXTRAS.packageMultipliers.funk_online.low, SRC_VDS_DEFAULT_EXTRAS.packageMultipliers.funk_online.mid, SRC_VDS_DEFAULT_EXTRAS.packageMultipliers.funk_online.high][levelIdx] || SRC_VDS_DEFAULT_EXTRAS.packageMultipliers.funk_online.mid;
+        applyRangeMultiplier(m, 'Paket Funk & Online');
+        scenario.experts.push('Paket Funk & Online ist als VDS-Vorschlagskorridor abgebildet.');
     }
     const unlimitedFlags = [special.unlimitedTime, special.unlimitedTerritory, special.unlimitedMedia].filter(Boolean).length;
     if(unlimitedFlags > 0) {
         let unlimitedFactor = 1;
-        if(unlimitedFlags >= 3) {
-            unlimitedFactor = SRC_VDS_DEFAULT_EXTRAS.unlimitedMultipliers.combo;
-        } else {
-            if(special.unlimitedTime) unlimitedFactor *= SRC_VDS_DEFAULT_EXTRAS.unlimitedMultipliers.time;
-            if(special.unlimitedTerritory) unlimitedFactor *= SRC_VDS_DEFAULT_EXTRAS.unlimitedMultipliers.territory;
-            if(special.unlimitedMedia) unlimitedFactor *= SRC_VDS_DEFAULT_EXTRAS.unlimitedMultipliers.media;
-        }
+        if(special.unlimitedTime) unlimitedFactor *= SRC_VDS_DEFAULT_EXTRAS.unlimitedMultipliers.time;
+        if(special.unlimitedTerritory) unlimitedFactor *= SRC_VDS_DEFAULT_EXTRAS.unlimitedMultipliers.territory;
+        if(special.unlimitedMedia) unlimitedFactor *= SRC_VDS_DEFAULT_EXTRAS.unlimitedMultipliers.media;
         applyRangeMultiplier(unlimitedFactor, 'Unlimited-Nutzung');
+        licMeta.push('Unlimited-Faktoren werden ohne Anrechnung zuvor erworbener Teilrechte kombiniert.');
     }
     scenario.experts.forEach(note => {
         licMeta.push(note);
