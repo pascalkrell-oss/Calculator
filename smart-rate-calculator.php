@@ -262,7 +262,7 @@ function src_shortcode_output_v7() {
                 
                 <div>
                     <div class="src-section-title"><i class="fa-solid fa-language" aria-hidden="true"></i> Sprache</div>
-                    <select id="src-language" class="src-select" data-src-change="srcAnalyzeText">
+                    <select id="src-language" class="src-select" data-src-change="srcCalc">
                         <option value="de">Deutsch (Standard)</option>
                         <option value="en">Englisch (+30%)</option>
                         <option value="other">Fremdsprache (+50%)</option>
@@ -362,38 +362,14 @@ function src_shortcode_output_v7() {
                 </details>
                 </div>
 
-                <div class="src-group" id="src-group-text">
-                <div class="src-section-title">
-                    <i class="fa-solid fa-align-left" aria-hidden="true"></i> Skript / Länge
-                    <span class="src-tooltip-icon src-field-tip" data-field-tip="length" data-default-tip="Tipp: Mit Skript kann die Dauer genauer geschätzt werden.">?</span>
-                </div>
-                <textarea id="src-text" class="src-textarea" placeholder="Skript hier einfügen für automatische Berechnung..." data-src-input="srcAnalyzeText"></textarea>
-                
-                <div class="src-stats">
-                    <span><span id="src-char-count">0</span> Zeichen</span>
-                    <span>•</span>
-                    <span>Ø <span id="src-min-count">0:00</span> Min.</span>
-                </div>
-                <div id="src-script-estimate" class="src-script-estimate">
-                    <span>Aus Skript geschätzt: <strong id="src-script-estimate-value">–</strong></span>
-                    <button class="src-mini-btn" type="button" id="src-apply-estimate">Schätzung übernehmen</button>
-                </div>
-
-                <div style="margin-top:5px;">
-                    <div class="src-switch-row" style="padding: 5px 0;">
-                        <span class="src-switch-content">
-                            <span class="src-manual-label">Länge manuell eingeben</span>
-                        </span>
-                        <div class="src-toggle-wrapper">
-                            <input type="checkbox" id="src-manual-time-check">
-                            <label class="src-toggle-slider" for="src-manual-time-check"></label>
-                        </div>
+                <div class="src-group" id="src-group-units" style="display:none;">
+                    <div class="src-section-title">
+                        <i class="fa-solid fa-align-left" aria-hidden="true"></i> Umfang
                     </div>
-                    <div id="src-manual-input-wrap" class="src-slide-wrap" style="margin-top:0;">
-                         <input type="text" id="src-manual-minutes" class="src-input-text" style="margin-top:5px;" placeholder="Länge in Minuten (z.B. 1,5)" data-src-input="srcAnalyzeText">
-                    </div>
+                    <label id="src-usage-label" class="src-usage-label" for="src-usage-minutes">Länge / Minuten</label>
+                    <input type="text" id="src-usage-minutes" class="src-input-text" placeholder="Wert eingeben (z.B. 1,5)" inputmode="decimal" data-src-input="srcCalc">
+                    <div id="src-usage-help" class="src-usage-help">Bitte den fachlich relevanten Umfang direkt eingeben.</div>
                 </div>
-            </div>
 
             <div id="mod-phone" class="src-slide-wrap">
                 <div class="src-light-box-wrapper">
@@ -1186,7 +1162,7 @@ function src_shortcode_output_v7() {
                     <ul>
                         <li><a href="#guide-1">1. Das Verwertungsprinzip</a></li>
                         <li><a href="#guide-2">2. Projektarten & Layout</a></li>
-                        <li><a href="#guide-3">3. Skriptlänge & Module</a></li>
+                        <li><a href="#guide-3">3. Umfang, Minuten & Module</a></li>
                         <li><a href="#guide-4">4. Verbreitungsgebiet & Lokal</a></li>
                         <li><a href="#guide-5">5. Laufzeiten & Buyouts</a></li>
                         <li><a href="#guide-6">6. Zusatzlizenzen & Cut-downs</a></li>
@@ -1208,11 +1184,11 @@ function src_shortcode_output_v7() {
                     Wird die Aufnahme lediglich genutzt, um intern eine Idee in einem <span class="src-glossary-term" data-hover="Präsentation einer Idee vor dem Kunden, bevor das eigentliche Projekt final beauftragt wird.">Pitchbild</span> zu präsentieren, wähle in den Optionen <em>"Nur Layout / Pitch"</em>. Hier wird eine stark reduzierte Pauschale ohne Rechte berechnet.
                 </div>
 
-                <h3 id="guide-3" class="src-guide-h3"><i class="fa-solid fa-clock src-guide-h3-icon" aria-hidden="true"></i> 3. Skriptlänge & Module</h3>
-                <p>Die Länge des Textes ist bei Corporate- oder E-Learning-Projekten essenziell. Das System schätzt die Dauer automatisch, sobald ein Skript eingefügt wird.</p>
+                <h3 id="guide-3" class="src-guide-h3"><i class="fa-solid fa-clock src-guide-h3-icon" aria-hidden="true"></i> 3. Umfang, Minuten & Module</h3>
+                <p>Für alle minutenbasierten Fälle wird der fachlich relevante Umfang direkt eingegeben. Die Kalkulation arbeitet dadurch deterministisch und hängt nicht von versteckten Textschätzungen ab.</p>
                 <div class="src-guide-tip">
-                    <strong>⏱️ Faustregel & Telefonansagen</strong><br>
-                    Kalkuliere pro Minute mit etwa 900 Zeichen (inkl. Leerzeichen). Bei <em>Telefonansagen (IVR)</em> wird nicht nach Länge, sondern nach <span class="src-glossary-term" data-hover="Ein Modul entspricht einer einzelnen, in sich abgeschlossenen Ansage im Telefonsystem.">Modulen</span> abgerechnet. 3 Module sind in der Grundpauschale enthalten.
+                    <strong>⏱️ Direkte Eingabe statt Schätzung</strong><br>
+                    Trage bei minutenbasierten Fällen die tatsächliche Länge bzw. die Netto-Sendeminuten direkt ein. Bei <em>Telefonansagen (IVR)</em> wird weiterhin nicht nach Länge, sondern nach <span class="src-glossary-term" data-hover="Ein Modul entspricht einer einzelnen, in sich abgeschlossenen Ansage im Telefonsystem.">Modulen</span> abgerechnet. 3 Module sind in der Grundpauschale enthalten.
                 </div>
 
                 <h3 id="guide-4" class="src-guide-h3"><i class="fa-solid fa-location-dot src-guide-h3-icon" aria-hidden="true"></i> 4. Verbreitungsgebiet & Lokal</h3>
@@ -1247,7 +1223,7 @@ function src_shortcode_output_v7() {
                 </ul>
 
                 <h3 id="guide-8" class="src-guide-h3"><i class="fa-solid fa-lock src-guide-h3-icon" aria-hidden="true"></i> 8. Datenschutz & Sicherheit</h3>
-                <p><strong>100% Lokal & Privat:</strong> Alle Deine eingegebenen Daten, Projektinformationen, Skripte und kalkulierten Zahlen werden <strong>niemals</strong> auf unseren Servern gespeichert oder an Dritte übertragen. Die gesamte Berechnung und auch die Erstellung der PDF-Angebote findet ausschließlich lokal in Deinem Browser statt. Deine Daten gehören nur Dir.</p>
+                <p><strong>100% Lokal & Privat:</strong> Alle Deine eingegebenen Daten, Projektinformationen und kalkulierten Zahlen werden <strong>niemals</strong> auf unseren Servern gespeichert oder an Dritte übertragen. Die gesamte Berechnung und auch die Erstellung der PDF-Angebote findet ausschließlich lokal in Deinem Browser statt. Deine Daten gehören nur Dir.</p>
                 <br>
             </div>
         </div>

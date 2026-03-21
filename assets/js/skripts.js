@@ -2,8 +2,6 @@
 
 // Globale Variablen für State-Management
 let srcRatesData = {}; 
-let calculatedMinutes = 0;
-let estimatedMinutes = 0;
 let currentResult = { low:0, mid:0, high:0 };
 let dynamicLicenseText = "";
 let pendingMainAmountUpdate = null;
@@ -921,9 +919,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             switch (target.id) {
-                case 'src-manual-time-check':
-                    srcToggleManualTime();
-                    return;
                 case 'src-own-studio':
                     srcToggleStudio();
                     return;
@@ -1012,11 +1007,6 @@ document.addEventListener('DOMContentLoaded', () => {
         exportStartBtn.addEventListener('click', () => srcHandleExportStart());
     }
     srcInitExportLogoSelect();
-
-    const applyEstimateBtn = document.getElementById('src-apply-estimate');
-    if(applyEstimateBtn) {
-        applyEstimateBtn.addEventListener('click', () => srcApplyScriptEstimate());
-    }
 
     const compareToggle = document.getElementById('src-compare-toggle');
     if(compareToggle) {
@@ -1759,32 +1749,6 @@ const srcFormatMinutes = function(minutes) {
     return `${m}:${s.toString().padStart(2,'0')}`;
 }
 
-const srcGetScriptEstimationConfig = function() {
-    const config = srcRatesData.script_estimation || {};
-    return {
-        wpm: config.wpm || { de: 150, en: 160, other: 150 },
-        min: Number.isFinite(config.min_minutes) ? config.min_minutes : 0.1,
-        max: Number.isFinite(config.max_minutes) ? config.max_minutes : 20
-    };
-}
-
-const estimateDurationFromScript = function(scriptText, lang) {
-    const cleanText = (scriptText || '').trim();
-    const words = cleanText ? cleanText.split(/\s+/).filter(Boolean).length : 0;
-    const config = srcGetScriptEstimationConfig();
-    const wpmConfig = config.wpm || {};
-    const wpm = Number.isFinite(wpmConfig[lang]) ? wpmConfig[lang] : (Number.isFinite(wpmConfig.de) ? wpmConfig.de : 150);
-    if(words <= 0 || wpm <= 0) {
-        return { minutes: 0, words };
-    }
-    let minutes = words / wpm;
-    const minClamp = config.min;
-    const maxClamp = config.max;
-    if(Number.isFinite(minClamp)) minutes = Math.max(minClamp, minutes);
-    if(Number.isFinite(maxClamp)) minutes = Math.min(maxClamp, minutes);
-    return { minutes, words };
-}
-
 const srcGetComplexityConfig = function() {
     return srcRatesData.complexity_factors || {};
 }
@@ -1820,13 +1784,33 @@ const srcResolveComplexity = function(selections) {
     return { factor, corridor, picks };
 }
 
+const srcParseUsageUnits = function(value) {
+    const normalized = String(value == null ? '' : value).trim().replace(',', '.');
+    const parsed = parseFloat(normalized);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+}
+
+const srcGetUsageFieldMeta = function(state, decision = null) {
+    const family = String(state?.projectFormatKey || '').trim();
+    const genre = String(state?.projectKey || '').trim();
+    const visibleFields = new Set((decision && decision.visibleFields) || []);
+    if(!visibleFields.has('minutes')) {
+        return { visible: false, label: 'Länge / Minuten', placeholder: 'Wert eingeben (z.B. 1,5)', help: 'Bitte den fachlich relevanten Umfang direkt eingeben.' };
+    }
+    if(family === 'hoerbuch' || genre === 'audiobook') {
+        return { visible: true, label: 'FAH', placeholder: 'Fertige Audiostunden (z.B. 6,5)', help: 'Bitte die fertigen Audiostunden direkt als FAH eingeben.' };
+    }
+    if(family === 'redaktionelle_inhalte_doku_tv_reportagen' || family === 'audiodeskription_ad' || ['doku','editorial_tv','audiodescription'].includes(genre)) {
+        return { visible: true, label: 'Netto-Sendeminuten', placeholder: 'Netto-Sendeminuten (z.B. 12)', help: 'Bitte die tatsächlich ausgewerteten Netto-Sendeminuten eingeben.' };
+    }
+    return { visible: true, label: 'Länge / Minuten', placeholder: 'Länge in Minuten (z.B. 1,5)', help: 'Bitte die tatsächliche Länge direkt eingeben.' };
+}
+
 const srcGetStateFromUI = function() {
     const regionInput = document.querySelector('input[name="region"]:checked');
     const genre = document.getElementById('src-genre').value;
-    const minutesRaw = Number.isFinite(calculatedMinutes) ? calculatedMinutes : 0;
-    const minutes = Math.max(0.1, minutesRaw);
-    const scriptText = document.getElementById('src-text').value || '';
-    const manualMinutesActive = document.getElementById('src-manual-time-check').checked;
+    const minutesRaw = srcParseUsageUnits(document.getElementById('src-usage-minutes')?.value || '');
+    const minutes = Math.max(0.1, minutesRaw || 0);
     const complexitySelections = srcGetComplexitySelections();
     const linkedProjects = Array.from(document.querySelectorAll('.src-linked-project:checked')).map(el => el.value);
     const advanced = {
@@ -1860,9 +1844,6 @@ const srcGetStateFromUI = function() {
         phoneCount: parseInt(document.getElementById('src-phone-count').value, 10) || 1,
         minutes,
         minutesRaw,
-        estimatedMinutes,
-        manualMinutesActive,
-        hasScript: scriptText.trim().length > 0,
         studioFee: document.getElementById('src-own-studio').checked ? (parseInt(document.getElementById('src-studio-fee').value, 10) || 0) : 0,
         expressToggle: document.getElementById('src-express-toggle').checked,
         expressType: document.getElementById('src-express-type').value,
@@ -2132,21 +2113,6 @@ const srcUpdateMeanValue = function(wrapper, target, nextText) {
             wrapper.classList.remove('is-updating');
         });
     });
-}
-
-const srcAdjustRangeForScript = function(values, hasScript) {
-    if(!hasScript || !Array.isArray(values) || values.length < 3) return values;
-    const min = values[0];
-    const mid = values[1];
-    const max = values[2];
-    if(!Number.isFinite(min) || !Number.isFinite(mid) || !Number.isFinite(max)) return values;
-    if(mid <= 0) return values;
-    const delta = Math.round(mid * 0.12);
-    let low = Math.max(min, mid - delta);
-    let high = Math.min(max, mid + delta);
-    if(low > mid) low = mid;
-    if(high < mid) high = mid;
-    return [low, mid, high];
 }
 
 const srcEnsurePriceTriple = function(value, fallback = [0, 0, 0]) {
@@ -2543,8 +2509,8 @@ const srcRenderPriceDetails = function(info, state, result) {
 const srcBuildRiskChecks = function(state) {
     const checks = [];
     if(!state || !state.projectKey) return checks;
-    if(!state.hasScript && (!state.manualMinutesActive || state.minutesRaw <= 0)) {
-        checks.push({ severity: 'info', text: 'Schätzung basiert auf wenigen Angaben. Für eine präzisere Spanne bitte Text oder Dauer ergänzen.' });
+    if(state.minutesRaw <= 0 && !['tv','online_paid','radio','cinema','pos','phone','games'].includes(state.projectKey)) {
+        checks.push({ severity: 'info', text: 'Für diesen Fall fehlt noch ein expliziter Umfangswert. Bitte Minuten, Netto-Sendeminuten oder FAH direkt eingeben.' });
     }
     if(['tv','online_paid','radio','cinema','pos'].includes(state.projectKey)) {
         if(state.region === 'world' && state.duration === 4) {
@@ -3368,7 +3334,6 @@ window.srcReset = function() {
     srcResetWerbungMitBildDependents();
     document.getElementById('src-genre').selectedIndex = 0;
     document.getElementById('src-language').selectedIndex = 0;
-    document.getElementById('src-text').value = '';
     const posType = document.getElementById('src-pos-type');
     if(posType) posType.selectedIndex = 0;
     const caseVariant = document.getElementById('src-case-variant');
@@ -3389,8 +3354,8 @@ window.srcReset = function() {
     });
     
     // Reset Inputs
-    document.getElementById('src-manual-time-check').checked = false;
-    document.getElementById('src-manual-minutes').value = '';
+    const usageInput = document.getElementById('src-usage-minutes');
+    if(usageInput) usageInput.value = '';
     document.getElementById('src-time-slider').value = 1;
     document.getElementById('src-slider-val').innerText = "1 Jahr";
     document.getElementById('src-phone-count').value = 1;
@@ -3433,7 +3398,6 @@ window.srcReset = function() {
     });
     
     document.querySelectorAll('.src-acc-item').forEach(el => el.classList.remove('open'));
-    toggleElement('src-manual-input-wrap', false);
     srcSyncOptionRowStates();
     
     const licBox = document.getElementById('src-license-text');
@@ -3508,7 +3472,9 @@ window.srcUIUpdate = function() {
     const advancedWrap = document.querySelector('.src-advanced');
 
     srcUpdateWerbungMitBildDependentFields();
-    srcApplyVdsVisibilityState(srcGetStateFromUI());
+    const currentState = srcGetStateFromUI();
+    const visibilityDecision = srcApplyVdsVisibilityState(currentState);
+    srcSyncUsageField(currentState, visibilityDecision);
 
     if (calcRoot) {
         calcRoot.classList.toggle('src-has-project', hasGenre);
@@ -3530,7 +3496,7 @@ window.srcUIUpdate = function() {
     toggleElement('src-vds-routing-wrap', showVdsRouting);
     toggleElement('src-vds-special-wrap', showVdsSpecial);
     if(layoutMode) {
-        toggleElement('mod-ads', false); toggleElement('mod-image', false); toggleElement('mod-phone', false);
+        toggleElement('mod-ads', false); toggleElement('mod-image', false); toggleElement('mod-phone', false); toggleElement('src-group-units', false);
         toggleElement('src-pos-type-wrap', false);
     } else {
         toggleElement('mod-ads', usesAdControls);
@@ -3548,7 +3514,7 @@ window.srcUIUpdate = function() {
     }
     srcUpdateCutdownVisibility(genre, layoutMode);
     srcSyncOptionRowStates();
-    srcAnalyzeText();
+    srcSyncUsageField(currentState, visibilityDecision);
     const buyoutMode = document.getElementById('src-adv-buyout-mode')?.value || 'standard';
     toggleElement('src-adv-periods-wrap', buyoutMode === 'staffel');
     if(buyoutMode !== 'staffel') {
@@ -3617,73 +3583,25 @@ window.srcUIUpdate = function() {
     }
 }
 
-window.srcToggleManualTime = function() {
-    const check = document.getElementById('src-manual-time-check').checked;
-    toggleElement('src-manual-input-wrap', check);
-    const txt = document.getElementById('src-text');
-    if(check) { txt.disabled = true; txt.style.opacity = '0.5'; } else { txt.disabled = false; txt.style.opacity = '1'; }
-    srcAnalyzeText();
-}
-
 window.srcToggleStudio = function() {
     srcHandleOptionToggle('src-own-studio');
     srcCalc();
 }
 
-window.srcAnalyzeText = function() {
-    let mins = 0;
-    const manualCheck = document.getElementById('src-manual-time-check').checked;
-    const txt = document.getElementById('src-text').value || '';
-    const lang = document.getElementById('src-language').value || 'de';
-    const estimate = estimateDurationFromScript(txt, lang);
-    estimatedMinutes = estimate.minutes;
-    if(manualCheck) {
-        let val = document.getElementById('src-manual-minutes').value;
-        val = val.replace(',', '.');
-        mins = parseFloat(val) || 0;
-        document.getElementById('src-char-count').innerText = '-';
-    } else {
-        const chars = txt.length;
-        document.getElementById('src-char-count').innerText = chars;
-        mins = estimate.minutes || 0;
+window.srcSyncUsageField = function(state = srcGetStateFromUI(), decision = null) {
+    const wrap = document.getElementById('src-group-units');
+    const input = document.getElementById('src-usage-minutes');
+    const label = document.getElementById('src-usage-label');
+    const help = document.getElementById('src-usage-help');
+    if(!wrap || !input || !label || !help) return;
+    const meta = srcGetUsageFieldMeta(state, decision);
+    wrap.style.display = meta.visible ? '' : 'none';
+    label.textContent = meta.label;
+    input.placeholder = meta.placeholder;
+    help.textContent = meta.help;
+    if(!meta.visible) {
+        input.value = '';
     }
-    document.getElementById('src-min-count').innerText = srcFormatMinutes(mins);
-    calculatedMinutes = mins;
-    srcUpdateScriptEstimateDisplay({
-        hasScript: txt.trim().length > 0,
-        manualCheck,
-        estimatedMinutes
-    });
-    srcCalc();
-}
-
-const srcUpdateScriptEstimateDisplay = function({ hasScript, manualCheck, estimatedMinutes }) {
-    const wrap = document.getElementById('src-script-estimate');
-    const valueEl = document.getElementById('src-script-estimate-value');
-    const btn = document.getElementById('src-apply-estimate');
-    if(!wrap || !valueEl) return;
-    if(!hasScript) {
-        wrap.classList.remove('is-visible');
-        if(btn) btn.classList.remove('is-visible');
-        return;
-    }
-    valueEl.textContent = `~${srcFormatMinutes(estimatedMinutes)}`;
-    wrap.classList.add('is-visible');
-    if(btn) {
-        btn.classList.toggle('is-visible', manualCheck);
-    }
-}
-
-const srcApplyScriptEstimate = function() {
-    const manualCheck = document.getElementById('src-manual-time-check');
-    const manualInput = document.getElementById('src-manual-minutes');
-    if(!manualCheck || !manualInput) return;
-    manualCheck.checked = true;
-    srcToggleManualTime();
-    if(Number.isFinite(estimatedMinutes)) {
-        manualInput.value = estimatedMinutes.toFixed(2).replace('.', ',');
-    }
-    srcAnalyzeText();
 }
 
 window.srcValidateFinalFee = function() {
@@ -4144,12 +4062,6 @@ const srcComputeSingleProjectResult = function(state, projectKey, options = {}) 
                 const unitCount = extraConfig.extraUnit || (tierUnit === 'modules' ? 1 : 5);
                 breakdownSteps.push({ label: `Überlänge ${extraConfig.chunks}x`, amountOrFactor: srcFormatSignedCurrency(extraCost), effectOnRange: 'add' });
                 addInfo(`Überlänge (+${extraConfig.chunks}× ${unitCount} ${unitSuffix})`, srcFormatSignedCurrency(extraCost), `+${extraConfig.chunks} × ${srcFormatCurrency(extraRates[1])}`);
-            }
-
-            if(tierUnit === 'minutes' && state.hasScript && state.minutes > 0) {
-                final = srcAdjustRangeForScript(final, true);
-                breakdownSteps.push({ label: "Skript vorhanden", amountOrFactor: "Range enger", effectOnRange: 'adjust' });
-                addInfo("Skript vorhanden", "—", "Range enger");
             }
 
             const licenseExtras = data.license_extras || {};
@@ -5863,7 +5775,7 @@ function srcBuildTutorialSteps() {
         { element: '.src-top-grid > div:nth-child(1)', title: '1. Format/Projekt', desc: 'Wähle hier aus, welche Art von Projekt kalkuliert wird.' },
         { element: '.src-top-grid > div:nth-child(2)', title: '2. Sprache', desc: 'Hier legst Du die Sprachvariante fest, die in die Berechnung einfließt.' },
         { element: '.src-advanced', title: '3. Erweitert', desc: 'Zusätzliche Vertrags- und Leistungsparameter für eine präzisere Kalkulation.' },
-        { element: '#src-group-text', title: '4. Skript / Länge', desc: 'Skript einfügen und die geschätzte Sprechdauer automatisch ermitteln lassen.' },
+        { element: '#src-group-units', title: '4. Umfang', desc: 'Trage hier die fachlich relevante Länge, Netto-Sendeminuten oder FAH direkt ein.' },
         { element: '.src-rights-card', title: '5. Nutzungsrechte', desc: 'Definiere Medium, Laufzeit und Gebiet der Verwertung.' },
         { element: '.src-complexity-group', title: '6. Produktion & Aufwand', desc: 'Produktionsanforderungen und Aufwand wirken sich direkt auf die Empfehlung aus.' },
         { element: '#src-global-settings', title: '7. Optionen', desc: 'Optionale Kostenblöcke wie Studio, Express oder Rabatt hinzufügen.' },
