@@ -267,8 +267,45 @@ const SRC_WERBUNG_MIT_BILD_ORDER = [
 ];
 
 const srcClone = function(payload) {
-    return JSON.parse(JSON.stringify(payload || {}));
+    try {
+        return JSON.parse(JSON.stringify(payload || {}));
+    } catch (error) {
+        console.warn('SRC: Konnte Daten nicht tief kopieren, verwende leeres Objekt.', error);
+        return {};
+    }
 }
+
+const srcSafeStorage = {
+    get(key) {
+        if(typeof localStorage === 'undefined' || !key) return null;
+        try {
+            return localStorage.getItem(key);
+        } catch (error) {
+            console.warn('SRC: localStorage-Lesezugriff nicht verfügbar.', error);
+            return null;
+        }
+    },
+    set(key, value) {
+        if(typeof localStorage === 'undefined' || !key) return false;
+        try {
+            localStorage.setItem(key, value);
+            return true;
+        } catch (error) {
+            console.warn('SRC: localStorage-Schreibzugriff nicht verfügbar.', error);
+            return false;
+        }
+    },
+    remove(key) {
+        if(typeof localStorage === 'undefined' || !key) return false;
+        try {
+            localStorage.removeItem(key);
+            return true;
+        } catch (error) {
+            console.warn('SRC: localStorage-Löschzugriff nicht verfügbar.', error);
+            return false;
+        }
+    }
+};
 
 const srcGetVdsConfig = function() {
     return srcRatesData && srcRatesData.vds2025 ? srcRatesData.vds2025 : null;
@@ -434,8 +471,7 @@ const srcSetCurrencyButtonsState = function(curr) {
 }
 
 const srcRestoreCurrencyPreference = function() {
-    if(typeof localStorage === 'undefined') return;
-    const saved = localStorage.getItem(SRC_CURRENCY_STORAGE_KEY);
+    const saved = srcSafeStorage.get(SRC_CURRENCY_STORAGE_KEY);
     if(saved === 'EUR' || saved === 'CHF' || saved === 'USD') {
         window.srcCurrencyCode = saved;
     }
@@ -445,9 +481,12 @@ async function srcLoadFxRates(){
     try {
         if(!window.SRC_CALC || !SRC_CALC.rest_fx_url) return { CHF: 1, USD: 1 };
         const res = await fetch(SRC_CALC.rest_fx_url, { credentials: 'same-origin' });
+        if(!res || !res.ok) {
+            throw new Error(`FX request failed with status ${res ? res.status : 'unknown'}`);
+        }
         const data = await res.json();
 
-        if(data && data.CHF && data.USD) {
+        if(data && Number.isFinite(Number(data.CHF)) && Number.isFinite(Number(data.USD))) {
             window.srcFxRates = { CHF: Number(data.CHF), USD: Number(data.USD) };
             return window.srcFxRates;
         }
@@ -459,9 +498,7 @@ async function srcLoadFxRates(){
 window.srcSetCurrency = async function(curr) {
     const next = (curr === 'CHF' || curr === 'USD') ? curr : 'EUR';
     window.srcCurrencyCode = next;
-    if(typeof localStorage !== 'undefined') {
-        localStorage.setItem(SRC_CURRENCY_STORAGE_KEY, window.srcCurrencyCode);
-    }
+    srcSafeStorage.set(SRC_CURRENCY_STORAGE_KEY, window.srcCurrencyCode);
     srcSetCurrencyButtonsState(window.srcCurrencyCode);
     if(window.srcCurrencyCode !== 'EUR') {
         await srcLoadFxRates();
@@ -493,11 +530,49 @@ let srcGlossaryTooltipEl = null;
 let srcGlossaryTooltipTarget = null;
 let srcGlossaryTooltipMoveHandlerBound = false;
 
+
+const srcTriggerNamedHandler = function(handlerName, context = null) {
+    if(!handlerName || typeof window[handlerName] !== 'function') return;
+    if(handlerName === 'toggleAccordion') {
+        window[handlerName](context);
+        return;
+    }
+    window[handlerName]();
+}
+
+const srcBindDeclarativeMarkupEvents = function(root = document) {
+    if(!root || !root.querySelectorAll) return;
+
+    root.querySelectorAll('[data-src-click]').forEach((el) => {
+        if(el.dataset.srcClickBound === 'true') return;
+        el.dataset.srcClickBound = 'true';
+        el.addEventListener('click', () => srcTriggerNamedHandler(el.getAttribute('data-src-click'), el));
+    });
+
+    root.querySelectorAll('[data-src-change]').forEach((el) => {
+        if(el.dataset.srcChangeBound === 'true') return;
+        el.dataset.srcChangeBound = 'true';
+        el.addEventListener('change', () => srcTriggerNamedHandler(el.getAttribute('data-src-change'), el));
+    });
+
+    root.querySelectorAll('[data-src-input]').forEach((el) => {
+        if(el.dataset.srcInputBound === 'true') return;
+        el.dataset.srcInputBound = 'true';
+        el.addEventListener('input', () => srcTriggerNamedHandler(el.getAttribute('data-src-input'), el));
+    });
+}
+
+window.srcHandleBuyoutModeChange = function() {
+    srcUIUpdate();
+    srcCalc();
+}
+
 document.addEventListener('DOMContentLoaded', () => { 
     const iconUrl = (window.srcPluginData && srcPluginData.checkIconUrl) ? String(srcPluginData.checkIconUrl).trim() : '';
     if(iconUrl){
         document.documentElement.style.setProperty('--src-check-icon', `url("${iconUrl}")`);
     }
+    srcBindDeclarativeMarkupEvents();
     srcRestoreCurrencyPreference();
     srcSetCurrencyButtonsState(window.srcCurrencyCode);
     const currencyToggle = document.getElementById('src-currency-toggle');
@@ -2857,7 +2932,7 @@ const srcSyncExportTiles = function() {
 
 window.srcSaveStateToStorage = function() {
     const calcRoot = document.getElementById('src-calc-v6');
-    if(!calcRoot || typeof localStorage === 'undefined') return;
+    if(!calcRoot) return;
 
     const state = {};
     calcRoot.querySelectorAll('select, textarea, input').forEach((el) => {
@@ -2880,13 +2955,11 @@ window.srcSaveStateToStorage = function() {
         }
     });
 
-    localStorage.setItem('src_calculator_state', JSON.stringify(state));
+    srcSafeStorage.set('src_calculator_state', JSON.stringify(state));
 }
 
 window.srcRestoreStateFromStorage = function() {
-    if(typeof localStorage === 'undefined') return false;
-
-    const rawState = localStorage.getItem('src_calculator_state');
+    const rawState = srcSafeStorage.get('src_calculator_state');
     if(!rawState) return false;
 
     let parsedState = null;
@@ -2894,7 +2967,7 @@ window.srcRestoreStateFromStorage = function() {
         parsedState = JSON.parse(rawState);
     } catch (error) {
         console.warn('SRC: Gespeicherter Zustand ist ungültig und wurde verworfen.', error);
-        localStorage.removeItem('src_calculator_state');
+        srcSafeStorage.remove('src_calculator_state');
         return false;
     }
 
@@ -3056,9 +3129,7 @@ window.srcReset = function() {
     const breakdownBox = document.getElementById('src-calc-breakdown');
     if(breakdownBox) breakdownBox.classList.remove('is-open');
 
-    if(typeof localStorage !== 'undefined') {
-        localStorage.removeItem('src_calculator_state');
-    }
+    srcSafeStorage.remove('src_calculator_state');
 
     updateLicenseMetaText({ region: 'national', duration: 1 });
     

@@ -16,21 +16,21 @@ add_action('admin_menu', 'src_add_admin_menu');
 // HTML der Einstellungsseite
 function src_settings_page_html() {
     // Speichern, wenn Formular gesendet wurde
-    if (isset($_POST['src_rates_json']) && check_admin_referer('src_save_settings')) {
-        $json_input = wp_unslash($_POST['src_rates_json']);
-        
-        // Validierung: Ist es valides JSON?
-        if(json_decode($json_input) !== null) {
-             update_option('src_rates_json', $json_input);
-             echo '<div class="notice notice-success is-dismissible"><p>Einstellungen gespeichert!</p></div>';
+    if ( isset( $_POST['src_rates_json'] ) && check_admin_referer( 'src_save_settings' ) ) {
+        $json_input = wp_unslash( $_POST['src_rates_json'] );
+        $decoded    = json_decode( $json_input, true );
+
+        if ( JSON_ERROR_NONE === json_last_error() && is_array( $decoded ) ) {
+            update_option( 'src_rates_json', wp_json_encode( $decoded, JSON_UNESCAPED_UNICODE ) );
+            echo '<div class="notice notice-success is-dismissible"><p>Einstellungen gespeichert!</p></div>';
         } else {
-             echo '<div class="notice notice-error is-dismissible"><p>Fehler: Ungültiges JSON Format.</p></div>';
+            echo '<div class="notice notice-error is-dismissible"><p>Fehler: Ungültiges JSON Format.</p></div>';
         }
     }
 
     // Aktuellen Wert holen oder Default
-    $current_json = get_option('src_rates_json');
-    if (!$current_json) {
+    $current_json = get_option( 'src_rates_json' );
+    if ( ! is_string( $current_json ) || '' === $current_json ) {
         $current_json = src_get_default_json();
     }
 
