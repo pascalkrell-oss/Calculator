@@ -3494,6 +3494,7 @@ window.srcUIUpdate = function() {
     const advancedWrap = document.querySelector('.src-advanced');
 
     srcUpdateWerbungMitBildDependentFields();
+    srcApplyVdsVisibilityState(srcGetStateFromUI());
 
     if (calcRoot) {
         calcRoot.classList.toggle('src-has-project', hasGenre);
@@ -4405,6 +4406,402 @@ const srcBuildGlobalAddonMarkup = function(addons) {
     return `${linesMarkup}${addons.extraBlock || ''}`;
 }
 
+
+const SRC_VDS_ENGINE_FIELD_RULES = {
+    region: { families: ['werbung_mit_bild', 'werbung_ohne_bild'] },
+    duration: { families: ['werbung_mit_bild', 'werbung_ohne_bild'] },
+    priceLevel: { families: ['werbung_mit_bild', 'werbung_ohne_bild'], cases: ['online_video_spot','atv_ctv_video_spot','linearer_tv_spot','kino_spot','tv_patronat','atv_ctv_patronat','radio','online_audio_spot','telefon_werbespot'] },
+    minutes: { unitTypes: ['minute', 'netto_sendeminute', 'film', 'fah'] },
+    phoneCount: { unitTypes: ['modul', 'bis_3_module', 'je_weiteres_modul'] },
+    caseVariant: { families: ['werbung_mit_bild'], cases: ['online_video_spot','linearer_tv_spot','kino_spot','tv_patronat','atv_ctv_patronat'] },
+    packageOnline: { cases: ['online_audio_spot', 'radio'] },
+    packageAtv: { cases: ['online_video_spot','atv_ctv_video_spot','online_paid'] },
+    addonTerritories: { families: ['werbung_mit_bild', 'werbung_ohne_bild'] },
+    addonYears: { families: ['werbung_mit_bild', 'werbung_ohne_bild'] },
+    addonMotifs: { families: ['werbung_mit_bild', 'werbung_ohne_bild'] },
+    reminderFactor: { addons: ['reminder'] },
+    unlimitedFlags: { families: ['werbung_mit_bild', 'werbung_ohne_bild', 'games', 'podcast', 'webvideo_imagefilm_praesentation_unpaid'] },
+    sessionHours: { unitTypes: ['studiostunde'] },
+    recordingDays: { unitTypes: ['studiostunde'] },
+    paidStatus: { families: ['werbung_mit_bild', 'werbung_ohne_bild'] },
+    usageContext: { families: ['werbung_mit_bild', 'werbung_ohne_bild', 'telefonansage', 'elearning_audioguide', 'podcast', 'games', 'app'] },
+    medium: { families: ['werbung_mit_bild', 'werbung_ohne_bild', 'telefonansage', 'elearning_audioguide', 'podcast', 'games', 'app'] }
+};
+
+const srcCreateVdsEngine = function() {
+    const priceLevelIdx = { lower: 'low', middle: 'mid', upper: 'high' };
+    const territoryFactorMap = { regional: 0.8, national: 1, dach: 2.5, world: 4 };
+    const territoryLabels = { regional: 'Regional', national: 'National', dach: 'DACH', world: 'Weltweit' };
+
+    const toRange = (source, fallback = 0) => {
+        if(Array.isArray(source)) {
+            return {
+                low: Number(source[0] || fallback),
+                mid: Number(source[1] || fallback),
+                high: Number(source[2] || fallback)
+            };
+        }
+        const src = source && typeof source === 'object' ? source : {};
+        return {
+            low: Number(src.low ?? src.min ?? fallback),
+            mid: Number(src.mid ?? src.middle ?? fallback),
+            high: Number(src.high ?? src.max ?? fallback)
+        };
+    };
+    const rangeToArray = range => [Math.round(range.low || 0), Math.round(range.mid || 0), Math.round(range.high || 0)];
+    const cloneRange = range => ({ low: Number(range.low || 0), mid: Number(range.mid || 0), high: Number(range.high || 0) });
+    const multiplyRange = (range, factor) => ({ low: Math.round(range.low * factor), mid: Math.round(range.mid * factor), high: Math.round(range.high * factor) });
+    const addRange = (range, add) => ({ low: Math.round(range.low + add.low), mid: Math.round(range.mid + add.mid), high: Math.round(range.high + add.high) });
+
+    const inferFamilyAndCase = (state) => {
+        const projectKey = String(state.projectKey || '').trim();
+        const family = String(state.projectFormatKey || '').trim();
+        const aliasMap = {
+            tv: { family: 'werbung_mit_bild', case: 'linearer_tv_spot' },
+            online_paid: { family: 'werbung_mit_bild', case: 'online_video_spot' },
+            radio: { family: 'werbung_ohne_bild', case: 'radio' },
+            imagefilm: { family: 'webvideo_imagefilm_praesentation_unpaid', case: 'imagefilm' },
+            explainer: { family: 'webvideo_imagefilm_praesentation_unpaid', case: 'explainer' },
+            webvideo_unpaid: { family: 'webvideo_imagefilm_praesentation_unpaid', case: 'webvideo_unpaid' },
+            presentation_unpaid: { family: 'webvideo_imagefilm_praesentation_unpaid', case: 'presentation_unpaid' },
+            phone: { family: 'telefonansage', case: 'telefonansage' },
+            elearning: { family: 'elearning_audioguide', case: 'elearning_intern' },
+            audioguide: { family: 'elearning_audioguide', case: 'audioguide' },
+            app: { family: 'app', case: 'app_voiceover' },
+            podcast: { family: 'podcast', case: 'podcast_standard' },
+            audiobook: { family: 'hoerbuch', case: 'audiobook' },
+            games: { family: 'games', case: 'game_session' },
+            doku: { family: 'redaktionelle_inhalte_doku_tv_reportagen', case: 'doku' },
+            editorial_tv: { family: 'redaktionelle_inhalte_doku_tv_reportagen', case: 'editorial_tv' },
+            audiodescription: { family: 'audiodeskription_ad', case: 'audiodescription' },
+            kleinraeumig: { family: 'kleinraeumig', case: 'kleinraeumig' },
+            pos: { family: 'werbung_mit_bild', case: 'pos_spot' },
+            cinema: { family: 'werbung_mit_bild', case: 'kino_spot' }
+        };
+        return aliasMap[projectKey] || { family, case: projectKey || '' };
+    };
+
+    const buildInput = (state) => {
+        const inferred = inferFamilyAndCase(state);
+        const special = Object.assign({ addonTerritories: 0, addonYears: 0, addonMotifs: 0, sessionHours: 1, recordingDays: 1, reminderFactor: 0.5 }, state.vdsSpecial || {});
+        const packageType = state.packageAtv ? 'atv_ctv' : (state.packageOnline ? 'online_audio' : 'standard');
+        const unlimitedUsage = Boolean(special.unlimitedTime || special.unlimitedTerritory || special.unlimitedMedia || state.duration === 4);
+        const addons = {
+            addonTerritories: Math.max(0, parseInt(special.addonTerritories, 10) || 0),
+            addonYears: Math.max(0, parseInt(special.addonYears, 10) || 0),
+            addonMotifs: Math.max(0, parseInt(special.addonMotifs, 10) || 0),
+            social: Boolean(special.social || state.licenseSocialEnabled),
+            event: Boolean(state.licenseEvent),
+            internal: Boolean(state.licenseInternal),
+            archive: Boolean(special.archive),
+            layout: Boolean(special.layout || state.layoutMode),
+            reminder: Boolean(state.cutdown),
+            patronage: Boolean(special.patronage),
+            presentation: Boolean(special.presentation),
+            followup: Boolean(special.followup),
+            sessionFeeFollowup: Math.max(0, (parseInt(special.sessionHours, 10) || 1) - 1),
+            reminderFactor: Number(special.reminderFactor || 0.5),
+            packageType
+        };
+        return {
+            family: inferred.family,
+            case: inferred.case,
+            unit_type: 'motiv',
+            medium: special.medium || 'standard',
+            territory: state.region || 'national',
+            duration: parseInt(state.duration, 10) || 1,
+            paid_unpaid: special.paidStatus || 'auto',
+            addons,
+            package_type: packageType,
+            unlimited_usage: unlimitedUsage,
+            expert_flags: [],
+            usage_context: special.usageContext || 'standard',
+            language: state.language || 'de',
+            price_level: state.priceLevelKey || 'middle',
+            minutes: Number(state.minutes || 0),
+            phone_count: Math.max(1, parseInt(state.phoneCount, 10) || 1),
+            session_hours: Math.max(1, parseInt(special.sessionHours, 10) || 1),
+            recording_days: Math.max(1, parseInt(special.recordingDays, 10) || 1),
+            projectKey: state.projectKey || '',
+            linkedProjects: Array.isArray(state.linkedProjects) ? state.linkedProjects.slice() : []
+        };
+    };
+
+    const applyCrossReference = (input) => {
+        const redirects = [];
+        const notes = [];
+        const expertFlags = [];
+        const out = Object.assign({}, input);
+        const redirect = (family, caze, reason) => {
+            out.family = family;
+            out.case = caze;
+            redirects.push(reason);
+        };
+        if(out.case === 'online_video_spot' && out.paid_unpaid === 'unpaid') redirect('webvideo_imagefilm_praesentation_unpaid', 'webvideo_unpaid', 'Online Video Spot Unpaid → Imagefilm / Webvideo');
+        if((out.case === 'online_audio_spot' || out.projectKey === 'radio') && out.medium === 'online_audio' && out.paid_unpaid === 'unpaid') redirect('webvideo_imagefilm_praesentation_unpaid', 'webvideo_unpaid', 'Online Audio Spot Unpaid → Imagefilm / Webvideo');
+        if(out.projectKey === 'app' && out.medium === 'inapp_ads') redirect('werbung_mit_bild', 'online_video_spot', 'In-App Ads → Werbung mit Bild');
+        if(out.projectKey === 'phone' && out.usage_context === 'promotional') redirect('werbung_ohne_bild', 'telefon_werbespot', 'Telefon-Werbespot → Werbung ohne Bild');
+        if(out.projectKey === 'phone' && out.usage_context === 'service') notes.push('Reine Telefonansage bleibt im Case Telefonansage.');
+        if(out.projectKey === 'elearning' && out.usage_context === 'internal') notes.push('Internes E-Learning bleibt im E-Learning-Case.');
+        if(out.projectKey === 'elearning' && ['marketing_public', 'promotional'].includes(out.usage_context)) redirect('webvideo_imagefilm_praesentation_unpaid', 'imagefilm', 'Öffentliches / marketingbezogenes E-Learning → Imagefilm / Webvideo');
+        if(out.projectKey === 'podcast' && ['promotional'].includes(out.usage_context)) redirect('werbung_ohne_bild', 'funk_spot', 'Werblicher Podcast-Fall → Werbung ohne Bild');
+        if(out.projectKey === 'games' && ['promotional'].includes(out.usage_context)) redirect('werbung_mit_bild', 'online_video_spot', 'Werbliche Games-Verwertung → Werbung mit Bild');
+        if(out.unlimited_usage) expertFlags.push('Unlimited usage benötigt VDS-Expert*innenprüfung; Faktor als transparente Vorschlagskalkulation.');
+        if(out.family === 'hoerbuch') expertFlags.push('Hörbuch bleibt eine VDS-Vorschlagskalkulation auf FAH-Basis.');
+        if(out.family === 'games') expertFlags.push('Games werden als Session-Fee-/Folgestunden-Modell ausgewiesen.');
+        out.expert_flags = out.expert_flags.concat(expertFlags);
+        return { input: out, redirects, notes, expertFlags };
+    };
+
+    const getVisibleFields = (resolvedInput) => {
+        const visible = [];
+        Object.keys(SRC_VDS_ENGINE_FIELD_RULES).forEach(key => {
+            const rule = SRC_VDS_ENGINE_FIELD_RULES[key] || {};
+            const familyMatch = !rule.families || rule.families.includes(resolvedInput.family);
+            const caseMatch = !rule.cases || rule.cases.includes(resolvedInput.case) || rule.cases.includes(resolvedInput.projectKey);
+            const unitMatch = !rule.unitTypes || rule.unitTypes.includes(resolvedInput.unit_type);
+            const addonMatch = !rule.addons || rule.addons.some(addonKey => Boolean(resolvedInput.addons && resolvedInput.addons[addonKey]));
+            if(familyMatch && caseMatch && unitMatch && addonMatch) visible.push(key);
+        });
+        return visible;
+    };
+
+    const createLine = (label, range, formula = '', tone = '') => ({ label, amount: srcFormatCurrency(range.mid), formula, tone });
+    const createBreakdownStep = (label, amountOrFactor, effectOnRange = 'add') => ({ label, amountOrFactor, effectOnRange });
+
+    const priceAdvertising = (input, breakdownSteps) => {
+        const adCases = {
+            online_video_spot: { label: 'Online Video Spot', variants: { paid_media: { low: 600, mid: 700, high: 800 }, archivgage: { low: 325, mid: 385, high: 450 } } },
+            linearer_tv_spot: { label: 'Linearer TV Spot', variants: { national: { low: 600, mid: 700, high: 800 }, regional: { low: 500, mid: 550, high: 600 } } },
+            kino_spot: { label: 'Kino Spot', variants: { national: { low: 600, mid: 700, high: 800 }, regional: { low: 500, mid: 550, high: 600 } } },
+            tv_patronat: { label: 'TV Patronat', variants: { national: { low: 600, mid: 700, high: 800 } } },
+            atv_ctv_video_spot: { label: 'ATV/CTV Video Spot', variants: { national: { low: 600, mid: 700, high: 800 } } },
+            telefon_werbespot: { label: 'Telefon-Werbespot', variants: { national: { low: 450, mid: 500, high: 550 } } },
+            funk_spot: { label: 'Funkspot', variants: { national: { low: 450, mid: 500, high: 550 } } },
+            radio: { label: 'Funkspot', variants: { national: { low: 450, mid: 500, high: 550 } } },
+            pos_spot: { label: 'POS Spot', variants: { national: { low: 600, mid: 700, high: 800 } } }
+        };
+        const caseConfig = adCases[input.case] || adCases[input.projectKey] || adCases.online_video_spot;
+        const variantKey = input.case === 'online_video_spot' && input.addons.archive ? 'archivgage' : (input.territory === 'regional' && caseConfig.variants.regional ? 'regional' : 'national');
+        let range = toRange(caseConfig.variants[variantKey] || caseConfig.variants.national);
+        breakdownSteps.push(createBreakdownStep(`Basis ${caseConfig.label}${variantKey ? ` · ${variantKey}` : ''}`, srcFormatCurrency(range.mid), 'base'));
+        if(input.language === 'en') { range = multiplyRange(range, 1.3); breakdownSteps.push(createBreakdownStep('Sprache Englisch', 'x1.3', 'multiply')); }
+        if(input.language === 'other') { range = multiplyRange(range, 1.5); breakdownSteps.push(createBreakdownStep('Sprache Fremdsprache', 'x1.5', 'multiply')); }
+        if(input.case !== 'telefon_werbespot' && input.case !== 'funk_spot' && input.case !== 'radio') {
+            const territoryFactor = territoryFactorMap[input.territory] || 1;
+            if(territoryFactor !== 1) { range = multiplyRange(range, territoryFactor); breakdownSteps.push(createBreakdownStep(`Gebiet ${territoryLabels[input.territory] || input.territory}`, `x${territoryFactor}`, 'multiply')); }
+        }
+        if(input.duration > 1 && input.duration < 4) { range = multiplyRange(range, input.duration); breakdownSteps.push(createBreakdownStep(`Laufzeit ${input.duration} Jahre`, `x${input.duration}`, 'multiply')); }
+        if(input.addons.packageType === 'online_audio') { range = multiplyRange(range, 1.6); breakdownSteps.push(createBreakdownStep('Paket Online Audio', 'x1.6', 'multiply')); }
+        if(input.addons.packageType === 'atv_ctv') { range = multiplyRange(range, 1.6); breakdownSteps.push(createBreakdownStep('Paket ATV/CTV', 'x1.6', 'multiply')); }
+        return { label: caseConfig.label, baseRange: cloneRange(range), range };
+    };
+
+    const priceTiered = (input, breakdownSteps) => {
+        const unitMinutes = Math.max(0.1, Number(input.minutes || 0));
+        const tierMap = {
+            imagefilm: { label: 'Imagefilm / Webvideo', tiers: [{ limit: 2, range: { low: 300, mid: 350, high: 400 } }, { limit: 5, range: { low: 350, mid: 450, high: 500 } }], extra: { low: 60, mid: 75, high: 90 }, extra_after: 5, extra_unit: 1, unit_type: 'minute' },
+            webvideo_unpaid: { label: 'Webvideo Unpaid', tiers: [{ limit: 2, range: { low: 300, mid: 350, high: 400 } }, { limit: 5, range: { low: 350, mid: 450, high: 500 } }], extra: { low: 60, mid: 75, high: 90 }, extra_after: 5, extra_unit: 1, unit_type: 'minute' },
+            explainer: { label: 'Erklärvideo', tiers: [{ limit: 2, range: { low: 300, mid: 350, high: 400 } }, { limit: 5, range: { low: 350, mid: 450, high: 500 } }], extra: { low: 60, mid: 75, high: 90 }, extra_after: 5, extra_unit: 1, unit_type: 'minute' },
+            presentation_unpaid: { label: 'Präsentation', tiers: [{ limit: 5, range: { low: 300, mid: 350, high: 400 } }], extra: { low: 60, mid: 75, high: 90 }, extra_after: 5, extra_unit: 5, unit_type: 'minute' },
+            elearning_intern: { label: 'E-Learning intern', tiers: [{ limit: 5, range: { low: 300, mid: 350, high: 400 } }], extra: { low: 60, mid: 75, high: 90 }, extra_after: 5, extra_unit: 5, unit_type: 'minute' },
+            audioguide: { label: 'Audioguide', tiers: [{ limit: 5, range: { low: 300, mid: 350, high: 400 } }], extra: { low: 60, mid: 75, high: 90 }, extra_after: 5, extra_unit: 5, unit_type: 'minute' },
+            kleinraeumig: { label: 'Kleinräumige Nutzung', tiers: [{ limit: 2, range: { low: 180, mid: 240, high: 300 } }, { limit: 5, range: { low: 240, mid: 300, high: 360 } }], extra: { low: 40, mid: 55, high: 70 }, extra_after: 5, extra_unit: 1, unit_type: 'minute' },
+            telefonansage: { label: 'Telefonansage', tiers: [{ limit: 3, range: { low: 180, mid: 240, high: 300 } }], extra: { low: 50, mid: 60, high: 70 }, extra_after: 3, extra_unit: 1, unit_type: 'modul' }
+        };
+        const config = tierMap[input.case] || tierMap[input.projectKey] || tierMap.imagefilm;
+        const unitType = config.unit_type;
+        input.unit_type = unitType === 'modul' ? 'modul' : 'minute';
+        const units = unitType === 'modul' ? input.phone_count : unitMinutes;
+        const selectedTier = config.tiers.find(tier => units <= tier.limit) || config.tiers[config.tiers.length - 1];
+        let range = toRange(selectedTier.range);
+        breakdownSteps.push(createBreakdownStep(`Basis ${config.label}`, srcFormatCurrency(range.mid), 'base'));
+        const extraChunks = units > config.extra_after ? Math.ceil((units - config.extra_after) / config.extra_unit) : 0;
+        if(extraChunks > 0) {
+            const add = multiplyRange(toRange(config.extra), extraChunks);
+            range = addRange(range, add);
+            breakdownSteps.push(createBreakdownStep(`Überlänge / Zusatzmodule (${extraChunks}x)`, srcFormatSignedCurrency(add.mid), 'add'));
+        }
+        if(input.language === 'en') { range = multiplyRange(range, 1.3); breakdownSteps.push(createBreakdownStep('Sprache Englisch', 'x1.3', 'multiply')); }
+        if(input.language === 'other') { range = multiplyRange(range, 1.5); breakdownSteps.push(createBreakdownStep('Sprache Fremdsprache', 'x1.5', 'multiply')); }
+        return { label: config.label, baseRange: cloneRange(range), range };
+    };
+
+    const priceMinimumPlusPerUnit = (input, breakdownSteps) => {
+        input.unit_type = 'netto_sendeminute';
+        const label = input.projectKey === 'audiodescription' ? 'Audiodeskription' : 'Doku / Redaktion';
+        const minimum = toRange({ low: 150, mid: 250, high: 350 });
+        const perUnit = toRange({ low: 10, mid: 15, high: 20 });
+        const units = Math.max(1, Number(input.minutes || 0));
+        const extraUnits = Math.max(0, units - 1);
+        let range = addRange(minimum, multiplyRange(perUnit, extraUnits));
+        breakdownSteps.push(createBreakdownStep(`Mindestgage ${label}`, srcFormatCurrency(minimum.mid), 'base'));
+        if(extraUnits > 0) breakdownSteps.push(createBreakdownStep(`Netto-Sendeminuten (${extraUnits}x)`, srcFormatSignedCurrency(perUnit.mid * extraUnits), 'add'));
+        return { label, baseRange: cloneRange(range), range };
+    };
+
+    const priceSession = (input, breakdownSteps) => {
+        input.unit_type = 'studiostunde';
+        const first = toRange({ low: 350, mid: 450, high: 550 });
+        const follow = toRange({ low: 180, mid: 240, high: 300 });
+        const followCount = Math.max(0, input.session_hours - 1);
+        let range = cloneRange(first);
+        breakdownSteps.push(createBreakdownStep('Session Fee – 1. Stunde', srcFormatCurrency(first.mid), 'base'));
+        if(followCount > 0) {
+            const followAdd = multiplyRange(follow, followCount);
+            range = addRange(range, followAdd);
+            breakdownSteps.push(createBreakdownStep(`Folgestunden (${followCount}x)`, srcFormatSignedCurrency(followAdd.mid), 'add'));
+        }
+        if(input.recording_days > 1) { range = multiplyRange(range, input.recording_days); breakdownSteps.push(createBreakdownStep(`Aufnahmetage (${input.recording_days}x)`, `x${input.recording_days}`, 'multiply')); }
+        return { label: 'Games / Session Fee', baseRange: cloneRange(range), range };
+    };
+
+    const priceExpert = (input, breakdownSteps) => {
+        input.unit_type = 'fah';
+        const fah = Math.max(1, Number(input.minutes || 60) / 60);
+        const perFah = toRange({ low: 220, mid: 280, high: 360 });
+        const minimum = toRange({ low: 300, mid: 350, high: 450 });
+        const calculated = multiplyRange(perFah, fah);
+        const range = { low: Math.max(minimum.low, calculated.low), mid: Math.max(minimum.mid, calculated.mid), high: Math.max(minimum.high, calculated.high) };
+        breakdownSteps.push(createBreakdownStep('Hörbuch / FAH', `${fah.toFixed(2)} FAH`, 'note'));
+        return { label: 'Hörbuch', baseRange: cloneRange(range), range };
+    };
+
+    const applyLicenseAddons = (state, input, priced, breakdownSteps, info) => {
+        let range = cloneRange(priced.range);
+        const licenseLines = [];
+        const addFixed = (label, triple, formula) => {
+            const add = toRange(triple);
+            range = addRange(range, add);
+            breakdownSteps.push(createBreakdownStep(label, srcFormatSignedCurrency(add.mid), 'add'));
+            info.push(createLine(label, add, formula));
+            licenseLines.push(label);
+        };
+        const addMultiplier = (label, factor, formula) => {
+            range = multiplyRange(range, factor);
+            breakdownSteps.push(createBreakdownStep(label, `x${factor}`, 'multiply'));
+            info.push({ label, amount: srcFormatSignedCurrency(Math.round((range.mid / factor) * (factor - 1))), formula, tone: '' });
+            licenseLines.push(label);
+        };
+        if(input.addons.addonTerritories > 0) addMultiplier(`Zusatzterritorien (${input.addons.addonTerritories}x)`, 1 + input.addons.addonTerritories, 'Zusätzliche Territorien gemäß VDS');
+        if(input.addons.addonYears > 0) addMultiplier(`Zusatzjahre (${input.addons.addonYears}x)`, 1 + input.addons.addonYears, 'Zusätzliche Jahre gemäß VDS');
+        if(input.addons.addonMotifs > 0) addMultiplier(`Zusatzmotive (${input.addons.addonMotifs}x)`, 1 + input.addons.addonMotifs, 'Zusätzliche Motive gemäß VDS');
+        if(input.addons.social) addFixed('Social Media', { low: 50, mid: 150, high: 250 }, 'Zusatzlizenz Social Media');
+        if(input.addons.event) addFixed('Präsentationen / Event / POS', { low: 50, mid: 150, high: 250 }, 'Zusatzlizenz Event/POS');
+        if(input.addons.internal) addFixed('Interne Nutzung', { low: 120, mid: 120, high: 120 }, 'Zusatzlizenz intern');
+        if(input.addons.presentation) addFixed('Präsentationen', { low: 120, mid: 150, high: 180 }, 'Zusatzlizenz Präsentation');
+        if(input.addons.archive) addFixed('Archivgage', { low: 325, mid: 385, high: 450 }, 'Archivnutzung');
+        if(input.addons.layout) addFixed('Layoutgage', { low: 250, mid: 300, high: 350 }, 'Layout / Nachgage / Archiv');
+        if(input.addons.patronage) addMultiplier('Patronat', 1.2, 'Patronat / Sponsor-Integration');
+        if(input.addons.reminder) addMultiplier('Reminder', Number(input.addons.reminderFactor || 0.5) / 0.5, 'Reminder gemäß Referenzregel');
+        if(input.addons.followup) addFixed('Nachgage / Zusatzverwertung', priced.range, 'Spätere Zusatzverwertung');
+        if(input.unlimited_usage) {
+            let factor = 1;
+            if(input.duration === 4) factor *= 1.6;
+            if(state?.vdsSpecial?.unlimitedTerritory) factor *= 1.8;
+            if(state?.vdsSpecial?.unlimitedMedia) factor *= 1.5;
+            addMultiplier('Unlimited-Nutzung', factor, 'Unlimited-Faktoren / Expertenfall');
+        }
+        return { range, licenseLines };
+    };
+
+    const buildBreakdown = (baseRange, steps, finalRange, resolved, summaryLabel) => ({
+        base: { min: Math.round(baseRange.low), mid: Math.round(baseRange.mid), max: Math.round(baseRange.high) },
+        steps: steps.concat((resolved.expertFlags || []).map(note => createBreakdownStep('Expertenhinweis', note, 'note'))),
+        final: { min: Math.round(finalRange.low), mid: Math.round(finalRange.mid), max: Math.round(finalRange.high) },
+        summaryLabel
+    });
+
+    const computeSingle = (state) => {
+        const input = buildInput(state);
+        const resolved = applyCrossReference(input);
+        const normalized = resolved.input;
+        const breakdownSteps = [];
+        const info = [];
+        let priced;
+        if(['werbung_mit_bild', 'werbung_ohne_bild'].includes(normalized.family)) {
+            priced = priceAdvertising(normalized, breakdownSteps);
+        } else if(['webvideo_imagefilm_praesentation_unpaid', 'telefonansage', 'elearning_audioguide', 'app', 'podcast', 'kleinraeumig'].includes(normalized.family)) {
+            priced = priceTiered(normalized, breakdownSteps);
+        } else if(['redaktionelle_inhalte_doku_tv_reportagen', 'audiodeskription_ad'].includes(normalized.family)) {
+            priced = priceMinimumPlusPerUnit(normalized, breakdownSteps);
+        } else if(normalized.family === 'games') {
+            priced = priceSession(normalized, breakdownSteps);
+        } else if(normalized.family === 'hoerbuch') {
+            priced = priceExpert(normalized, breakdownSteps);
+        } else {
+            return { handled: false, reason: 'unsupported_case' };
+        }
+        info.push(createLine(`Basisposition ${priced.label}`, priced.baseRange, 'VDS-Core-Engine'));
+        const licensed = applyLicenseAddons(state, normalized, priced, breakdownSteps, info);
+        const finalRange = licensed.range;
+        const breakdown = buildBreakdown(priced.baseRange, breakdownSteps, finalRange, resolved, priced.label);
+        const licenseMeta = []
+            .concat(resolved.redirects || [])
+            .concat(resolved.notes || [])
+            .concat(resolved.expertFlags || [])
+            .concat(licensed.licenseLines || []);
+        const licenseText = [
+            `<div class="src-license-meta"><strong>VDS-Core-Engine:</strong> ${priced.label}</div>`,
+            resolved.redirects.length ? `<div class="src-license-meta"><strong>Querverweise:</strong> ${resolved.redirects.join(' · ')}</div>` : '',
+            licensed.licenseLines.length ? `<div class="src-license-addons"><strong>Zusatzlizenzen:</strong> ${licensed.licenseLines.join(' · ')}</div>` : '',
+            resolved.expertFlags.length ? `<div class="src-license-extra-note">${resolved.expertFlags.join(' ')}</div>` : ''
+        ].join('');
+        return {
+            handled: true,
+            input: normalized,
+            decision: { family: normalized.family, case: normalized.case, visibleFields: getVisibleFields(normalized), redirects: resolved.redirects, notes: resolved.notes },
+            final: rangeToArray(finalRange),
+            info,
+            licenseText,
+            breakdown,
+            licMeta: licenseMeta,
+            guidanceText: `${priced.label} gemäß VDS-Gagenkompass 2025 mit zentraler Regel-Engine.`,
+            extraBlock: '',
+            projectName: priced.label,
+            engine: 'vds-core-2025'
+        };
+    };
+
+    const compute = (state) => {
+        const single = computeSingle(state);
+        if(!single.handled) return single;
+        return single;
+    };
+
+    return { buildInput, applyCrossReference, getVisibleFields, compute };
+}();
+
+const srcApplyVdsVisibilityState = function(state) {
+    const engineResult = SRC_VDS_ENGINE.compute(state);
+    const decision = engineResult && engineResult.decision ? engineResult.decision : null;
+    const visible = new Set((decision && decision.visibleFields) || []);
+    const setWrap = (id, isVisible) => {
+        const el = document.getElementById(id);
+        if(!el) return;
+        el.style.display = isVisible ? '' : 'none';
+    };
+    setWrap('src-price-level-wrap', visible.has('priceLevel'));
+    setWrap('src-vds-routing-wrap', visible.has('paidStatus') || visible.has('usageContext') || visible.has('medium'));
+    const phoneInput = document.getElementById('src-phone-count');
+    if(phoneInput && phoneInput.parentElement) phoneInput.parentElement.style.display = visible.has('phoneCount') ? '' : 'none';
+    ['src-vds-addon-territories','src-vds-addon-years','src-vds-addon-motifs','src-vds-session-hours','src-vds-recording-days','src-vds-reminder-factor'].forEach(id => {
+        const el = document.getElementById(id);
+        if(el && el.parentElement) {
+            const map = {
+                'src-vds-addon-territories': 'addonTerritories',
+                'src-vds-addon-years': 'addonYears',
+                'src-vds-addon-motifs': 'addonMotifs',
+                'src-vds-session-hours': 'sessionHours',
+                'src-vds-recording-days': 'recordingDays',
+                'src-vds-reminder-factor': 'reminderFactor'
+            };
+            el.parentElement.style.display = visible.has(map[id]) ? '' : 'none';
+        }
+    });
+    return decision;
+}
+
 const srcGetAdvancedConfig = function(state) {
     const advanced = state && state.advanced ? state.advanced : {};
     const exclusivityMap = {
@@ -4538,6 +4935,10 @@ const srcApplyAdvancedAdjustments = function(result, state) {
 
 const srcComputeResult = function(state) {
     const primaryKey = state.projectKey;
+    const engineResult = SRC_VDS_ENGINE.compute(state);
+    if(engineResult && engineResult.handled) {
+        return srcApplyAdvancedAdjustments(engineResult, state);
+    }
     if(!primaryKey) {
         return { final: [0,0,0], info: [], licenseText: "", breakdown: null, licMeta: [] };
     }
