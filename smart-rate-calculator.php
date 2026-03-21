@@ -227,6 +227,30 @@ function src_shortcode_output_v7() {
                             <option value="upper">hoher Bereich</option>
                         </select>
                     </div>
+                    <div id="src-vds-routing-wrap" class="src-dependent-field-wrap src-vds-routing" style="display:none;">
+                        <select id="src-vds-paid-status" class="src-select" data-src-change="srcCalc">
+                            <option value="auto" selected>Paid / Unpaid automatisch</option>
+                            <option value="paid">Paid / werblich</option>
+                            <option value="unpaid">Unpaid / organisch</option>
+                        </select>
+                        <select id="src-vds-usage-context" class="src-select" data-src-change="srcCalc">
+                            <option value="standard" selected>Nutzung / Verwertung</option>
+                            <option value="marketing_public">Öffentlich / Marketing</option>
+                            <option value="internal">Intern / Schulung</option>
+                            <option value="promotional">Werblich / Promotion</option>
+                            <option value="service">Service / funktional</option>
+                        </select>
+                        <select id="src-vds-medium" class="src-select" data-src-change="srcCalc">
+                            <option value="standard" selected>Medium / Ausspielung</option>
+                            <option value="online_audio">Online Audio</option>
+                            <option value="telefonie">Telefon / IVR</option>
+                            <option value="inapp_ads">In-App Ads</option>
+                            <option value="podcast_ads">Podcast werblich</option>
+                            <option value="elearning_public">E-Learning öffentlich</option>
+                            <option value="games_promotional">Games werblich</option>
+                            <option value="presentation">Präsentation</option>
+                        </select>
+                    </div>
                     <span class="src-top-sub">Was wird produziert?</span>
                 </div>
                 
@@ -370,6 +394,56 @@ function src_shortcode_output_v7() {
                     <label style="font-size:13px; font-weight:700; color:var(--src-primary); display:block; margin-bottom:5px;">Anzahl der Module / Ansagen</label>
                     <input type="number" id="src-phone-count" class="src-input-text" value="1" min="1" data-src-input="srcCalc">
                     <div style="font-size:11px; color:#64748b; margin-top:5px;">Bis zu 3 Module sind in der Pauschale enthalten. Jedes weitere Modul kostet extra.</div>
+                </div>
+            </div>
+
+            <div id="src-vds-special-wrap" class="src-slide-wrap">
+                <div class="src-light-box-wrapper">
+                    <div class="src-section-title"><i class="fa-solid fa-diagram-project" aria-hidden="true"></i> VDS-Sonderlogik</div>
+                    <div class="src-vds-special-grid">
+                        <label class="src-complexity-field">
+                            <span>Zusatzterritorien</span>
+                            <input type="number" id="src-vds-addon-territories" class="src-input-compact" min="0" value="0" data-src-input="srcCalc">
+                        </label>
+                        <label class="src-complexity-field">
+                            <span>Zusatzjahre</span>
+                            <input type="number" id="src-vds-addon-years" class="src-input-compact" min="0" value="0" data-src-input="srcCalc">
+                        </label>
+                        <label class="src-complexity-field">
+                            <span>Zusatzmotive</span>
+                            <input type="number" id="src-vds-addon-motifs" class="src-input-compact" min="0" value="0" data-src-input="srcCalc">
+                        </label>
+                        <label class="src-complexity-field">
+                            <span>Session-/Studiostunden</span>
+                            <input type="number" id="src-vds-session-hours" class="src-input-compact" min="1" value="1" data-src-input="srcCalc">
+                        </label>
+                        <label class="src-complexity-field">
+                            <span>Aufnahmetage</span>
+                            <input type="number" id="src-vds-recording-days" class="src-input-compact" min="1" value="1" data-src-input="srcCalc">
+                        </label>
+                        <label class="src-complexity-field">
+                            <span>Paketfaktor / Motive im Paket</span>
+                            <input type="number" id="src-vds-package-count" class="src-input-compact" min="1" value="1" data-src-input="srcCalc">
+                        </label>
+                        <label class="src-complexity-field">
+                            <span>Reminder-Satz</span>
+                            <select id="src-vds-reminder-factor" class="src-select" data-src-change="srcCalc">
+                                <option value="0.5">50%</option>
+                                <option value="0.75" selected>75%</option>
+                                <option value="1">100%</option>
+                            </select>
+                        </label>
+                    </div>
+                    <div class="src-vds-flags">
+                        <label><input type="checkbox" id="src-vds-addon-archive"> Archivgage</label>
+                        <label><input type="checkbox" id="src-vds-addon-social"> Social Media Zusatzrecht</label>
+                        <label><input type="checkbox" id="src-vds-addon-presentation"> Präsentationsnutzung</label>
+                        <label><input type="checkbox" id="src-vds-addon-patronage"> Patronat</label>
+                        <label><input type="checkbox" id="src-vds-addon-followup"> spätere Zusatzverwertung / Nachgage</label>
+                        <label><input type="checkbox" id="src-vds-unlimited-time"> zeitlich unbegrenzt</label>
+                        <label><input type="checkbox" id="src-vds-unlimited-territory"> räumlich unbegrenzt</label>
+                        <label><input type="checkbox" id="src-vds-unlimited-media"> medial unbegrenzt</label>
+                    </div>
                 </div>
             </div>
         </div>
