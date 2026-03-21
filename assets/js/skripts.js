@@ -24,6 +24,8 @@ window.srcLicenseSocialLevel = 'mid';
 window.srcLicenseEventLevel = 'mid';
 window.srcCurrencyCode = 'EUR';
 window.srcFxRates = { CHF: 1, USD: 1 };
+let srcFxRatesPromise = null;
+let srcFxLoadWarningShown = false;
 const SRC_CURRENCY_STORAGE_KEY = 'src_currency';
 const SRC_CURRENCY_FORMAT_LOCALE = 'de-DE';
 
@@ -477,32 +479,72 @@ const srcRestoreCurrencyPreference = function() {
     }
 }
 
-async function srcLoadFxRates(){
-    try {
-        if(!window.SRC_CALC || !SRC_CALC.rest_fx_url) return { CHF: 1, USD: 1 };
-        const res = await fetch(SRC_CALC.rest_fx_url, { credentials: 'same-origin' });
-        if(!res || !res.ok) {
-            throw new Error(`FX request failed with status ${res ? res.status : 'unknown'}`);
-        }
-        const data = await res.json();
+async function srcLoadFxRates(forceReload = false){
+    if(!forceReload && srcFxRatesPromise) {
+        return srcFxRatesPromise;
+    }
 
-        if(data && Number.isFinite(Number(data.CHF)) && Number.isFinite(Number(data.USD))) {
-            window.srcFxRates = { CHF: Number(data.CHF), USD: Number(data.USD) };
+    srcFxRatesPromise = (async () => {
+        const fallbackRates = {
+            CHF: Number.isFinite(Number(window.srcFxRates?.CHF)) ? Number(window.srcFxRates.CHF) : 1,
+            USD: Number.isFinite(Number(window.srcFxRates?.USD)) ? Number(window.srcFxRates.USD) : 1
+        };
+
+        try {
+            if(!window.SRC_CALC || !SRC_CALC.rest_fx_url) {
+                throw new Error('FX endpoint missing.');
+            }
+            const res = await fetch(SRC_CALC.rest_fx_url, { credentials: 'same-origin' });
+            if(!res || !res.ok) {
+                throw new Error(`FX request failed with status ${res ? res.status : 'unknown'}`);
+            }
+            const data = await res.json();
+            const chf = Number(data?.CHF);
+            const usd = Number(data?.USD);
+
+            if(Number.isFinite(chf) && Number.isFinite(usd)) {
+                window.srcFxRates = { CHF: chf, USD: usd };
+                srcFxLoadWarningShown = false;
+                return window.srcFxRates;
+            }
+
+            throw new Error('FX payload missing CHF/USD rates.');
+        } catch (error) {
+            if(!srcFxLoadWarningShown) {
+                console.warn('SRC: FX-Rates konnten nicht aktualisiert werden. Bestehende Werte werden weiter verwendet.', error);
+                srcFxLoadWarningShown = true;
+            }
+            window.srcFxRates = fallbackRates;
             return window.srcFxRates;
+        } finally {
+            srcFxRatesPromise = null;
         }
-    } catch (e) {}
-    window.srcFxRates = { CHF: 1, USD: 1 };
-    return window.srcFxRates;
+    })();
+
+    return srcFxRatesPromise;
 }
 
 window.srcSetCurrency = async function(curr) {
     const next = (curr === 'CHF' || curr === 'USD') ? curr : 'EUR';
+    const prev = srcGetCurrencyCode();
     window.srcCurrencyCode = next;
     srcSafeStorage.set(SRC_CURRENCY_STORAGE_KEY, window.srcCurrencyCode);
     srcSetCurrencyButtonsState(window.srcCurrencyCode);
-    if(window.srcCurrencyCode !== 'EUR') {
-        await srcLoadFxRates();
+
+    if(next === 'EUR') {
+        srcCalc();
+        if(packagesState) srcRenderPackages();
+        return;
     }
+
+    const hasUsableRates = Number.isFinite(Number(window.srcFxRates?.[next])) && Number(window.srcFxRates[next]) > 0;
+    if(hasUsableRates || prev !== next) {
+        srcCalc();
+        if(packagesState) srcRenderPackages();
+    }
+
+    await srcLoadFxRates(!hasUsableRates);
+    if(srcGetCurrencyCode() !== next) return;
     srcCalc();
     if(packagesState) srcRenderPackages();
 };
@@ -531,13 +573,13 @@ let srcGlossaryTooltipTarget = null;
 let srcGlossaryTooltipMoveHandlerBound = false;
 
 
-const srcTriggerNamedHandler = function(handlerName, context = null) {
-    if(!handlerName || typeof window[handlerName] !== 'function') return;
-    if(handlerName === 'toggleAccordion') {
-        window[handlerName](context);
+const srcTriggerNamedHandler = function(handlerName, context = null, event = null) {
+    if(!handlerName) return;
+    if(typeof window[handlerName] !== 'function') {
+        console.warn(`SRC: Declarative handler "${handlerName}" wurde nicht gefunden.`);
         return;
     }
-    window[handlerName]();
+    window[handlerName](context, event);
 }
 
 const srcBindDeclarativeMarkupEvents = function(root = document) {
@@ -546,19 +588,19 @@ const srcBindDeclarativeMarkupEvents = function(root = document) {
     root.querySelectorAll('[data-src-click]').forEach((el) => {
         if(el.dataset.srcClickBound === 'true') return;
         el.dataset.srcClickBound = 'true';
-        el.addEventListener('click', () => srcTriggerNamedHandler(el.getAttribute('data-src-click'), el));
+        el.addEventListener('click', (event) => srcTriggerNamedHandler(el.getAttribute('data-src-click'), el, event));
     });
 
     root.querySelectorAll('[data-src-change]').forEach((el) => {
         if(el.dataset.srcChangeBound === 'true') return;
         el.dataset.srcChangeBound = 'true';
-        el.addEventListener('change', () => srcTriggerNamedHandler(el.getAttribute('data-src-change'), el));
+        el.addEventListener('change', (event) => srcTriggerNamedHandler(el.getAttribute('data-src-change'), el, event));
     });
 
     root.querySelectorAll('[data-src-input]').forEach((el) => {
         if(el.dataset.srcInputBound === 'true') return;
         el.dataset.srcInputBound = 'true';
-        el.addEventListener('input', () => srcTriggerNamedHandler(el.getAttribute('data-src-input'), el));
+        el.addEventListener('input', (event) => srcTriggerNamedHandler(el.getAttribute('data-src-input'), el, event));
     });
 }
 
@@ -572,6 +614,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if(iconUrl){
         document.documentElement.style.setProperty('--src-check-icon', `url("${iconUrl}")`);
     }
+
+    // DATEN IMPORTIEREN (Vom PHP übergeben)
+    if(typeof srcPluginData !== 'undefined' && srcPluginData.rates) {
+        srcRatesData = srcNormalizeRatesData(srcPluginData.rates);
+    } else {
+        console.error("SRC: Keine Preisdaten geladen.");
+    }
+
     srcBindDeclarativeMarkupEvents();
     srcRestoreCurrencyPreference();
     srcSetCurrencyButtonsState(window.srcCurrencyCode);
@@ -581,16 +631,8 @@ document.addEventListener('DOMContentLoaded', () => {
             btn.addEventListener('click', () => srcSetCurrency(btn.getAttribute('data-currency') || 'EUR'));
         });
     }
-    if(srcGetCurrencyCode() !== 'EUR') {
-        srcLoadFxRates().then(() => srcCalc());
-    }
 
-    // DATEN IMPORTIEREN (Vom PHP übergeben)
-    if(typeof srcPluginData !== 'undefined' && srcPluginData.rates) {
-        srcRatesData = srcNormalizeRatesData(srcPluginData.rates);
-    } else {
-        console.error("SRC: Keine Preisdaten geladen.");
-    }
+    const initialFxPromise = srcLoadFxRates();
 
     // Initial state logic
     srcSyncOptionRowStates();
@@ -845,12 +887,19 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('resize', scheduleStickyOffsetUpdate);
     window.addEventListener('scroll', scheduleStickyOffsetUpdate, { passive: true });
 
-    // Erster UI Check
-    const restoredState = srcRestoreStateFromStorage();
-    if(!restoredState) {
-        srcUIUpdate();
+    const finalizeInitialRender = function() {
+        const restoredState = srcRestoreStateFromStorage();
+        if(!restoredState) {
+            srcUIUpdate();
+        }
+        srcAuditRatesAgainstVDS();
+    };
+
+    if(srcGetCurrencyCode() === 'EUR') {
+        finalizeInitialRender();
+    } else {
+        initialFxPromise.finally(finalizeInitialRender);
     }
-    srcAuditRatesAgainstVDS();
 });
 
 const srcInitGlossaryTooltips = function() {
