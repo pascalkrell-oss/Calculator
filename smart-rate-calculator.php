@@ -25,23 +25,17 @@ function src_enqueue_assets_v7() {
     }
 
     wp_enqueue_style(
-        'src-rubik-font',
-        'https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700&display=swap',
-        array(),
-        null
-    );
-    wp_enqueue_style(
         'src-font-awesome',
         SRC_PLUGIN_URL . 'assets/vendor/fontawesome/css/all.min.css',
         array(),
         '6.7.2'
     );
 
-    // CSS laden
+    // CSS laden – nur lokale Plugin-Assets, keine externen Font-/CDN-Abhängigkeiten.
     wp_enqueue_style(
-        'src-styles', 
-        SRC_PLUGIN_URL . 'assets/css/style.css', 
-        array('src-rubik-font', 'src-font-awesome'), 
+        'src-styles',
+        SRC_PLUGIN_URL . 'assets/css/style.css',
+        array('src-font-awesome'),
         SRC_PLUGIN_VERSION
     );
 

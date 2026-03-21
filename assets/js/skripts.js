@@ -680,6 +680,20 @@ const srcGetFxRate = function(currencyCode) {
     return (Number.isFinite(rate) && rate > 0) ? rate : 1;
 }
 
+const srcConvertAmountFromEURForCurrency = function(value, currencyCode) {
+    if(!Number.isFinite(value)) return value;
+    const normalized = String(currencyCode || 'EUR').toUpperCase();
+    return value * srcGetFxRate(normalized);
+}
+
+const srcConvertAmountToEURFromCurrency = function(value, currencyCode) {
+    if(!Number.isFinite(value)) return value;
+    const normalized = String(currencyCode || 'EUR').toUpperCase();
+    const rate = srcGetFxRate(normalized);
+    if(!Number.isFinite(rate) || rate <= 0) return value;
+    return value / rate;
+}
+
 const srcIsUsd = function() {
     return srcGetCurrencyCode() === 'USD';
 }
@@ -4428,6 +4442,49 @@ const SRC_VDS_ENGINE_FIELD_RULES = {
     medium: { families: ['werbung_mit_bild', 'werbung_ohne_bild', 'telefonansage', 'elearning_audioguide', 'podcast', 'games', 'app'] }
 };
 
+
+const srcGetEngineCasePricing = function(caseKey) {
+    const caseConfig = srcResolveCaseConfig(caseKey);
+    return caseConfig && caseConfig.pricing ? caseConfig.pricing : null;
+}
+
+const srcGetEngineAdvertisingVariantRange = function(caseKey, variantKey) {
+    const caseConfig = srcResolveCaseConfig(caseKey);
+    if(!caseConfig) return null;
+    const variants = Array.isArray(caseConfig.variants) ? caseConfig.variants : [];
+    if(variants.length) {
+        const variant = variants.find(entry => entry && entry.key === variantKey) || variants[0];
+        if(variant) {
+            return {
+                label: variant.label || variant.key || caseConfig.name || caseKey,
+                range: { low: Number(variant.lower || 0), mid: Number(variant.middle || 0), high: Number(variant.upper || 0) }
+            };
+        }
+    }
+    const pricing = caseConfig.pricing || {};
+    const base = Array.isArray(pricing.base) ? pricing.base : [0, 0, 0];
+    return {
+        label: caseConfig.name || caseKey,
+        range: { low: Number(base[0] || 0), mid: Number(base[1] || 0), high: Number(base[2] || 0) }
+    };
+}
+
+const srcGetEngineFixedAddonRange = function(addonKey, projectKey, fallbackRange) {
+    const projectData = (projectKey && srcRatesData && srcRatesData[projectKey]) ? srcRatesData[projectKey] : {};
+    const extras = projectData.license_extras || {};
+    let source = null;
+    if(addonKey === 'internal_use') {
+        const internalRaw = extras.internal_use;
+        source = Array.isArray(internalRaw)
+            ? internalRaw
+            : (Number.isFinite(Number(internalRaw)) ? [Number(internalRaw), Number(internalRaw), Number(internalRaw)] : fallbackRange);
+    } else {
+        source = srcGetLicenseExtraAmount(extras, addonKey) || srcGetAddonPriceConfig(projectKey)[addonKey] || fallbackRange;
+    }
+    const list = srcNormalizeAddonPriceTriple(source, addonKey);
+    return { low: Number(list[0] || 0), mid: Number(list[1] || 0), high: Number(list[2] || 0) };
+}
+
 const srcCreateVdsEngine = function() {
     const priceLevelIdx = { lower: 'low', middle: 'mid', upper: 'high' };
     const territoryFactorMap = { regional: 0.8, national: 1, dach: 2.5, world: 4 };
@@ -4544,7 +4601,7 @@ const srcCreateVdsEngine = function() {
         if(out.projectKey === 'phone' && out.usage_context === 'service') notes.push('Reine Telefonansage bleibt im Case Telefonansage.');
         if(out.projectKey === 'elearning' && out.usage_context === 'internal') notes.push('Internes E-Learning bleibt im E-Learning-Case.');
         if(out.projectKey === 'elearning' && ['marketing_public', 'promotional'].includes(out.usage_context)) redirect('webvideo_imagefilm_praesentation_unpaid', 'imagefilm', 'Öffentliches / marketingbezogenes E-Learning → Imagefilm / Webvideo');
-        if(out.projectKey === 'podcast' && ['promotional'].includes(out.usage_context)) redirect('werbung_ohne_bild', 'funk_spot', 'Werblicher Podcast-Fall → Werbung ohne Bild');
+        if(out.projectKey === 'podcast' && ['promotional'].includes(out.usage_context)) redirect('werbung_ohne_bild', 'radio', 'Werblicher Podcast-Fall → Werbung ohne Bild');
         if(out.projectKey === 'games' && ['promotional'].includes(out.usage_context)) redirect('werbung_mit_bild', 'online_video_spot', 'Werbliche Games-Verwertung → Werbung mit Bild');
         if(out.unlimited_usage) expertFlags.push('Unlimited usage benötigt VDS-Expert*innenprüfung; Faktor als transparente Vorschlagskalkulation.');
         if(out.family === 'hoerbuch') expertFlags.push('Hörbuch bleibt eine VDS-Vorschlagskalkulation auf FAH-Basis.');
@@ -4570,21 +4627,16 @@ const srcCreateVdsEngine = function() {
     const createBreakdownStep = (label, amountOrFactor, effectOnRange = 'add') => ({ label, amountOrFactor, effectOnRange });
 
     const priceAdvertising = (input, breakdownSteps) => {
-        const adCases = {
-            online_video_spot: { label: 'Online Video Spot', variants: { paid_media: { low: 600, mid: 700, high: 800 }, archivgage: { low: 325, mid: 385, high: 450 } } },
-            linearer_tv_spot: { label: 'Linearer TV Spot', variants: { national: { low: 600, mid: 700, high: 800 }, regional: { low: 500, mid: 550, high: 600 } } },
-            kino_spot: { label: 'Kino Spot', variants: { national: { low: 600, mid: 700, high: 800 }, regional: { low: 500, mid: 550, high: 600 } } },
-            tv_patronat: { label: 'TV Patronat', variants: { national: { low: 600, mid: 700, high: 800 } } },
-            atv_ctv_video_spot: { label: 'ATV/CTV Video Spot', variants: { national: { low: 600, mid: 700, high: 800 } } },
-            telefon_werbespot: { label: 'Telefon-Werbespot', variants: { national: { low: 450, mid: 500, high: 550 } } },
-            funk_spot: { label: 'Funkspot', variants: { national: { low: 450, mid: 500, high: 550 } } },
-            radio: { label: 'Funkspot', variants: { national: { low: 450, mid: 500, high: 550 } } },
-            pos_spot: { label: 'POS Spot', variants: { national: { low: 600, mid: 700, high: 800 } } }
-        };
-        const caseConfig = adCases[input.case] || adCases[input.projectKey] || adCases.online_video_spot;
-        const variantKey = input.case === 'online_video_spot' && input.addons.archive ? 'archivgage' : (input.territory === 'regional' && caseConfig.variants.regional ? 'regional' : 'national');
-        let range = toRange(caseConfig.variants[variantKey] || caseConfig.variants.national);
-        breakdownSteps.push(createBreakdownStep(`Basis ${caseConfig.label}${variantKey ? ` · ${variantKey}` : ''}`, srcFormatCurrency(range.mid), 'base'));
+        const isArchivedOnlineSpot = input.case === 'online_video_spot' && input.addons.archive;
+        const variantKey = isArchivedOnlineSpot ? 'archivgage' : (input.territory === 'regional' ? 'regional' : 'national');
+        const resolvedVariant = srcGetEngineAdvertisingVariantRange(input.case, variantKey) || srcGetEngineAdvertisingVariantRange(input.projectKey, variantKey);
+        const fallbackLabel = input.case === 'telefon_werbespot' ? 'Telefon-Werbespot' : 'Funkspot';
+        const fallbackRange = input.case === 'telefon_werbespot'
+            ? { low: 450, mid: 500, high: 550 }
+            : { low: 450, mid: 500, high: 550 };
+        const caseLabel = resolvedVariant && resolvedVariant.label ? resolvedVariant.label : fallbackLabel;
+        let range = toRange(resolvedVariant && resolvedVariant.range ? resolvedVariant.range : fallbackRange);
+        breakdownSteps.push(createBreakdownStep(`Basis ${caseLabel}${variantKey ? ` · ${variantKey}` : ''}`, srcFormatCurrency(range.mid), 'base'));
         if(input.language === 'en') { range = multiplyRange(range, 1.3); breakdownSteps.push(createBreakdownStep('Sprache Englisch', 'x1.3', 'multiply')); }
         if(input.language === 'other') { range = multiplyRange(range, 1.5); breakdownSteps.push(createBreakdownStep('Sprache Fremdsprache', 'x1.5', 'multiply')); }
         if(input.case !== 'telefon_werbespot' && input.case !== 'funk_spot' && input.case !== 'radio') {
@@ -4594,22 +4646,23 @@ const srcCreateVdsEngine = function() {
         if(input.duration > 1 && input.duration < 4) { range = multiplyRange(range, input.duration); breakdownSteps.push(createBreakdownStep(`Laufzeit ${input.duration} Jahre`, `x${input.duration}`, 'multiply')); }
         if(input.addons.packageType === 'online_audio') { range = multiplyRange(range, 1.6); breakdownSteps.push(createBreakdownStep('Paket Online Audio', 'x1.6', 'multiply')); }
         if(input.addons.packageType === 'atv_ctv') { range = multiplyRange(range, 1.6); breakdownSteps.push(createBreakdownStep('Paket ATV/CTV', 'x1.6', 'multiply')); }
-        return { label: caseConfig.label, baseRange: cloneRange(range), range };
+        return { label: caseLabel, baseRange: cloneRange(range), range };
     };
 
     const priceTiered = (input, breakdownSteps) => {
         const unitMinutes = Math.max(0.1, Number(input.minutes || 0));
-        const tierMap = {
-            imagefilm: { label: 'Imagefilm / Webvideo', tiers: [{ limit: 2, range: { low: 300, mid: 350, high: 400 } }, { limit: 5, range: { low: 350, mid: 450, high: 500 } }], extra: { low: 60, mid: 75, high: 90 }, extra_after: 5, extra_unit: 1, unit_type: 'minute' },
-            webvideo_unpaid: { label: 'Webvideo Unpaid', tiers: [{ limit: 2, range: { low: 300, mid: 350, high: 400 } }, { limit: 5, range: { low: 350, mid: 450, high: 500 } }], extra: { low: 60, mid: 75, high: 90 }, extra_after: 5, extra_unit: 1, unit_type: 'minute' },
-            explainer: { label: 'Erklärvideo', tiers: [{ limit: 2, range: { low: 300, mid: 350, high: 400 } }, { limit: 5, range: { low: 350, mid: 450, high: 500 } }], extra: { low: 60, mid: 75, high: 90 }, extra_after: 5, extra_unit: 1, unit_type: 'minute' },
-            presentation_unpaid: { label: 'Präsentation', tiers: [{ limit: 5, range: { low: 300, mid: 350, high: 400 } }], extra: { low: 60, mid: 75, high: 90 }, extra_after: 5, extra_unit: 5, unit_type: 'minute' },
-            elearning_intern: { label: 'E-Learning intern', tiers: [{ limit: 5, range: { low: 300, mid: 350, high: 400 } }], extra: { low: 60, mid: 75, high: 90 }, extra_after: 5, extra_unit: 5, unit_type: 'minute' },
-            audioguide: { label: 'Audioguide', tiers: [{ limit: 5, range: { low: 300, mid: 350, high: 400 } }], extra: { low: 60, mid: 75, high: 90 }, extra_after: 5, extra_unit: 5, unit_type: 'minute' },
-            kleinraeumig: { label: 'Kleinräumige Nutzung', tiers: [{ limit: 2, range: { low: 180, mid: 240, high: 300 } }, { limit: 5, range: { low: 240, mid: 300, high: 360 } }], extra: { low: 40, mid: 55, high: 70 }, extra_after: 5, extra_unit: 1, unit_type: 'minute' },
-            telefonansage: { label: 'Telefonansage', tiers: [{ limit: 3, range: { low: 180, mid: 240, high: 300 } }], extra: { low: 50, mid: 60, high: 70 }, extra_after: 3, extra_unit: 1, unit_type: 'modul' }
+        const pricing = srcGetEngineCasePricing(input.case) || srcGetEngineCasePricing(input.projectKey) || {};
+        const config = {
+            label: (srcResolveCaseConfig(input.case) || srcResolveCaseConfig(input.projectKey) || {}).name || 'Imagefilm / Webvideo',
+            tiers: Array.isArray(pricing.tiers) ? pricing.tiers.map(tier => ({
+                limit: Number(tier.limit || 0),
+                range: { low: Number(tier.p?.[0] || 0), mid: Number(tier.p?.[1] || 0), high: Number(tier.p?.[2] || 0) }
+            })) : [{ limit: 5, range: { low: 300, mid: 350, high: 400 } }],
+            extra: toRange(Array.isArray(pricing.extra) ? pricing.extra : [60, 75, 90]),
+            extra_after: Number(pricing.extra_after || 5),
+            extra_unit: Number(pricing.extra_unit || 1),
+            unit_type: pricing.unit === 'modules' ? 'modul' : 'minute'
         };
-        const config = tierMap[input.case] || tierMap[input.projectKey] || tierMap.imagefilm;
         const unitType = config.unit_type;
         input.unit_type = unitType === 'modul' ? 'modul' : 'minute';
         const units = unitType === 'modul' ? input.phone_count : unitMinutes;
@@ -4630,8 +4683,9 @@ const srcCreateVdsEngine = function() {
     const priceMinimumPlusPerUnit = (input, breakdownSteps) => {
         input.unit_type = 'netto_sendeminute';
         const label = input.projectKey === 'audiodescription' ? 'Audiodeskription' : 'Doku / Redaktion';
-        const minimum = toRange({ low: 150, mid: 250, high: 350 });
-        const perUnit = toRange({ low: 10, mid: 15, high: 20 });
+        const pricing = srcGetEngineCasePricing(input.case) || srcGetEngineCasePricing(input.projectKey) || {};
+        const minimum = toRange(Array.isArray(pricing.min) ? pricing.min : { low: 150, mid: 250, high: 350 });
+        const perUnit = toRange(Array.isArray(pricing.per_min) ? pricing.per_min : { low: 10, mid: 15, high: 20 });
         const units = Math.max(1, Number(input.minutes || 0));
         const extraUnits = Math.max(0, units - 1);
         let range = addRange(minimum, multiplyRange(perUnit, extraUnits));
@@ -4642,8 +4696,9 @@ const srcCreateVdsEngine = function() {
 
     const priceSession = (input, breakdownSteps) => {
         input.unit_type = 'studiostunde';
-        const first = toRange({ low: 350, mid: 450, high: 550 });
-        const follow = toRange({ low: 180, mid: 240, high: 300 });
+        const sessionDefaults = input.projectKey === 'session_fee_recording' ? SRC_VDS_DEFAULT_EXTRAS.sessionFee : SRC_VDS_DEFAULT_EXTRAS.games;
+        const first = toRange({ low: sessionDefaults.firstHour[0], mid: sessionDefaults.firstHour[1], high: sessionDefaults.firstHour[2] });
+        const follow = toRange({ low: sessionDefaults.followHour[0], mid: sessionDefaults.followHour[1], high: sessionDefaults.followHour[2] });
         const followCount = Math.max(0, input.session_hours - 1);
         let range = cloneRange(first);
         breakdownSteps.push(createBreakdownStep('Session Fee – 1. Stunde', srcFormatCurrency(first.mid), 'base'));
@@ -4659,8 +4714,8 @@ const srcCreateVdsEngine = function() {
     const priceExpert = (input, breakdownSteps) => {
         input.unit_type = 'fah';
         const fah = Math.max(1, Number(input.minutes || 60) / 60);
-        const perFah = toRange({ low: 220, mid: 280, high: 360 });
-        const minimum = toRange({ low: 300, mid: 350, high: 450 });
+        const perFah = toRange({ low: SRC_VDS_DEFAULT_EXTRAS.audiobook.perFah[0], mid: SRC_VDS_DEFAULT_EXTRAS.audiobook.perFah[1], high: SRC_VDS_DEFAULT_EXTRAS.audiobook.perFah[2] });
+        const minimum = toRange({ low: SRC_VDS_DEFAULT_EXTRAS.audiobook.minimum[0], mid: SRC_VDS_DEFAULT_EXTRAS.audiobook.minimum[1], high: SRC_VDS_DEFAULT_EXTRAS.audiobook.minimum[2] });
         const calculated = multiplyRange(perFah, fah);
         const range = { low: Math.max(minimum.low, calculated.low), mid: Math.max(minimum.mid, calculated.mid), high: Math.max(minimum.high, calculated.high) };
         breakdownSteps.push(createBreakdownStep('Hörbuch / FAH', `${fah.toFixed(2)} FAH`, 'note'));
@@ -4686,10 +4741,10 @@ const srcCreateVdsEngine = function() {
         if(input.addons.addonTerritories > 0) addMultiplier(`Zusatzterritorien (${input.addons.addonTerritories}x)`, 1 + input.addons.addonTerritories, 'Zusätzliche Territorien gemäß VDS');
         if(input.addons.addonYears > 0) addMultiplier(`Zusatzjahre (${input.addons.addonYears}x)`, 1 + input.addons.addonYears, 'Zusätzliche Jahre gemäß VDS');
         if(input.addons.addonMotifs > 0) addMultiplier(`Zusatzmotive (${input.addons.addonMotifs}x)`, 1 + input.addons.addonMotifs, 'Zusätzliche Motive gemäß VDS');
-        if(input.addons.social) addFixed('Social Media', { low: 50, mid: 150, high: 250 }, 'Zusatzlizenz Social Media');
-        if(input.addons.event) addFixed('Präsentationen / Event / POS', { low: 50, mid: 150, high: 250 }, 'Zusatzlizenz Event/POS');
-        if(input.addons.internal) addFixed('Interne Nutzung', { low: 120, mid: 120, high: 120 }, 'Zusatzlizenz intern');
-        if(input.addons.presentation) addFixed('Präsentationen', { low: 120, mid: 150, high: 180 }, 'Zusatzlizenz Präsentation');
+        if(input.addons.social) addFixed('Social Media', srcGetEngineFixedAddonRange('social_organic', state.projectKey, [50, 150, 250]), 'Zusatzlizenz Social Media');
+        if(input.addons.event) addFixed('Präsentationen / Event / POS', srcGetEngineFixedAddonRange('event_pos', state.projectKey, [50, 150, 250]), 'Zusatzlizenz Event/POS');
+        if(input.addons.internal) addFixed('Interne Nutzung', srcGetEngineFixedAddonRange('internal_use', state.projectKey, [120, 120, 120]), 'Zusatzlizenz intern');
+        if(input.addons.presentation) addFixed('Präsentationen', { low: 80, mid: 150, high: 250 }, 'Zusatzlizenz Präsentation');
         if(input.addons.archive) addFixed('Archivgage', { low: 325, mid: 385, high: 450 }, 'Archivnutzung');
         if(input.addons.layout) addFixed('Layoutgage', { low: 250, mid: 300, high: 350 }, 'Layout / Nachgage / Archiv');
         if(input.addons.patronage) addMultiplier('Patronat', 1.2, 'Patronat / Sponsor-Integration');
@@ -5153,14 +5208,14 @@ window.srcGeneratePDFv6 = async function(options = {}) {
     const subjectText = extraSettings.offerSubject || i18n.subject;
 
     const exportCurrency = extraSettings.exportCurrency || 'EUR';
-    let priceValue = Number.isFinite(extraSettings.customFee) ? extraSettings.customFee : result.final[1];
+    let priceValue = Number.isFinite(extraSettings.customFee) ? extraSettings.customFee : srcConvertAmountFromEURForCurrency(result.final[1], exportCurrency);
     let packageLabel = '';
     if(pricingMode === 'package') {
         if(!packagesState) {
             packagesState = srcBuildPackages(state);
         }
         const pkg = packagesState[selectedPackage] || packagesState.standard;
-        priceValue = parseFloat(pkg.price) || 0;
+        priceValue = srcConvertAmountFromEURForCurrency(parseFloat(pkg.price) || 0, exportCurrency);
         packageLabel = pkg.label;
     }
 
@@ -5436,7 +5491,7 @@ window.srcGeneratePDFv6 = async function(options = {}) {
         rightsY += SP_4;
 
         addonEntries.forEach(entry => {
-            const amount = Number.isFinite(entry.amount) ? srcFormatCurrencyForExport(entry.amount, exportCurrency) : '';
+            const amount = Number.isFinite(entry.amount) ? srcFormatCurrencyForExport(srcConvertAmountFromEURForCurrency(entry.amount, exportCurrency), exportCurrency) : '';
             const leftText = `• ${srcStripAddonLevelLabel(entry.name)}`;
             const amountW = amount ? doc.getTextWidth(amount) + SP_2 : 0;
             const leftMax = CONTENT_W - (BOX_PAD * 2) - amountW;
@@ -5504,7 +5559,7 @@ window.srcGeneratePDFv6 = async function(options = {}) {
     currentY = alignToGrid(currentY + summaryH + SP_8);
 
     if(includeBreakdown && currentBreakdownData) {
-        const breakdownLines = [`Basis: ${srcFormatCurrencyForExport(currentBreakdownData.base.mid, exportCurrency)}`].concat(currentBreakdownData.steps.map(step => `${srcStripAddonLevelLabel(srcStripHTML(step.label))}: ${srcStripHTML(step.amountOrFactor)}`));
+        const breakdownLines = [`Basis: ${srcFormatCurrencyForExport(srcConvertAmountFromEURForCurrency(currentBreakdownData.base.mid, exportCurrency), exportCurrency)}`].concat(currentBreakdownData.steps.map(step => `${srcStripAddonLevelLabel(srcStripHTML(step.label))}: ${srcStripHTML(step.amountOrFactor)}`));
         const wrapped = wrapText(breakdownLines.join('\n'), CONTENT_W - (BOX_PAD * 2));
         const boxH = alignToGrid(BOX_PAD + SP_2 + (wrapped.length * 4.2) + BOX_PAD);
         ensurePageSpace(boxH + SP_6);
