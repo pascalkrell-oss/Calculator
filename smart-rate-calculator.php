@@ -32,7 +32,7 @@ function src_enqueue_assets_v7() {
     );
     wp_enqueue_style(
         'src-font-awesome',
-        content_url( 'assets/fontawesome/css/all.min.css' ),
+        SRC_PLUGIN_URL . 'assets/vendor/fontawesome/css/all.min.css',
         array(),
         '6.7.2'
     );
@@ -48,14 +48,14 @@ function src_enqueue_assets_v7() {
     // Lokale PDF Libraries
     wp_enqueue_script(
         'jspdf',
-        content_url( 'assets/jspdf/jspdf.umd.min.js' ),
+        SRC_PLUGIN_URL . 'assets/vendor/jspdf/jspdf.umd.min.js',
         array(),
         '2.5.1',
         true
     );
     wp_enqueue_script(
         'jspdf-autotable',
-        content_url( 'assets/jspdf/jspdf.plugin.autotable.js' ),
+        SRC_PLUGIN_URL . 'assets/vendor/jspdf/jspdf.plugin.autotable.min.js',
         array( 'jspdf' ),
         '3.5.28',
         true
