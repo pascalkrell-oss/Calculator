@@ -1,0 +1,835 @@
+{
+  "meta": {
+    "id": "vds-gagenkompass-2025-blueprint",
+    "version": "2025.1-foundation",
+    "source": "VDS Gagenkompass 2025",
+    "purpose": "Fachliches Mapping- und Regelmodell für Schritt 2 der technischen Integration.",
+    "status": "foundation_only",
+    "integration_mode": "prepared_not_enforced"
+  },
+  "unit_types": {
+    "motiv": {
+      "label": "Motiv",
+      "input": "integer"
+    },
+    "film": {
+      "label": "Film",
+      "input": "integer"
+    },
+    "sendung": {
+      "label": "Sendung",
+      "input": "integer"
+    },
+    "folge": {
+      "label": "Folge",
+      "input": "integer"
+    },
+    "modul": {
+      "label": "Modul",
+      "input": "integer"
+    },
+    "minute": {
+      "label": "Minute",
+      "input": "decimal"
+    },
+    "netto_sendeminute": {
+      "label": "Netto-Sendeminute",
+      "input": "decimal"
+    },
+    "studiostunde": {
+      "label": "Studiostunde",
+      "input": "decimal"
+    },
+    "fah": {
+      "label": "Final Audio Hour",
+      "input": "decimal"
+    },
+    "textblock_bis_2_min": {
+      "label": "Textlänge bis 2 Min",
+      "input": "range"
+    },
+    "textblock_bis_5_min": {
+      "label": "Textlänge bis 5 Min",
+      "input": "range"
+    },
+    "je_weitere_5_min": {
+      "label": "Je weitere 5 Min",
+      "input": "increment"
+    },
+    "erste_stunde": {
+      "label": "Erste Stunde",
+      "input": "fixed_step"
+    },
+    "folgestunde": {
+      "label": "Folgestunde",
+      "input": "fixed_step"
+    },
+    "bis_3_module": {
+      "label": "Bis 3 Module",
+      "input": "range"
+    },
+    "je_weiteres_modul": {
+      "label": "Je weiteres Modul",
+      "input": "increment"
+    }
+  },
+  "cross_reference_rules": [
+    {
+      "id": "online_video_unpaid_to_imagefilm",
+      "when": {
+        "family": "werbung_mit_bild",
+        "case": "online_video_spot",
+        "conditions": {
+          "media_payment": "unpaid"
+        }
+      },
+      "then": {
+        "action": "redirect_case_family",
+        "target_family": "webvideo_imagefilm_praesentation_unpaid",
+        "target_case": "webvideo_unpaid"
+      }
+    },
+    {
+      "id": "online_audio_unpaid_to_imagefilm",
+      "when": {
+        "family": "werbung_ohne_bild",
+        "case": "online_audio_spot",
+        "conditions": {
+          "media_payment": "unpaid"
+        }
+      },
+      "then": {
+        "action": "redirect_case_family",
+        "target_family": "webvideo_imagefilm_praesentation_unpaid",
+        "target_case": "webvideo_unpaid"
+      }
+    },
+    {
+      "id": "telefon_werbespot_to_audio_advertising",
+      "when": {
+        "family": "telefonansage",
+        "case": "telefon_werbespot"
+      },
+      "then": {
+        "action": "redirect_case_family",
+        "target_family": "werbung_ohne_bild",
+        "target_case": "telefon_werbespot"
+      }
+    },
+    {
+      "id": "reine_telefonansage_stays_phone",
+      "when": {
+        "family": "telefonansage",
+        "case": "telefonansage",
+        "conditions": {
+          "promotional_intent": false
+        }
+      },
+      "then": {
+        "action": "stay_in_case"
+      }
+    },
+    {
+      "id": "inapp_ads_to_advertising_with_visual",
+      "when": {
+        "family": "app",
+        "case": "inapp_ad"
+      },
+      "then": {
+        "action": "redirect_case_family",
+        "target_family": "werbung_mit_bild",
+        "target_case": "online_video_spot"
+      }
+    },
+    {
+      "id": "internal_elearning_stays_elearning",
+      "when": {
+        "family": "elearning_audioguide",
+        "case": "elearning_intern"
+      },
+      "then": {
+        "action": "stay_in_case"
+      }
+    },
+    {
+      "id": "marketing_elearning_to_webvideo",
+      "when": {
+        "family": "elearning_audioguide",
+        "case": "elearning_marketing",
+        "conditions": {
+          "audience": "public"
+        }
+      },
+      "then": {
+        "action": "redirect_case_family",
+        "target_family": "webvideo_imagefilm_praesentation_unpaid",
+        "target_case": "imagefilm_marketing"
+      }
+    },
+    {
+      "id": "podcast_promotional_to_audio_advertising",
+      "when": {
+        "family": "podcast",
+        "case": "podcast_werblich"
+      },
+      "then": {
+        "action": "redirect_case_family",
+        "target_family": "werbung_ohne_bild",
+        "target_case": "funk_spot"
+      }
+    },
+    {
+      "id": "games_promotional_to_advertising_with_visual",
+      "when": {
+        "family": "games",
+        "case": "game_werbliche_nutzung"
+      },
+      "then": {
+        "action": "redirect_case_family",
+        "target_family": "werbung_mit_bild",
+        "target_case": "online_video_spot"
+      }
+    }
+  ],
+  "families": [
+    {
+      "id": "werbung_mit_bild",
+      "title": "Werbung mit Bild",
+      "description": "Paid Advertising und eng verwandte Bewegtbild-Werbeformen.",
+      "breakdown_template": "advertising_visual",
+      "cases": [
+        {
+          "id": "online_video_spot",
+          "title": "Online Video Spot",
+          "unit_type": "motiv",
+          "pricing_mode": "fixed_plus_license_multipliers",
+          "base_rates": {
+            "paid_media": {
+              "low": 600,
+              "mid": 700,
+              "high": 800
+            },
+            "archivgage": {
+              "low": 325,
+              "mid": 385,
+              "high": 450
+            }
+          },
+          "addons": [
+            "zusaetzliches_territorium",
+            "zusaetzliches_jahr",
+            "zusaetzliches_motiv",
+            "social_media_paid_extension",
+            "cutdown"
+          ],
+          "visibility_rules": {
+            "show_fields": [
+              "price_level",
+              "territory",
+              "duration_years",
+              "language",
+              "variant_selector"
+            ],
+            "follow_up_questions": [
+              "paid_or_unpaid",
+              "is_archivnutzung",
+              "has_additional_motifs"
+            ]
+          },
+          "notes": {
+            "standardizable": [
+              "paid_media_basis",
+              "archivgage_basis",
+              "territorium_und_jahr_als_additive_lizenzmodule"
+            ],
+            "expert_required": [
+              "buyout_naeherungswerte_außerhalb_definierter_lizenzkorridore",
+              "mehrstufige_kampagnen_mit_anrechnung"
+            ]
+          }
+        },
+        {
+          "id": "atv_ctv_video_spot",
+          "title": "ATV/CTV Spot",
+          "unit_type": "motiv",
+          "pricing_mode": "fixed_plus_license_multipliers",
+          "base_rates": {
+            "national": {
+              "low": 600,
+              "mid": 700,
+              "high": 800
+            }
+          }
+        },
+        {
+          "id": "tv_spot",
+          "title": "TV Spot",
+          "unit_type": "motiv",
+          "pricing_mode": "fixed_plus_license_multipliers",
+          "base_rates": {
+            "regional": {
+              "low": 500,
+              "mid": 550,
+              "high": 600
+            },
+            "national": {
+              "low": 600,
+              "mid": 700,
+              "high": 800
+            }
+          }
+        },
+        {
+          "id": "tv_reminder",
+          "title": "TV Reminder",
+          "unit_type": "motiv",
+          "pricing_mode": "reference_percentage",
+          "rate_tiers": {
+            "percentage_of_parent_case": [
+              0.5,
+              1.0
+            ]
+          },
+          "expert_override_flags": {
+            "needs_parent_reference": true
+          }
+        },
+        {
+          "id": "tv_patronat",
+          "title": "TV Patronat",
+          "unit_type": "motiv",
+          "pricing_mode": "fixed_plus_license_multipliers",
+          "base_rates": {
+            "national": {
+              "low": 600,
+              "mid": 700,
+              "high": 800
+            }
+          }
+        },
+        {
+          "id": "kino_spot",
+          "title": "Kino Spot",
+          "unit_type": "motiv",
+          "pricing_mode": "fixed_plus_license_multipliers",
+          "base_rates": {
+            "regional": {
+              "low": 500,
+              "mid": 550,
+              "high": 600
+            },
+            "national": {
+              "low": 600,
+              "mid": 700,
+              "high": 800
+            }
+          }
+        },
+        {
+          "id": "pos_spot",
+          "title": "POS Spot",
+          "unit_type": "motiv",
+          "pricing_mode": "fixed",
+          "base_rates": {
+            "default": {
+              "low": 600,
+              "mid": 700,
+              "high": 800
+            }
+          }
+        },
+        {
+          "id": "layoutgage",
+          "title": "Layoutgage",
+          "unit_type": "motiv",
+          "pricing_mode": "fixed",
+          "base_rates": {
+            "default": {
+              "low": 250,
+              "mid": 300,
+              "high": 350
+            }
+          }
+        },
+        {
+          "id": "animatic_narrative_moodfilm",
+          "title": "Animatic / Narrative / Moodfilm",
+          "unit_type": "motiv",
+          "pricing_mode": "fixed",
+          "base_rates": {
+            "default": {
+              "low": 250,
+              "mid": 300,
+              "high": 350
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "werbung_ohne_bild",
+      "title": "Werbung ohne Bild",
+      "breakdown_template": "advertising_audio",
+      "cases": [
+        {
+          "id": "funk_spot",
+          "title": "Funk Spot",
+          "unit_type": "motiv",
+          "pricing_mode": "fixed_plus_license_multipliers",
+          "base_rates": {
+            "default": {
+              "low": 450,
+              "mid": 500,
+              "high": 550
+            }
+          },
+          "addons": [
+            "online_audio_package",
+            "zusaetzliches_territorium",
+            "zusaetzliches_jahr",
+            "zusaetzliches_motiv"
+          ]
+        },
+        {
+          "id": "funk_reminder",
+          "title": "Funk Reminder",
+          "unit_type": "motiv",
+          "pricing_mode": "reference_percentage",
+          "rate_tiers": {
+            "percentage_of_parent_case": [
+              0.5,
+              1.0
+            ]
+          }
+        },
+        {
+          "id": "ladenfunk",
+          "title": "Ladenfunk",
+          "unit_type": "motiv",
+          "pricing_mode": "fixed",
+          "base_rates": {
+            "default": {
+              "low": 450,
+              "mid": 550,
+              "high": 650
+            }
+          }
+        },
+        {
+          "id": "telefon_werbespot",
+          "title": "Telefon-Werbespot",
+          "unit_type": "motiv",
+          "pricing_mode": "cross_reference_only",
+          "cross_reference_rules": [
+            "telefon_werbespot_to_audio_advertising"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "webvideo_imagefilm_praesentation_unpaid",
+      "title": "Webvideo / Imagefilm / Präsentation – Unpaid Media",
+      "breakdown_template": "tiered_minutes_unpaid",
+      "cases": [
+        {
+          "id": "imagefilm",
+          "title": "Imagefilm",
+          "unit_type": "minute",
+          "pricing_mode": "tiered_duration",
+          "durations": [
+            {
+              "up_to": 2,
+              "rates": {
+                "low": 300,
+                "mid": 350,
+                "high": 400
+              }
+            },
+            {
+              "up_to": 5,
+              "rates": {
+                "low": 350,
+                "mid": 450,
+                "high": 500
+              }
+            }
+          ],
+          "addons": [
+            "social_media_organic",
+            "event_pos",
+            "internal_use"
+          ]
+        },
+        {
+          "id": "webvideo_unpaid",
+          "title": "Webvideo (Unpaid)",
+          "unit_type": "minute",
+          "pricing_mode": "tiered_duration",
+          "durations": [
+            {
+              "up_to": 2,
+              "rates": {
+                "low": 300,
+                "mid": 350,
+                "high": 400
+              }
+            },
+            {
+              "up_to": 5,
+              "rates": {
+                "low": 350,
+                "mid": 450,
+                "high": 500
+              }
+            }
+          ]
+        },
+        {
+          "id": "mitarbeiterfilm",
+          "title": "Mitarbeiterfilm",
+          "unit_type": "minute",
+          "pricing_mode": "tiered_duration",
+          "notes": {
+            "expert_required": [
+              "anrechnung_bei_spaeterer_externer_nutzung"
+            ]
+          }
+        },
+        {
+          "id": "awardfilm",
+          "title": "Awardfilm",
+          "unit_type": "minute",
+          "pricing_mode": "tiered_duration"
+        },
+        {
+          "id": "praesentation",
+          "title": "Präsentation",
+          "unit_type": "minute",
+          "pricing_mode": "tiered_duration",
+          "addons": [
+            "praesentations_zusatzlizenz"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "app",
+      "title": "App",
+      "breakdown_template": "tiered_minutes_mixed_rights",
+      "cases": [
+        {
+          "id": "app_voiceover",
+          "title": "App",
+          "unit_type": "minute",
+          "pricing_mode": "tiered_duration",
+          "cross_reference_rules": [
+            "inapp_ads_to_advertising_with_visual"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "telefonansage",
+      "title": "Telefonansage",
+      "breakdown_template": "modules_plus_increment",
+      "cases": [
+        {
+          "id": "telefonansage",
+          "title": "Telefonansage bis 3 Module / je weiteres Modul",
+          "unit_type": "modul",
+          "pricing_mode": "tiered_modules",
+          "base_rates": {
+            "bis_3_module": {
+              "low": 180,
+              "mid": 240,
+              "high": 300
+            }
+          },
+          "rate_tiers": {
+            "je_weiteres_modul": {
+              "low": 50,
+              "mid": 60,
+              "high": 70
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "elearning_audioguide",
+      "title": "E-Learning / Audioguide",
+      "breakdown_template": "tiered_minutes_or_modules",
+      "cases": [
+        {
+          "id": "elearning_intern",
+          "title": "E-Learning intern",
+          "unit_type": "minute",
+          "pricing_mode": "tiered_duration",
+          "base_rates": {
+            "bis_5_min": {
+              "low": 300,
+              "mid": 350,
+              "high": 400
+            }
+          },
+          "rate_tiers": {
+            "je_weitere_5_min": {
+              "low": 60,
+              "mid": 75,
+              "high": 90
+            }
+          }
+        },
+        {
+          "id": "elearning_marketing",
+          "title": "Marketing-E-Learning / öffentliches E-Learning",
+          "unit_type": "minute",
+          "pricing_mode": "cross_reference_only",
+          "cross_reference_rules": [
+            "marketing_elearning_to_webvideo"
+          ]
+        },
+        {
+          "id": "audioguide",
+          "title": "Audioguide",
+          "unit_type": "minute",
+          "pricing_mode": "tiered_duration"
+        }
+      ]
+    },
+    {
+      "id": "podcast",
+      "title": "Podcast",
+      "breakdown_template": "podcast_packaging",
+      "cases": [
+        {
+          "id": "podcast_verpackung",
+          "title": "Podcast Verpackung",
+          "unit_type": "folge",
+          "pricing_mode": "proposal_required"
+        },
+        {
+          "id": "podcast_werblich",
+          "title": "Podcast werblich",
+          "unit_type": "motiv",
+          "pricing_mode": "cross_reference_only",
+          "cross_reference_rules": [
+            "podcast_promotional_to_audio_advertising"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hoerbuch",
+      "title": "Hörbuch",
+      "breakdown_template": "fah_or_session",
+      "cases": [
+        {
+          "id": "hoerbuch_fah",
+          "title": "Hörbuch nach FAH",
+          "unit_type": "fah",
+          "pricing_mode": "expert_matrix",
+          "expert_override_flags": {
+            "hard_automation_not_recommended": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "games",
+      "title": "Games",
+      "breakdown_template": "session_hour_steps",
+      "cases": [
+        {
+          "id": "games_recording",
+          "title": "Games erste Stunde / Folgestunde",
+          "unit_type": "studiostunde",
+          "pricing_mode": "session_fee_plus_followup_hour",
+          "rate_tiers": {
+            "erste_stunde": {
+              "proposal": true
+            },
+            "folgestunde": {
+              "proposal": true
+            }
+          },
+          "expert_override_flags": {
+            "hard_automation_not_recommended": true
+          }
+        },
+        {
+          "id": "game_werbliche_nutzung",
+          "title": "Werbliche Nutzung von Games",
+          "unit_type": "motiv",
+          "pricing_mode": "cross_reference_only",
+          "cross_reference_rules": [
+            "games_promotional_to_advertising_with_visual"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "redaktionelle_inhalte_doku_tv_reportagen",
+      "title": "Redaktionelle Inhalte / Doku / TV-Reportage",
+      "breakdown_template": "minimum_plus_net_minute",
+      "cases": [
+        {
+          "id": "doku_kommentar",
+          "title": "Doku Kommentar",
+          "unit_type": "netto_sendeminute",
+          "pricing_mode": "minimum_plus_per_unit",
+          "base_rates": {
+            "minimum": {
+              "low": 150,
+              "mid": 250,
+              "high": 350
+            }
+          },
+          "rate_tiers": {
+            "per_net_minute": {
+              "low": 10,
+              "mid": 15,
+              "high": 20
+            }
+          }
+        },
+        {
+          "id": "doku_overvoice",
+          "title": "Doku Overvoice",
+          "unit_type": "netto_sendeminute",
+          "pricing_mode": "minimum_plus_per_unit"
+        },
+        {
+          "id": "tv_reportage",
+          "title": "TV-Reportage",
+          "unit_type": "netto_sendeminute",
+          "pricing_mode": "minimum_plus_per_unit"
+        }
+      ]
+    },
+    {
+      "id": "audiodeskription_ad",
+      "title": "Audiodeskription",
+      "breakdown_template": "minimum_plus_net_minute",
+      "cases": [
+        {
+          "id": "audiodeskription",
+          "title": "Audiodeskription mit Mindestgage",
+          "unit_type": "netto_sendeminute",
+          "pricing_mode": "minimum_plus_per_unit",
+          "base_rates": {
+            "minimum": {
+              "low": 150,
+              "mid": 250,
+              "high": 350
+            }
+          },
+          "rate_tiers": {
+            "per_net_minute": {
+              "low": 10,
+              "mid": 15,
+              "high": 20
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "kleinraeumig",
+      "title": "Kleinräumige Nutzung",
+      "breakdown_template": "small_usage_fixed",
+      "cases": [
+        {
+          "id": "kleinraeumige_nutzung",
+          "title": "Kleinräumige Nutzung",
+          "unit_type": "minute",
+          "pricing_mode": "tiered_duration",
+          "base_rates": {
+            "bis_2_min": {
+              "low": 180,
+              "mid": 240,
+              "high": 300
+            },
+            "bis_5_min": {
+              "low": 240,
+              "mid": 300,
+              "high": 360
+            }
+          },
+          "rate_tiers": {
+            "je_weitere_minute": {
+              "low": 40,
+              "mid": 55,
+              "high": 70
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "session_fee",
+      "title": "Session Fee",
+      "breakdown_template": "session_fee_only",
+      "cases": [
+        {
+          "id": "session_fee_recording",
+          "title": "Session Fee",
+          "unit_type": "studiostunde",
+          "pricing_mode": "expert_matrix",
+          "expert_override_flags": {
+            "requires_individual_negotiation": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "unlimited_usage",
+      "title": "Zeitlich / räumlich / medial unbegrenzte Nutzung",
+      "breakdown_template": "buyout_expert",
+      "cases": [
+        {
+          "id": "buyout_unlimited",
+          "title": "Unbegrenzte Nutzung",
+          "unit_type": "motiv",
+          "pricing_mode": "expert_override_or_multiplier_cap",
+          "unlimited_usage_rules": {
+            "base_reference": "advertising_parent_case",
+            "allowed_multiplier_reference": "duration_year_4_equals_unlimited",
+            "requires_expert_confirmation": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "pakete_rabatte_sonderfaelle",
+      "title": "Pakete / Rabatte / Sonderfälle",
+      "breakdown_template": "packages_and_credits",
+      "package_rules": [
+        {
+          "id": "online_audio_package",
+          "applies_to": "funk_spot",
+          "mode": "multiplier",
+          "value": 1.6
+        },
+        {
+          "id": "atv_ctv_package",
+          "applies_to": "online_video_spot",
+          "mode": "multiplier",
+          "value": 1.6
+        }
+      ],
+      "credit_rules": [
+        {
+          "id": "spaetere_zusatzverwertung",
+          "description": "Spätere Zusatzverwertung darf vorhandene Basiskaufkraft berücksichtigen, aber nicht stillschweigend voll anrechnen.",
+          "mode": "expert_credit"
+        },
+        {
+          "id": "nachgage",
+          "description": "Nachgage als separates Verwertungsereignis ausweisen.",
+          "mode": "additive_event"
+        }
+      ]
+    }
+  ]
+}

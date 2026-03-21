@@ -1,6 +1,23 @@
 <?php
 if ( ! defined( 'ABSPATH' ) ) exit;
 
+function src_load_vds_mapping_blueprint() {
+    $mapping_file = SRC_PLUGIN_DIR . 'config/vds-gagenkompass-2025.mapping.json';
+
+    if ( ! file_exists( $mapping_file ) || ! is_readable( $mapping_file ) ) {
+        return array();
+    }
+
+    $contents = file_get_contents( $mapping_file );
+    if ( false === $contents || '' === $contents ) {
+        return array();
+    }
+
+    $decoded = json_decode( $contents, true );
+
+    return ( JSON_ERROR_NONE === json_last_error() && is_array( $decoded ) ) ? $decoded : array();
+}
+
 // Admin-Menüpunkt hinzufügen
 function src_add_admin_menu() {
     add_options_page(
@@ -70,6 +87,8 @@ function src_settings_page_html() {
 
 // Hilfsfunktion: Default JSON Daten (Fallback)
 function src_get_default_json() {
+    $vds_mapping_blueprint = src_load_vds_mapping_blueprint();
+
     $config = array(
         'schema_version' => 'vds-2025.1',
         'vds2025' => array(
@@ -118,7 +137,8 @@ function src_get_default_json() {
                 'social_organic' => array('levels' => array('low' => 50, 'mid' => 150, 'high' => 250)),
                 'event_pos' => array('levels' => array('low' => 50, 'mid' => 150, 'high' => 250)),
                 'internal_use' => array('flat' => 120)
-            )
+            ),
+            'mapping_blueprint' => $vds_mapping_blueprint
         ),
         'script_estimation' => array(
             'wpm' => array('de' => 150, 'en' => 160, 'other' => 150),
