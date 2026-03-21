@@ -319,6 +319,104 @@ const srcGetVdsCaseConfig = function(projectKey) {
     return vds.cases[projectKey] || null;
 }
 
+const SRC_VDS_DEFAULT_EXTRAS = {
+    socialEligible: ['imagefilm', 'explainer', 'webvideo_unpaid', 'presentation_unpaid', 'app', 'elearning', 'audioguide', 'podcast'],
+    internalEligible: ['imagefilm', 'webvideo_unpaid', 'presentation_unpaid', 'elearning', 'audioguide', 'app'],
+    presentationAddon: [80, 150, 250],
+    archiveAddon: [325, 385, 450],
+    followupAddonFactor: 0.35,
+    packageDiscountSteps: { 2: 0.95, 3: 0.9, 4: 0.87, 5: 0.85 },
+    unlimitedMultipliers: { time: 4, territory: 1.6, media: 1.5, combo: 6 },
+    games: { firstHour: [350, 450, 600], followHour: [175, 225, 300], extraDayFactor: 0.85 },
+    audiobook: { perFah: [220, 280, 360], minimum: [350, 450, 600] },
+    podcastPackaging: { base: [250, 350, 450], extraEpisode: [75, 100, 130] },
+    doku: { minimum: [150, 250, 350], perMinute: [10, 15, 20] }
+};
+
+const srcGetVdsBlueprint = function() {
+    const vds = srcGetVdsConfig();
+    return vds && vds.mapping_blueprint ? vds.mapping_blueprint : null;
+}
+
+const srcGetVdsSpecialState = function() {
+    return {
+        paidStatus: document.getElementById('src-vds-paid-status')?.value || 'auto',
+        usageContext: document.getElementById('src-vds-usage-context')?.value || 'standard',
+        medium: document.getElementById('src-vds-medium')?.value || 'standard',
+        addonTerritories: parseInt(document.getElementById('src-vds-addon-territories')?.value, 10) || 0,
+        addonYears: parseInt(document.getElementById('src-vds-addon-years')?.value, 10) || 0,
+        addonMotifs: parseInt(document.getElementById('src-vds-addon-motifs')?.value, 10) || 0,
+        sessionHours: Math.max(1, parseFloat(document.getElementById('src-vds-session-hours')?.value) || 1),
+        recordingDays: Math.max(1, parseInt(document.getElementById('src-vds-recording-days')?.value, 10) || 1),
+        packageCount: Math.max(1, parseInt(document.getElementById('src-vds-package-count')?.value, 10) || 1),
+        reminderFactor: parseFloat(document.getElementById('src-vds-reminder-factor')?.value) || 0.75,
+        archive: Boolean(document.getElementById('src-vds-addon-archive')?.checked),
+        social: Boolean(document.getElementById('src-vds-addon-social')?.checked),
+        presentation: Boolean(document.getElementById('src-vds-addon-presentation')?.checked),
+        patronage: Boolean(document.getElementById('src-vds-addon-patronage')?.checked),
+        followup: Boolean(document.getElementById('src-vds-addon-followup')?.checked),
+        unlimitedTime: Boolean(document.getElementById('src-vds-unlimited-time')?.checked),
+        unlimitedTerritory: Boolean(document.getElementById('src-vds-unlimited-territory')?.checked),
+        unlimitedMedia: Boolean(document.getElementById('src-vds-unlimited-media')?.checked)
+    };
+}
+
+const srcResolveVdsScenario = function(state, projectKey) {
+    const special = state?.vdsSpecial || {};
+    const scenario = {
+        originalProjectKey: projectKey,
+        effectiveProjectKey: projectKey,
+        effectiveFormatKey: state?.projectFormatKey || srcGetFormatConfigByProject(projectKey)?.key || '',
+        redirects: [],
+        notes: [],
+        experts: [],
+        labels: [],
+        special
+    };
+    const redirect = (targetProject, reason, formatKey = '') => {
+        scenario.effectiveProjectKey = targetProject;
+        scenario.effectiveFormatKey = formatKey || srcGetFormatConfigByProject(targetProject)?.key || scenario.effectiveFormatKey;
+        scenario.redirects.push(reason);
+    };
+    if(projectKey === 'online_video_spot' && special.paidStatus === 'unpaid') {
+        redirect('webvideo_unpaid', 'Online Video Spot Unpaid → Imagefilm / Webvideo', 'webvideo_imagefilm_praesentation_unpaid');
+    }
+    if(projectKey === 'radio' && special.medium === 'online_audio' && special.paidStatus === 'unpaid') {
+        redirect('webvideo_unpaid', 'Online Audio Spot Unpaid → Imagefilm / Webvideo', 'webvideo_imagefilm_praesentation_unpaid');
+    }
+    if(projectKey === 'phone' && special.usageContext === 'promotional') {
+        redirect('radio', 'Telefon-Werbespot → Werbung ohne Bild', 'werbung_ohne_bild');
+    }
+    if(projectKey === 'app' && special.medium === 'inapp_ads') {
+        redirect('online_paid', 'In-App Ads → Werbung mit Bild', 'werbung_mit_bild');
+    }
+    if(projectKey === 'elearning' && (special.medium === 'elearning_public' || special.usageContext === 'marketing_public')) {
+        redirect('imagefilm', 'Öffentliches / Marketing-E-Learning → Imagefilm / Webvideo', 'webvideo_imagefilm_praesentation_unpaid');
+    }
+    if(projectKey === 'podcast' && (special.medium === 'podcast_ads' || special.usageContext === 'promotional')) {
+        redirect('radio', 'Werblicher Podcast-Fall → Werbung ohne Bild', 'werbung_ohne_bild');
+    }
+    if(projectKey === 'games' && (special.medium === 'games_promotional' || special.usageContext === 'promotional')) {
+        redirect('online_paid', 'Werbliche Games-Verwertung → Werbung mit Bild', 'werbung_mit_bild');
+    }
+    if(projectKey === 'phone' && special.usageContext === 'service') {
+        scenario.notes.push('Reine Telefonansage bleibt im Modul-Modell der Telefonansage.');
+    }
+    if(projectKey === 'elearning' && special.usageContext === 'internal') {
+        scenario.notes.push('Internes E-Learning bleibt im E-Learning-Modell.');
+    }
+    if(projectKey === 'audiobook') {
+        scenario.experts.push('Hörbuch wird als Vorschlagskalkulation ausgewiesen; individuelle Verhandlung nach FAH/Projektmatrix bleibt üblich.');
+    }
+    if(projectKey === 'games') {
+        scenario.experts.push('Games-Sessions werden als Session-/Stundenmodell vorgeschlagen; Rollenanzahl, Schreilast und Pickups sollten individuell verhandelt werden.');
+    }
+    if(special.unlimitedTime || special.unlimitedTerritory || special.unlimitedMedia) {
+        scenario.experts.push('Unlimited-Nutzung ist als Expertenfall markiert; der Rechner liefert eine Vorschlagskalkulation ohne Scheingenauigkeit.');
+    }
+    return scenario;
+}
+
 const srcNormalizeRatesData = function(rawData) {
     const safe = rawData && typeof rawData === 'object' ? srcClone(rawData) : {};
 
@@ -1599,7 +1697,8 @@ const srcGetStateFromUI = function() {
             return Number.isFinite(raw) ? raw : null;
         })(),
         complexitySelections,
-        advanced
+        advanced,
+        vdsSpecial: srcGetVdsSpecialState()
     };
 }
 
@@ -1636,7 +1735,7 @@ const srcRenderLicenseSidebar = function(state, result = null) {
     const licSection = document.getElementById('src-license-section');
     if(!licBox) return;
 
-    const projectName = state.layoutMode ? 'Layout / Pitch' : srcGetProjectDisplayLabel(state.projectKey, state.projectFormatKey);
+    const projectName = state.layoutMode ? 'Layout / Pitch' : ((result && result.projectName) || srcGetProjectDisplayLabel(state.projectKey, state.projectFormatKey));
     const linkedProjectNames = Array.from(new Set((state.linkedProjects || []).map(srcGetProjectName).filter(Boolean)));
     const projectLabel = linkedProjectNames.length ? `${projectName} (+ ${linkedProjectNames.join(', ')})` : projectName;
     const regionLabel = srcGetRegionLabel(state.region);
@@ -1915,7 +2014,9 @@ const srcGetLicenseExtraAmount = function(data, key) {
 }
 
 const srcProjectSupportsInternalUse = function(projectKey) {
-    if(!projectKey || !srcRatesData || !srcRatesData[projectKey]) return false;
+    if(!projectKey) return false;
+    if(SRC_VDS_DEFAULT_EXTRAS.internalEligible.includes(projectKey)) return true;
+    if(!srcRatesData || !srcRatesData[projectKey]) return false;
     const projectConfig = srcRatesData[projectKey];
     const extras = projectConfig.license_extras;
     if(!extras || !Object.prototype.hasOwnProperty.call(extras, 'internal_use')) return false;
@@ -1939,7 +2040,9 @@ const srcGetSocialLevelRow = function() {
 }
 
 const srcProjectSupportsSocialOrganic = function(projectKey) {
-    if(!projectKey || !srcRatesData || !srcRatesData[projectKey]) return false;
+    if(!projectKey) return false;
+    if(SRC_VDS_DEFAULT_EXTRAS.socialEligible.includes(projectKey)) return true;
+    if(!srcRatesData || !srcRatesData[projectKey]) return false;
     const extras = (srcRatesData[projectKey] || {}).license_extras || {};
     return Object.prototype.hasOwnProperty.call(extras, 'social_organic');
 }
@@ -3237,22 +3340,28 @@ window.srcUIUpdate = function() {
     const glob = document.getElementById('src-global-settings');
     if(hasGenre) glob.classList.add('active'); else glob.classList.remove('active');
     
+    const caseConfig = srcGetVdsCaseConfig(genre) || {};
+    const pricingUnit = caseConfig.pricing && caseConfig.pricing.unit ? caseConfig.pricing.unit : '';
+    const pricingKind = caseConfig.pricing && caseConfig.pricing.kind ? caseConfig.pricing.kind : '';
+    const usesAdControls = caseConfig.license_type === 'advertising';
+    const usesLengthControls = pricingUnit === 'minutes' || pricingKind === 'per_minute';
+    const scenario = srcResolveVdsScenario({ projectFormatKey: formatKey, vdsSpecial: srcGetVdsSpecialState() }, genre);
+    const effectiveGenre = scenario.effectiveProjectKey || genre;
+    const showVdsRouting = hasGenre && !layoutMode;
+    const showVdsSpecial = hasGenre && !layoutMode;
+    toggleElement('src-vds-routing-wrap', showVdsRouting);
+    toggleElement('src-vds-special-wrap', showVdsSpecial);
     if(layoutMode) {
         toggleElement('mod-ads', false); toggleElement('mod-image', false); toggleElement('mod-phone', false);
         toggleElement('src-pos-type-wrap', false);
     } else {
-        const caseConfig = srcGetVdsCaseConfig(genre) || {};
-        const pricingUnit = caseConfig.pricing && caseConfig.pricing.unit ? caseConfig.pricing.unit : '';
-        const pricingKind = caseConfig.pricing && caseConfig.pricing.kind ? caseConfig.pricing.kind : '';
-        const usesAdControls = caseConfig.license_type === 'advertising';
-        const usesLengthControls = pricingUnit === 'minutes' || pricingKind === 'per_minute';
         toggleElement('mod-ads', usesAdControls);
         toggleElement('mod-image', usesLengthControls);
         toggleElement('mod-phone', genre === 'phone');
         toggleElement('src-pos-type-wrap', genre === 'pos');
         
-        toggleElement('src-pkg-online-wrap', genre === 'radio');
-        toggleElement('src-pkg-atv-wrap', genre === 'online_paid');
+        toggleElement('src-pkg-online-wrap', effectiveGenre === 'radio');
+        toggleElement('src-pkg-atv-wrap', effectiveGenre === 'online_paid');
     }
     srcUpdateCutdownVisibility(genre, layoutMode);
     srcSyncOptionRowStates();
@@ -3305,7 +3414,7 @@ window.srcUIUpdate = function() {
     srcRenderFieldTips(genre);
     const localModeCard = document.querySelector('.src-opt-card[data-opt="localmode"]');
     if(localModeCard) {
-        const showLocal = (genre === 'radio' || genre === 'online_paid') && !layoutMode;
+        const showLocal = (effectiveGenre === 'radio' || effectiveGenre === 'online_paid') && !layoutMode;
         localModeCard.style.display = showLocal ? '' : 'none';
         if(!showLocal) {
             const localToggle = document.getElementById('src-local-mode');
@@ -3628,16 +3737,18 @@ const srcComputeSingleProjectResult = function(state, projectKey, options = {}) 
     if(!genre) {
         return { final: [0,0,0], info: [], licenseText: "", breakdown: null, licMeta: [], guidanceText: '', extraBlock: '', projectName: '' };
     }
-    let data = srcRatesData[genre];
-    const caseConfig = srcResolveCaseConfig(genre);
-    const werbungCaseConfig = srcGetWerbungMitBildCaseConfig(genre);
+    const scenario = srcResolveVdsScenario(state, genre);
+    const effectiveGenre = scenario.effectiveProjectKey || genre;
+    let data = srcRatesData[effectiveGenre];
+    const caseConfig = srcResolveCaseConfig(effectiveGenre);
+    const werbungCaseConfig = srcGetWerbungMitBildCaseConfig(effectiveGenre);
     if(!data && !caseConfig && !werbungCaseConfig) {
         return { final: [0,0,0], info: [], licenseText: "", breakdown: null, licMeta: [], guidanceText: '', extraBlock: '', projectName: '' };
     }
     if(!data && caseConfig) {
         const pricing = caseConfig.pricing || {};
         data = {
-            name: caseConfig.name || genre,
+            name: caseConfig.name || effectiveGenre,
             base: pricing.base || [0,0,0],
             tiers: pricing.tiers || [],
             tier_unit: pricing.unit || 'minutes',
@@ -3665,8 +3776,12 @@ const srcComputeSingleProjectResult = function(state, projectKey, options = {}) 
     const languageModel = ((srcGetVdsConfig() || {}).license_model || {}).language || { de: 1, en: 1.3, other: 1.5 };
     let langFactor = Number(languageModel[lang] || 1);
     let langLabel = "";
-    const projectName = srcGetProjectDisplayLabel(genre, state.projectFormatKey);
-    const werbungCase = srcResolveWerbungMitBildCase(state);
+    const projectName = srcGetProjectDisplayLabel(effectiveGenre, scenario.effectiveFormatKey || state.projectFormatKey);
+    const werbungState = Object.assign({}, state, {
+        projectKey: effectiveGenre,
+        projectFormatKey: scenario.effectiveFormatKey || state.projectFormatKey
+    });
+    const werbungCase = srcResolveWerbungMitBildCase(werbungState);
     if(lang === 'en') { langLabel = " (Englisch)"; }
     if(lang === 'other') { langLabel = " (Fremdsprache)"; }
 
@@ -3678,6 +3793,8 @@ const srcComputeSingleProjectResult = function(state, projectKey, options = {}) 
         licBaseText = "Nur interne Nutzung / Pitch (Keine Veröffentlichung).";
     } else {
         licParts.push("Projekt: " + projectName);
+        scenario.redirects.forEach(note => licMeta.push(note));
+        scenario.notes.forEach(note => licMeta.push(note));
         licBaseText = data.lic || "";
 
         if(werbungCase && werbungCase.valid) {
@@ -3715,19 +3832,19 @@ const srcComputeSingleProjectResult = function(state, projectKey, options = {}) 
             licMeta.push('Bitte Untervariante wählen.');
             licBaseText = '';
         }
-        else if(['tv','online_paid','radio','cinema','pos'].includes(genre)) {
+        else if(['tv','online_paid','radio','cinema','pos'].includes(effectiveGenre)) {
             let adName = data.name;
             let adBase = data.base;
 
-            let isLocalModeActive = state.localMode && (genre === 'radio' || genre === 'online_paid');
+            let isLocalModeActive = state.localMode && (effectiveGenre === 'radio' || effectiveGenre === 'online_paid');
             if(isLocalModeActive) {
-                adBase = genre === 'radio' ? [60, 75, 100] : [150, 225, 300];
-                adName = genre === 'radio' ? "Funk Spot (Lokal)" : "Online Video (Kleinräumig)";
-                licBaseText = genre === 'radio'
+                adBase = effectiveGenre === 'radio' ? [60, 75, 100] : [150, 225, 300];
+                adName = effectiveGenre === 'radio' ? "Funk Spot (Lokal)" : "Online Video (Kleinräumig)";
+                licBaseText = effectiveGenre === 'radio'
                     ? "Lizenzen: Lineares Radio-Programm (Lokal/Simulcast), bis zu 1 Jahr."
                     : `Lizenzen: Kleine Online Paid Media (KMU, Media <${srcFormatMoney(5000)}), max 3 Monate.`;
                 licMeta.push("Sonderformat: Kleinräumiges Segment");
-            } else if(genre === 'pos') {
+            } else if(effectiveGenre === 'pos') {
                 const variants = data.variants || {};
                 const variant = variants[state.posType] || variants.pos_spot || variants.ladenfunk;
                 if(variant) {
@@ -3748,7 +3865,7 @@ const srcComputeSingleProjectResult = function(state, projectKey, options = {}) 
             addInfo(`Grundhonorar (${adName}${langLabel})`, srcFormatCurrency(base[1]), langFactor !== 1 ? `Basis × Sprachfaktor (${langFactor})` : "Basis");
 
             const region = state.region;
-            const adMultipliers = srcGetAdvertisingMultipliers(genre);
+            const adMultipliers = srcGetAdvertisingMultipliers(effectiveGenre);
             const regionMult = !isLocalModeActive
                 ? (adMultipliers.region[region] ?? adMultipliers.region.national ?? 1.0)
                 : 1.0;
@@ -3785,10 +3902,10 @@ const srcComputeSingleProjectResult = function(state, projectKey, options = {}) 
                 }
                 breakdownSteps.push({ label: `Laufzeit`, amountOrFactor: `x${timeMult}`, effectOnRange: 'multiply' });
             } else {
-                addInfo(`Laufzeit: ${genre === 'radio' ? '1 Jahr' : '3 Monate'} (inkl.)`, '—', 'Im Kleintarif enthalten');
+                addInfo(`Laufzeit: ${effectiveGenre === 'radio' ? '1 Jahr' : '3 Monate'} (inkl.)`, '—', 'Im Kleintarif enthalten');
             }
 
-            if(genre === 'radio' && state.packageOnline) {
+            if(effectiveGenre === 'radio' && state.packageOnline) {
                 const beforePackage = base[1];
                 base = base.map(v => Math.round(v * 1.6));
                 breakdownSteps.push({ label: "Paket: Online Audio", amountOrFactor: "x1.6", effectOnRange: 'multiply' });
@@ -3796,7 +3913,7 @@ const srcComputeSingleProjectResult = function(state, projectKey, options = {}) 
                 licParts.push("inkl. Online Audio");
                 licMeta.push("Paket: Online Audio");
             }
-            if(genre === 'online_paid' && state.packageAtv) {
+            if(effectiveGenre === 'online_paid' && state.packageAtv) {
                 const beforePackage = base[1];
                 base = base.map(v => Math.round(v * 1.6));
                 breakdownSteps.push({ label: "Paket: ATV/CTV", amountOrFactor: "x1.6", effectOnRange: 'multiply' });
@@ -3853,7 +3970,7 @@ const srcComputeSingleProjectResult = function(state, projectKey, options = {}) 
             }
 
             const licenseExtras = data.license_extras || {};
-            const addonPriceConfig = srcGetAddonPriceConfig(genre);
+            const addonPriceConfig = srcGetAddonPriceConfig(effectiveGenre);
             const socialExtra = srcGetLicenseExtraAmount(licenseExtras, 'social_organic') || addonPriceConfig.social_organic;
             const eventExtra = srcGetLicenseExtraAmount(licenseExtras, 'event_pos') || addonPriceConfig.event_pos;
             const internalExtra = srcGetLicenseExtraAmount(licenseExtras, 'internal_use');
@@ -3883,7 +4000,7 @@ const srcComputeSingleProjectResult = function(state, projectKey, options = {}) 
                 }
                 licParts.push("+ Event");
             }
-            if(state.licenseInternal && applyAddons && srcProjectSupportsInternalUse(genre) && internalExtra) {
+            if(state.licenseInternal && applyAddons && srcProjectSupportsInternalUse(effectiveGenre) && internalExtra) {
                 const extraRates = internalExtra;
                 final = final.map((v, idx) => v + extraRates[idx]);
                 if(srcHasPositiveAddonAmount(extraRates)) {
@@ -3900,6 +4017,104 @@ const srcComputeSingleProjectResult = function(state, projectKey, options = {}) 
             addInfo(`Grundhonorar (Standard${langLabel})`, srcFormatCurrency(final[1]), langFactor !== 1 ? `Basis × Sprachfaktor (${langFactor})` : "Basis");
         }
     }
+
+    const special = scenario.special || {};
+    const applyRangeMultiplier = function(multiplier, label) {
+        if(!Number.isFinite(multiplier) || multiplier === 1) return;
+        final = final.map(v => Math.round(v * multiplier));
+        breakdownSteps.push({ label, amountOrFactor: `x${Number(multiplier).toFixed(2)}`, effectOnRange: 'multiply' });
+        addInfo(label, '—', `Multiplikator ${Number(multiplier).toFixed(2)}`);
+    };
+    const applyRangeAddition = function(range, label, formula = 'Zusatzlizenz') {
+        const add = srcEnsurePriceTriple(range, [0,0,0]);
+        final = final.map((v, idx) => v + add[idx]);
+        if(srcHasPositiveAddonAmount(add)) {
+            breakdownSteps.push({ label, amountOrFactor: srcFormatSignedCurrency(add[1]), effectOnRange: 'add' });
+            addInfo(label, srcFormatSignedCurrency(add[1]), formula);
+        }
+    };
+
+    if(effectiveGenre === 'games') {
+        const first = SRC_VDS_DEFAULT_EXTRAS.games.firstHour;
+        const follow = SRC_VDS_DEFAULT_EXTRAS.games.followHour;
+        const hours = Math.max(1, Number(special.sessionHours || 1));
+        const days = Math.max(1, Number(special.recordingDays || 1));
+        const followHours = Math.max(0, hours - 1);
+        final = first.map((value, idx) => Math.round(value + (follow[idx] * followHours)));
+        if(days > 1) {
+            const dayFactor = 1 + ((days - 1) * SRC_VDS_DEFAULT_EXTRAS.games.extraDayFactor);
+            final = final.map(v => Math.round(v * dayFactor));
+            breakdownSteps.push({ label: 'Mehrtagelogik Games', amountOrFactor: `x${dayFactor.toFixed(2)}`, effectOnRange: 'multiply' });
+        }
+        breakdownBase = { min: first[0], mid: first[1], max: first[2] };
+        breakdownSteps.push({ label: '1. Stunde Games', amountOrFactor: srcFormatCurrency(first[1]), effectOnRange: 'base' });
+        if(followHours > 0) {
+            breakdownSteps.push({ label: `Folgestunden (${followHours}x)`, amountOrFactor: srcFormatSignedCurrency(follow[1] * followHours), effectOnRange: 'add' });
+        }
+        addInfo('Games Session Fee', srcFormatCurrency(first[1]), 'Erste Stunde');
+        if(followHours > 0) addInfo('Games Folgestunden', srcFormatSignedCurrency(follow[1] * followHours), `${followHours} × ${srcFormatCurrency(follow[1])}`);
+    }
+
+    if(effectiveGenre === 'audiobook') {
+        const fah = Math.max(1, Number(state.minutes || 60) / 60);
+        const proposal = SRC_VDS_DEFAULT_EXTRAS.audiobook.perFah.map((value, idx) => Math.max(SRC_VDS_DEFAULT_EXTRAS.audiobook.minimum[idx], Math.round(value * fah)));
+        final = proposal;
+        breakdownBase = { min: proposal[0], mid: proposal[1], max: proposal[2] };
+        breakdownSteps.push({ label: 'Hörbuch / FAH', amountOrFactor: `${fah.toFixed(2)} FAH`, effectOnRange: 'note' });
+        addInfo('Hörbuch Vorschlagskalkulation', srcFormatCurrency(proposal[1]), `${fah.toFixed(2)} FAH`);
+    }
+
+    if(special.archive) {
+        applyRangeAddition(SRC_VDS_DEFAULT_EXTRAS.archiveAddon, 'Archivgage', 'Archivnutzung laut VDS');
+    }
+    if(special.presentation && ['imagefilm', 'explainer', 'webvideo_unpaid', 'presentation_unpaid'].includes(effectiveGenre)) {
+        applyRangeAddition(SRC_VDS_DEFAULT_EXTRAS.presentationAddon, 'Präsentationsnutzung', 'Zusatzlizenz Präsentation');
+    }
+    if(special.social) {
+        applyRangeAddition(srcGetAddonPriceConfig(effectiveGenre).social_organic || [50,150,250], 'Social Media Zusatzrecht', 'Zusatzlizenz Social Media');
+    }
+    if(special.patronage) {
+        applyRangeMultiplier(1.2, 'Patronat / Sponsor-Integration');
+    }
+    if(special.followup) {
+        applyRangeMultiplier(1 + SRC_VDS_DEFAULT_EXTRAS.followupAddonFactor, 'spätere Zusatzverwertung / Nachgage');
+    }
+    if(['tv','online_paid','radio','cinema','pos','online_video_spot'].includes(effectiveGenre) || scenario.effectiveFormatKey === 'werbung_mit_bild') {
+        if(special.addonTerritories > 0) {
+            applyRangeMultiplier(1 + special.addonTerritories, `Zusatzterritorien (${special.addonTerritories}x)`);
+        }
+        if(special.addonYears > 0) {
+            applyRangeMultiplier(1 + special.addonYears, `Zusatzjahre (${special.addonYears}x)`);
+        }
+        if(special.addonMotifs > 0) {
+            applyRangeMultiplier(1 + special.addonMotifs, `Zusatzmotive (${special.addonMotifs}x)`);
+        }
+    }
+    if(state.cutdown && special.reminderFactor && special.reminderFactor !== 0.5) {
+        applyRangeMultiplier(special.reminderFactor / 0.5, 'Reminder-Regel');
+    }
+    if(special.packageCount > 1) {
+        const discountMap = SRC_VDS_DEFAULT_EXTRAS.packageDiscountSteps;
+        const packageDiscount = discountMap[special.packageCount] || Math.max(0.8, 1 - (Math.min(8, special.packageCount) * 0.03));
+        applyRangeMultiplier(packageDiscount, `Paketlogik (${special.packageCount} Motive)`);
+        scenario.experts.push('Paketpreise sind als konservative Vorschlagskalkulation ausgewiesen; große Kampagnen sollten individuell verhandelt werden.');
+    }
+    const unlimitedFlags = [special.unlimitedTime, special.unlimitedTerritory, special.unlimitedMedia].filter(Boolean).length;
+    if(unlimitedFlags > 0) {
+        let unlimitedFactor = 1;
+        if(unlimitedFlags >= 3) {
+            unlimitedFactor = SRC_VDS_DEFAULT_EXTRAS.unlimitedMultipliers.combo;
+        } else {
+            if(special.unlimitedTime) unlimitedFactor *= SRC_VDS_DEFAULT_EXTRAS.unlimitedMultipliers.time;
+            if(special.unlimitedTerritory) unlimitedFactor *= SRC_VDS_DEFAULT_EXTRAS.unlimitedMultipliers.territory;
+            if(special.unlimitedMedia) unlimitedFactor *= SRC_VDS_DEFAULT_EXTRAS.unlimitedMultipliers.media;
+        }
+        applyRangeMultiplier(unlimitedFactor, 'Unlimited-Nutzung');
+    }
+    scenario.experts.forEach(note => {
+        licMeta.push(note);
+        breakdownSteps.push({ label: 'Expertenhinweis', amountOrFactor: note, effectOnRange: 'note' });
+    });
 
     const complexity = srcResolveComplexity(state.complexitySelections || {});
     if(complexity.factor !== 1 && Number.isFinite(final[1])) {
@@ -3922,7 +4137,7 @@ const srcComputeSingleProjectResult = function(state, projectKey, options = {}) 
     if(applyAddons) {
         if(state.licenseSocialEnabled && state.licenseSocialLevel && state.licenseSocialLevel !== 'off') { licMeta.push('Social Media (organisch)'); }
         if(state.licenseEvent) { licMeta.push('Event / Messe / POS'); }
-        if(state.licenseInternal && srcProjectSupportsInternalUse(genre)) {
+        if(state.licenseInternal && srcProjectSupportsInternalUse(effectiveGenre)) {
             const internalAmount = srcGetLicenseExtraAmount((data.license_extras || {}), 'internal_use');
             if(srcHasPositiveAddonAmount(internalAmount)) {
                 licMeta.push("Interne Nutzung (Mitarbeiterschulung / Intranet)");
@@ -3962,7 +4177,7 @@ const srcComputeSingleProjectResult = function(state, projectKey, options = {}) 
 
     const rightsGuidance = srcRatesData.rights_guidance || {};
     const defaultGuidance = rightsGuidance.default || {};
-    const guidanceEntry = rightsGuidance[state.layoutMode ? 'default' : genre] || defaultGuidance;
+    const guidanceEntry = rightsGuidance[state.layoutMode ? 'default' : effectiveGenre] || defaultGuidance;
     let guidanceText = guidanceEntry.text || defaultGuidance.text || "";
     if(licBaseText && (state.layoutMode || !guidanceEntry.text || licBaseText !== (data.lic || ""))) {
         guidanceText = licBaseText;
@@ -3987,7 +4202,7 @@ const srcComputeSingleProjectResult = function(state, projectKey, options = {}) 
         if(state.licenseEvent && extras.event_pos) {
             extrasText.push(extras.event_pos);
         }
-        if(state.licenseInternal && srcProjectSupportsInternalUse(genre) && extras.internal_use) {
+        if(state.licenseInternal && srcProjectSupportsInternalUse(effectiveGenre) && extras.internal_use) {
             extrasText.push(extras.internal_use);
         }
     }

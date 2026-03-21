@@ -3640,3 +3640,31 @@ body.src-tutorial-active #src-tutorial-panel:not(.src-tutorial-hidden) {
 #src-calc-v6 .src-dependent-field-wrap + .src-dependent-field-wrap {
     margin-top: 12px;
 }
+
+.src-vds-routing {
+    display:grid;
+    gap:10px;
+    margin-top:10px;
+}
+
+.src-vds-special-grid {
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(160px, 1fr));
+    gap:12px;
+    margin-top:10px;
+}
+
+.src-vds-flags {
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));
+    gap:8px 14px;
+    margin-top:14px;
+    font-size:12px;
+    color:#475569;
+}
+
+.src-vds-flags label {
+    display:flex;
+    align-items:center;
+    gap:8px;
+}
