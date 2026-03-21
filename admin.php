@@ -140,11 +140,6 @@ function src_get_default_json() {
             ),
             'mapping_blueprint' => $vds_mapping_blueprint
         ),
-        'script_estimation' => array(
-            'wpm' => array('de' => 150, 'en' => 160, 'other' => 150),
-            'min_minutes' => 0.1,
-            'max_minutes' => 20
-        ),
         'license_multipliers' => array(
             'default_advertising' => array(
                 'region' => array('regional' => 0.8, 'national' => 1.0, 'dach' => 2.5, 'world' => 4.0),
